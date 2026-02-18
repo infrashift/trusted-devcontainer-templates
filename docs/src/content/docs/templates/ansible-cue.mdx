@@ -1,0 +1,53 @@
+---
+title: Ansible + CUE
+description: Trusted Ansible and CUE development environment based on UBI9.
+---
+
+import FeatureList from '../../../components/FeatureList.astro';
+import VerifyCommand from '../../../components/VerifyCommand.astro';
+import TestBadge from '../../../components/TestBadge.astro';
+import templates from '../../../data/templates.json';
+
+export const template = templates.find(t => t.id === 'ansible-cue');
+
+**Status:** <TestBadge status={template.testStatus} /> &nbsp; **Version:** `v{template.version}` &nbsp; **Platforms:** `linux/amd64`, `linux/arm64`
+
+## Usage
+
+```bash
+devcontainer templates apply \
+  --template-id ghcr.io/infrashift/trusted-devcontainer-templates/ansible-cue
+```
+
+## Installed Features
+
+<FeatureList primary={template.features.primary} common={template.features.common} />
+
+## Use Cases
+
+- Infrastructure-as-code development with Ansible playbooks and roles
+- CUE-based configuration validation and generation
+- Automated infrastructure provisioning and configuration management
+- Policy-driven infrastructure with CUE constraints
+
+## Containerfile
+
+The Containerfile is shared across all templates. It provides:
+
+1. UBI9 base image pinned by digest
+2. Non-root `dev` user (UID 1001)
+3. uv pre-installed for feature bootstrap
+
+```dockerfile
+FROM ghcr.io/infrashift/trusted-base-images/trusted/ubi9-standard@sha256:f938c...
+
+ARG USERNAME=dev
+ARG USER_UID=1001
+ARG USER_GID=1001
+```
+
+See [Containerfile Sync](/trusted-devcontainer-templates/pipeline/containerfile-sync/) for how consistency is enforced.
+
+## Verification
+
+<VerifyCommand templateId="ansible-cue" />

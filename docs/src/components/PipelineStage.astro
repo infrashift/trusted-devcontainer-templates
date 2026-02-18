@@ -1,0 +1,48 @@
+---
+interface Props {
+	number: number;
+	title: string;
+	description: string;
+}
+
+const { number, title, description } = Astro.props;
+---
+
+<div class="pipeline-stage">
+	<div class="stage-number">{number}</div>
+	<div class="stage-content">
+		<strong>{title}</strong>
+		<p>{description}</p>
+	</div>
+</div>
+
+<style>
+	.pipeline-stage {
+		display: flex;
+		gap: 1em;
+		padding: 1em;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 8px;
+		margin-bottom: 0.75em;
+	}
+	.stage-number {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 2.5em;
+		height: 2.5em;
+		background-color: var(--sl-color-accent);
+		color: var(--sl-color-white);
+		border-radius: 50%;
+		font-weight: 700;
+		font-size: 1.1em;
+	}
+	:root[data-theme='light'] .stage-number {
+		color: #ffffff;
+	}
+	.stage-content p {
+		margin: 0.25em 0 0;
+		font-size: 0.9em;
+		color: var(--sl-color-gray-2);
+	}
+</style>

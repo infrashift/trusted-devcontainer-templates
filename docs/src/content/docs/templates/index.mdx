@@ -1,0 +1,36 @@
+---
+title: Template Catalog
+description: All available trusted dev container templates.
+---
+
+import TemplateCard from '../../../components/TemplateCard.astro';
+import templates from '../../../data/templates.json';
+
+Every template shares a common foundation:
+
+- **UBI9 base image** pinned by SHA256 digest
+- **Non-root `dev` user** (UID 1001 / GID 1001)
+- **uv** pre-installed for feature bootstrap
+- **Common tooling**: git, git-lfs, grype, syft, jq, yq
+
+## Templates
+
+| Template | Category | Primary Features |
+|---|---|---|
+| [Ansible + CUE](/trusted-devcontainer-templates/templates/ansible-cue/) | Infrastructure | ansible-core, python, cuelang |
+| [.NET + Node.js](/trusted-devcontainer-templates/templates/dotnet-node/) | Web | dotnet, nodejs, npm, pnpm |
+| [Go + CUE](/trusted-devcontainer-templates/templates/go-cue/) | Systems | golang, cuelang |
+| [Java](/trusted-devcontainer-templates/templates/java/) | Enterprise | openjdk |
+| [Python](/trusted-devcontainer-templates/templates/python/) | Data Science | python, uv-ruff |
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1em; margin-top: 1.5em;">
+	{templates.map((t) => (
+		<TemplateCard
+			id={t.id}
+			name={t.name}
+			description={t.description}
+			version={t.version}
+			testStatus={t.testStatus}
+		/>
+	))}
+</div>

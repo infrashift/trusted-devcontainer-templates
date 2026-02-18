@@ -1,0 +1,51 @@
+---
+interface Props {
+	templateId: string;
+}
+
+const { templateId } = Astro.props;
+const ref = `ghcr.io/infrashift/trusted-devcontainer-templates/${templateId}:latest`;
+---
+
+<div class="verify-commands">
+	<div class="verify-block">
+		<div class="code-header">
+			<span>Verify signature (sovereign key)</span>
+		</div>
+		<pre><code set:text={`cosign verify --key cosign-release.pub ${ref}`} /></pre>
+	</div>
+
+	<div class="verify-block">
+		<div class="code-header">
+			<span>Verify SBOM attestation</span>
+		</div>
+		<pre><code set:text={`cosign verify-attestation --key cosign-release.pub --type spdxjson ${ref}`} /></pre>
+	</div>
+
+	<div class="verify-block">
+		<div class="code-header">
+			<span>Verify SLSA provenance</span>
+		</div>
+		<pre><code set:text={`cosign verify-attestation --key cosign-release.pub --type slsaprovenance1 ${ref}`} /></pre>
+	</div>
+</div>
+
+<style>
+	.verify-commands {
+		display: flex;
+		flex-direction: column;
+		gap: 1em;
+		margin: 1em 0;
+	}
+	.code-header {
+		background-color: var(--sl-color-gray-5);
+		padding: 0.4em 0.75em;
+		border-radius: 6px 6px 0 0;
+		font-size: 0.85em;
+		font-weight: 600;
+	}
+	pre {
+		margin-top: 0;
+		border-radius: 0 0 6px 6px;
+	}
+</style>

@@ -1,0 +1,54 @@
+---
+import TestBadge from './TestBadge.astro';
+
+interface Props {
+	id: string;
+	name: string;
+	description: string;
+	version: string;
+	testStatus: 'passing' | 'failing' | 'unknown';
+}
+
+const { id, name, description, version, testStatus } = Astro.props;
+---
+
+<a href={`/trusted-devcontainer-templates/templates/${id}/`} class="template-card">
+	<div class="card-header">
+		<strong>{name}</strong>
+		<TestBadge status={testStatus} />
+	</div>
+	<p class="card-description">{description}</p>
+	<div class="card-footer">
+		<code>v{version}</code>
+	</div>
+</a>
+
+<style>
+	.template-card {
+		display: block;
+		padding: 1em;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 8px;
+		text-decoration: none;
+		color: inherit;
+		transition: border-color 0.2s;
+	}
+	.template-card:hover {
+		border-color: var(--sl-color-accent);
+	}
+	.card-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 0.5em;
+	}
+	.card-description {
+		font-size: 0.9em;
+		color: var(--sl-color-gray-2);
+		margin: 0 0 0.75em;
+	}
+	.card-footer {
+		font-size: 0.8em;
+		color: var(--sl-color-gray-3);
+	}
+</style>

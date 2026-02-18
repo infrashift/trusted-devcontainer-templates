@@ -1,0 +1,53 @@
+---
+title: Python
+description: Trusted Python development environment based on UBI9 with uv and ruff.
+---
+
+import FeatureList from '../../../components/FeatureList.astro';
+import VerifyCommand from '../../../components/VerifyCommand.astro';
+import TestBadge from '../../../components/TestBadge.astro';
+import templates from '../../../data/templates.json';
+
+export const template = templates.find(t => t.id === 'python');
+
+**Status:** <TestBadge status={template.testStatus} /> &nbsp; **Version:** `v{template.version}` &nbsp; **Platforms:** `linux/amd64`, `linux/arm64`
+
+## Usage
+
+```bash
+devcontainer templates apply \
+  --template-id ghcr.io/infrashift/trusted-devcontainer-templates/python
+```
+
+## Installed Features
+
+<FeatureList primary={template.features.primary} common={template.features.common} />
+
+## Use Cases
+
+- Python application development with modern tooling (uv, ruff)
+- Data science and machine learning workflows
+- API development with FastAPI or Django
+- Automation scripting and CLI tools
+
+## Containerfile
+
+The Containerfile is shared across all templates. It provides:
+
+1. UBI9 base image pinned by digest
+2. Non-root `dev` user (UID 1001)
+3. uv pre-installed for feature bootstrap
+
+```dockerfile
+FROM ghcr.io/infrashift/trusted-base-images/trusted/ubi9-standard@sha256:f938c...
+
+ARG USERNAME=dev
+ARG USER_UID=1001
+ARG USER_GID=1001
+```
+
+See [Containerfile Sync](/trusted-devcontainer-templates/pipeline/containerfile-sync/) for how consistency is enforced.
+
+## Verification
+
+<VerifyCommand templateId="python" />

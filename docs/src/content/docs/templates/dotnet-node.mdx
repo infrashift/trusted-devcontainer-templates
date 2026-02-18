@@ -1,0 +1,53 @@
+---
+title: .NET + Node.js
+description: Trusted .NET and Node.js development environment based on UBI9.
+---
+
+import FeatureList from '../../../components/FeatureList.astro';
+import VerifyCommand from '../../../components/VerifyCommand.astro';
+import TestBadge from '../../../components/TestBadge.astro';
+import templates from '../../../data/templates.json';
+
+export const template = templates.find(t => t.id === 'dotnet-node');
+
+**Status:** <TestBadge status={template.testStatus} /> &nbsp; **Version:** `v{template.version}` &nbsp; **Platforms:** `linux/amd64`, `linux/arm64`
+
+## Usage
+
+```bash
+devcontainer templates apply \
+  --template-id ghcr.io/infrashift/trusted-devcontainer-templates/dotnet-node
+```
+
+## Installed Features
+
+<FeatureList primary={template.features.primary} common={template.features.common} />
+
+## Use Cases
+
+- Full-stack web development with ASP.NET and React/Vue/Angular
+- Blazor applications with Node.js build tooling
+- Microservices with .NET backends and Node.js frontends
+- API development with .NET and TypeScript client generation
+
+## Containerfile
+
+The Containerfile is shared across all templates. It provides:
+
+1. UBI9 base image pinned by digest
+2. Non-root `dev` user (UID 1001)
+3. uv pre-installed for feature bootstrap
+
+```dockerfile
+FROM ghcr.io/infrashift/trusted-base-images/trusted/ubi9-standard@sha256:f938c...
+
+ARG USERNAME=dev
+ARG USER_UID=1001
+ARG USER_GID=1001
+```
+
+See [Containerfile Sync](/trusted-devcontainer-templates/pipeline/containerfile-sync/) for how consistency is enforced.
+
+## Verification
+
+<VerifyCommand templateId="dotnet-node" />

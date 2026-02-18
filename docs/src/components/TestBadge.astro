@@ -1,0 +1,33 @@
+---
+interface Props {
+	status: 'passing' | 'failing' | 'unknown';
+}
+
+const { status } = Astro.props;
+
+const styles: Record<string, { bg: string; text: string; label: string }> = {
+	passing: { bg: '#166534', text: '#bbf7d0', label: 'Passing' },
+	failing: { bg: '#991b1b', text: '#fecaca', label: 'Failing' },
+	unknown: { bg: '#525252', text: '#d4d4d4', label: 'Unknown' },
+};
+
+const style = styles[status] ?? styles.unknown;
+---
+
+<span
+	class="test-badge"
+	style={`background-color: ${style.bg}; color: ${style.text};`}
+>
+	{style.label}
+</span>
+
+<style>
+	.test-badge {
+		display: inline-block;
+		padding: 0.2em 0.6em;
+		border-radius: 4px;
+		font-size: 0.85em;
+		font-weight: 600;
+		letter-spacing: 0.025em;
+	}
+</style>

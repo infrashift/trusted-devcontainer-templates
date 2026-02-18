@@ -1,0 +1,35 @@
+---
+title: Trusted DevContainer Templates
+description: Pre-hardened, OCI-published dev container templates built on UBI9 with SBOM, CVE scanning, SLSA provenance, and dual signing.
+template: splash
+hero:
+  tagline: Pre-hardened dev container templates with verifiable supply-chain trust — built on UBI9, signed with cosign, and gated by OPA policy.
+  actions:
+    - text: Get Started
+      link: /trusted-devcontainer-templates/getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/infrashift/trusted-devcontainer-templates
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid>
+	<Card title="5 Templates" icon="puzzle">
+		Ansible + CUE, .NET + Node.js, Go + CUE, Java, and Python — each pre-configured with the tools your team needs.
+	</Card>
+	<Card title="UBI9 Foundation" icon="seti:lock">
+		Every template builds on Red Hat Universal Base Image 9 pinned by digest for a stable, enterprise-grade foundation.
+	</Card>
+	<Card title="SBOM + CVE + SLSA" icon="approve-check-circle">
+		Every release includes a signed SBOM, CVE scan report, and SLSA provenance attestation — all verifiable with cosign.
+	</Card>
+	<Card title="Dual Signing" icon="star">
+		Templates are signed with both a sovereign key and keyless OIDC (Sigstore Fulcio/Rekor) for defense-in-depth verification.
+	</Card>
+	<Card title="Trusted Features Only" icon="setting">
+		All dev container features come exclusively from the InfraShift trusted-devcontainer-features collection.
+	</Card>
+</CardGrid>

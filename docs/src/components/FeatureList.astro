@@ -1,0 +1,90 @@
+---
+interface FeatureOption {
+	[key: string]: string;
+}
+
+interface PrimaryFeature {
+	id: string;
+	name: string;
+	options: FeatureOption;
+}
+
+interface Props {
+	primary: PrimaryFeature[];
+	common: string[];
+}
+
+const { primary, common } = Astro.props;
+
+const featureDocsBase = 'https://infrashift.github.io/devcontainer-features/features';
+
+function formatOptions(options: FeatureOption): string {
+	const entries = Object.entries(options);
+	if (entries.length === 0) return 'defaults';
+	return entries.map(([k, v]) => `${k}: ${v}`).join(', ');
+}
+---
+
+<div class="feature-list">
+	<h4>Primary Features</h4>
+	<table>
+		<thead>
+			<tr>
+				<th>Feature</th>
+				<th>Options</th>
+			</tr>
+		</thead>
+		<tbody>
+			{primary.map((f) => (
+				<tr>
+					<td>
+						<a href={`${featureDocsBase}/${f.id}/`}>{f.name}</a>
+					</td>
+					<td><code>{formatOptions(f.options)}</code></td>
+				</tr>
+			))}
+		</tbody>
+	</table>
+
+	<h4>Common Features</h4>
+	<div class="common-features">
+		{common.map((id) => (
+			<a href={`${featureDocsBase}/${id}/`} class="common-badge">
+				<code>{id}</code>
+			</a>
+		))}
+	</div>
+</div>
+
+<style>
+	table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+	th, td {
+		padding: 0.5em 0.75em;
+		text-align: left;
+		border-bottom: 1px solid var(--sl-color-gray-5);
+	}
+	th {
+		font-weight: 600;
+		background-color: var(--sl-color-gray-6);
+	}
+	.common-features {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5em;
+	}
+	.common-badge {
+		display: inline-block;
+		padding: 0.3em 0.6em;
+		background-color: var(--sl-color-gray-6);
+		border-radius: 4px;
+		text-decoration: none;
+		color: var(--sl-color-accent);
+		transition: background-color 0.2s;
+	}
+	.common-badge:hover {
+		background-color: var(--sl-color-gray-5);
+	}
+</style>
