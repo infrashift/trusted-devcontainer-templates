@@ -9,7 +9,7 @@ test-template: ## Test one template (TEMPLATE=python)
 	@test -n "$(TEMPLATE)" || { echo "Usage: make test-template TEMPLATE=<name>"; exit 1; }
 	bunx @devcontainers/cli up --workspace-folder "src/$(TEMPLATE)"
 	bunx @devcontainers/cli exec --workspace-folder "src/$(TEMPLATE)" \
-		bash /workspace/test/$(TEMPLATE)/test.sh
+		bash ../../test/$(TEMPLATE)/test.sh
 
 .PHONY: test
 test: ## Test ALL templates sequentially

@@ -26,21 +26,27 @@ vars:
   _securedevcontainer_variant: "{{ securedevcontainer_variant }}"
 ```
 
-### 2. Feature install ordering — dependencies not on PATH
+### 2. ansible-core feature fails — UV virtual environment not activated
 
-**Affected features:** ansible-core (needs python), npm (needs nodejs)
-**Errors:**
+**Affected features:** ansible-core
+**Error:**
 ```
-# ansible-core
 error: No interpreter found for Python 3.12 in virtual environments, managed installations, or search path
+```
+**Cause:** The ansible-core feature depends on UV. UV creates a virtual environment and installs Python 3.x along with the specified version of ansible-core into it. Verification commands (e.g., `ansible --version`, `uv python find 3.12`) fail because the virtual environment is not sourced/activated before they run.
+**Fix:** Ensure the ansible-core feature activates the UV virtual environment before running verification steps.
 
-# npm
+### 3. npm feature fails — Node.js not on PATH
+
+**Affected features:** npm (needs nodejs)
+**Error:**
+```
 env: 'node': No such file or directory
 ```
-**Cause:** Features with soft-dependencies (e.g., ansible-core depends on python, npm depends on nodejs) fail when the dependency is installed but its binary is not yet on the PATH during the dependent feature's install step.
-**Fix:** Ensure dependent features source the PATH updates from prior feature installs, or resolve the binary path explicitly rather than relying on PATH.
+**Cause:** The npm feature depends on nodejs, but the Node.js binary is not on the PATH when npm's install step runs.
+**Fix:** Ensure the npm feature resolves the Node.js binary path explicitly or sources PATH updates from the nodejs feature install.
 
-### 3. Features require sudo in base image
+### 4. Features require sudo in base image
 
 **Affected features:** git (confirmed), likely all features using Ansible roles with `sudo`
 **Error:**
@@ -54,17 +60,12 @@ env: 'node': No such file or directory
 
 ## infrashift/trusted-devcontainer-templates
 
-### 4. Makefile test path does not match devcontainer mount
+### ~~5. Makefile test path does not match devcontainer mount~~ RESOLVED
 
-**Error:**
-```
-bash: /workspace/test/go-cue/test.sh: No such file or directory
-```
-**Cause:** The Makefile `test-template` target uses `/workspace/test/...` but `devcontainer up` mounts the repo at `/workspaces/<repo-name>/`. Locally this resolves to `/workspaces/trusted-devcontainer-templates/test/...`.
-**Fix:** Update the Makefile exec command to use the correct workspace-relative path. The CI workflows (`release.yaml`, `test-pr.yaml`) may also need the same fix depending on the GitHub Actions runner's checkout directory name.
+Fixed — Makefile exec now uses `../../test/$(TEMPLATE)/test.sh` (relative to the remote workspace folder) instead of the absolute `/workspace/test/...` path. The CI workflows (`release.yaml`, `test-pr.yaml`) may also need the same fix depending on the GitHub Actions runner's checkout directory name.
 
-### 5. Shared Containerfile includes sudo as a workaround
+### 6. Shared Containerfile includes sudo as a workaround
 
 **Location:** `shared/Containerfile`
-**Cause:** Workaround for issue #3 above. The `RUN dnf install -y sudo && dnf clean all` layer was added because features require sudo.
-**Fix:** Remove this layer once issue #3 is resolved upstream in `infrashift/trusted-devcontainer-features`.
+**Cause:** Workaround for issue #4 above. The `RUN dnf install -y sudo && dnf clean all` layer was added because features require sudo.
+**Fix:** Remove this layer once issue #4 is resolved upstream in `infrashift/trusted-devcontainer-features`.
