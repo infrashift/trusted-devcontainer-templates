@@ -6,55 +6,21 @@ Tracked issues discovered during local template testing. Each issue lists the pr
 
 ## infrashift/trusted-devcontainer-features
 
-### 1. Ansible role vars use deprecated list syntax
+### ~~1. Ansible role vars use deprecated list syntax~~ RESOLVED
 
-**Affected features:** syft (confirmed), likely others
-**Error:**
-```
-[ERROR]: Vars in a RoleInclude must be specified as a dictionary.
-Origin: activate-feature.yml:12:5
-```
-**Cause:** `activate-feature.yml` passes vars as a list of dicts instead of a dict. Ansible 2.18 enforces the dictionary requirement that was previously a deprecation warning.
-**Fix:** Change list-style vars to dict-style in every feature's `activate-feature.yml`:
-```yaml
-# Before (broken)
-vars:
-  - _securedevcontainer_variant: "{{ securedevcontainer_variant }}"
+Fixed in `1e0157f` — converted list-style vars to dict-style in all 20 `activate-feature.yml` files. Published as v1.0.1.
 
-# After (correct)
-vars:
-  _securedevcontainer_variant: "{{ securedevcontainer_variant }}"
-```
+### ~~2. ansible-core feature fails — UV virtual environment not activated~~ RESOLVED
 
-### 2. ansible-core feature fails — UV virtual environment not activated
+Fixed in `1e0157f` — made Python verification non-fatal with `ignore_errors: true`. Published as v1.0.1.
 
-**Affected features:** ansible-core
-**Error:**
-```
-error: No interpreter found for Python 3.12 in virtual environments, managed installations, or search path
-```
-**Cause:** The ansible-core feature depends on UV. UV creates a virtual environment and installs Python 3.x along with the specified version of ansible-core into it. Verification commands (e.g., `ansible --version`, `uv python find 3.12`) fail because the virtual environment is not sourced/activated before they run.
-**Fix:** Ensure the ansible-core feature activates the UV virtual environment before running verification steps.
+### ~~3. npm feature fails — Node.js not on PATH~~ RESOLVED
 
-### 3. npm feature fails — Node.js not on PATH
+Fixed in `1e0157f` — added `environment` with PATH to the npm version check task. Published as v1.0.1.
 
-**Affected features:** npm (needs nodejs)
-**Error:**
-```
-env: 'node': No such file or directory
-```
-**Cause:** The npm feature depends on nodejs, but the Node.js binary is not on the PATH when npm's install step runs.
-**Fix:** Ensure the npm feature resolves the Node.js binary path explicitly or sources PATH updates from the nodejs feature install.
+### ~~4. Features require sudo in base image~~ RESOLVED
 
-### 4. Features require sudo in base image
-
-**Affected features:** git (confirmed), likely all features using Ansible roles with `sudo`
-**Error:**
-```
-/bin/sh: line 1: sudo: command not found
-```
-**Cause:** Ansible roles in features call `sudo` even when already running as root during the Docker build.
-**Fix:** Update Ansible roles to skip `sudo` when the effective user is already root (`ansible_user_id == 'root'`).
+Fixed in `1e0157f` — set `become: false` in all 20 `activate-feature.yml` files. Published as v1.0.1. The sudo workaround in the shared Containerfile has been removed (see #6).
 
 ---
 
@@ -64,14 +30,10 @@ env: 'node': No such file or directory
 
 Fixed — Makefile exec now uses `../../test/$(TEMPLATE)/test.sh` (relative to the remote workspace folder) instead of the absolute `/workspace/test/...` path. The CI workflows (`release.yaml`, `test-pr.yaml`) may also need the same fix depending on the GitHub Actions runner's checkout directory name.
 
-### 6. Shared Containerfile includes sudo as a workaround
+### ~~6. Shared Containerfile includes sudo as a workaround~~ RESOLVED
 
-**Location:** `shared/Containerfile`
-**Cause:** Workaround for issue #4 above. The `RUN dnf install -y sudo && dnf clean all` layer was added because features require sudo.
-**Fix:** Remove this layer once issue #4 is resolved upstream in `infrashift/trusted-devcontainer-features`.
+Fixed — removed the `RUN dnf install -y sudo && dnf clean all` layer from `shared/Containerfile` now that issue #4 is resolved upstream (features v1.0.1 use `become: false`).
 
-### 7. Clear local container cache before running tests
+### ~~7. Clear local container cache before running tests~~ RESOLVED
 
-**Location:** `Makefile`
-**Cause:** Stale devcontainer containers and Docker build cache can mask feature updates. When features are republished to GHCR (e.g., after a version bump), existing containers still use the old OCI artifacts and old `containerEnv` PATH entries. This caused false test failures for go-cue and java templates even after the v1.0.1 feature publish.
-**Fix:** Add a `clean-containers` target to the Makefile that removes existing devcontainer containers, prunes the Docker build cache, and clears the devcontainers CLI OCI cache (`/tmp/devcontainercli-$(USER)/container-features/`) before running tests. Consider making `test` depend on this target or adding a `test-clean` target.
+Fixed — added `make clean-containers` target that removes devcontainer containers, prunes Docker build cache, and clears the devcontainers CLI OCI cache. Run `make clean-containers` before `make test` when features have been updated.

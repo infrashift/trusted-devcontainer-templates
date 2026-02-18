@@ -61,6 +61,16 @@ docs-preview: ## Preview docs build
 
 ## ── Housekeeping ─────────────────────────────────────────────
 
+.PHONY: clean-containers
+clean-containers: ## Remove devcontainer containers and caches
+	@echo "Removing devcontainer containers..."
+	@docker ps -a --filter "label=devcontainer.local_folder" --format "{{.ID}}" | xargs -r docker rm -f
+	@echo "Pruning Docker build cache..."
+	@docker builder prune -f
+	@echo "Clearing devcontainers CLI OCI cache..."
+	@rm -rf /tmp/devcontainercli-$$(whoami)/container-features/
+	@echo "Done."
+
 .PHONY: clean
 clean: ## Remove docs/dist and caches
 	rm -rf docs/dist docs/.astro docs/node_modules/.cache
