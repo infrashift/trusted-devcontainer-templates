@@ -5,6 +5,13 @@ USER root
 # Silence subscription-manager messages (TODO: move to base image)
 RUN echo "enabled=0" >> /etc/yum/pluginconf.d/subscription-manager.conf
 
+# TODO(ISSUE): WORKAROUND — sudo is only needed because the Ansible playbooks in
+# infrashift/trusted-devcontainer-features assume sudo is present when installing
+# features (e.g. git). The real fix is to update the feature Ansible roles to not
+# require sudo when already running as root. Once that is fixed upstream, remove
+# this dnf install and the corresponding layer.
+RUN dnf install -y sudo && dnf clean all
+
 # Create the devcontainer user
 ARG USERNAME=dev
 ARG USER_UID=1001
