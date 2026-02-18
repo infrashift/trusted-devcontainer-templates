@@ -69,3 +69,9 @@ Fixed — Makefile exec now uses `../../test/$(TEMPLATE)/test.sh` (relative to t
 **Location:** `shared/Containerfile`
 **Cause:** Workaround for issue #4 above. The `RUN dnf install -y sudo && dnf clean all` layer was added because features require sudo.
 **Fix:** Remove this layer once issue #4 is resolved upstream in `infrashift/trusted-devcontainer-features`.
+
+### 7. Clear local container cache before running tests
+
+**Location:** `Makefile`
+**Cause:** Stale devcontainer containers and Docker build cache can mask feature updates. When features are republished to GHCR (e.g., after a version bump), existing containers still use the old OCI artifacts and old `containerEnv` PATH entries. This caused false test failures for go-cue and java templates even after the v1.0.1 feature publish.
+**Fix:** Add a `clean-containers` target to the Makefile that removes existing devcontainer containers, prunes the Docker build cache, and clears the devcontainers CLI OCI cache (`/tmp/devcontainercli-$(USER)/container-features/`) before running tests. Consider making `test` depend on this target or adding a `test-clean` target.
