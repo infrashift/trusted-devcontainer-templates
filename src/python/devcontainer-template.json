@@ -1,0 +1,20 @@
+{
+    "id": "python",
+    "version": "1.0.0",
+    "name": "Python (Trusted)",
+    "description": "A trusted Python development environment based on UBI9 with uv, ruff, and security scanning tools.",
+    "publisher": "InfraShift",
+    "options": {},
+    "platforms": [
+        "linux/amd64",
+        "linux/arm64"
+    ],
+    "keywords": [
+        "python",
+        "uv",
+        "ruff",
+        "ubi9",
+        "trusted",
+        "secure"
+    ]
+}

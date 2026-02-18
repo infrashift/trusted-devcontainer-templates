@@ -1,0 +1,22 @@
+{
+    "id": "go-cue",
+    "version": "1.0.0",
+    "name": "Go + CUE (Trusted)",
+    "description": "A trusted Go and CUE development environment based on UBI9 for CLI/TUI development with security scanning tools.",
+    "publisher": "InfraShift",
+    "options": {},
+    "platforms": [
+        "linux/amd64",
+        "linux/arm64"
+    ],
+    "keywords": [
+        "go",
+        "golang",
+        "cue",
+        "cuelang",
+        "cli",
+        "ubi9",
+        "trusted",
+        "secure"
+    ]
+}

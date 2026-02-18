@@ -1,0 +1,16 @@
+{
+    "build": {
+        "dockerfile": "./Containerfile"
+    },
+    "containerUser": "dev",
+    "updateRemoteUserUID": false,
+    "features": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/openjdk": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/git": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/git-lfs": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/grype": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/syft": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/jq": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/yq": {}
+    }
+}

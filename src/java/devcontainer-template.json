@@ -1,0 +1,19 @@
+{
+    "id": "java",
+    "version": "1.0.0",
+    "name": "Java (Trusted)",
+    "description": "A trusted Java development environment based on UBI9 with OpenJDK, security scanning tools, and supply-chain tooling.",
+    "publisher": "InfraShift",
+    "options": {},
+    "platforms": [
+        "linux/amd64",
+        "linux/arm64"
+    ],
+    "keywords": [
+        "java",
+        "openjdk",
+        "ubi9",
+        "trusted",
+        "secure"
+    ]
+}

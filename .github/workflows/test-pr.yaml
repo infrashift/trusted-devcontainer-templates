@@ -1,0 +1,62 @@
+name: Test Templates
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'shared/**'
+      - 'test/**'
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'shared/**'
+      - 'test/**'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      templates: ${{ steps.changed.outputs.templates }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changed templates
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # On push to main, test all templates
+            templates=$(ls -d src/*/ | xargs -I{} basename {} | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          else
+            # On PR, only test changed templates
+            changed_files=$(gh pr diff ${{ github.event.pull_request.number }} --name-only 2>/dev/null || git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.sha }})
+            templates=$(echo "$changed_files" | grep -oP '^src/\K[^/]+' | sort -u | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          fi
+          echo "templates=${templates}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.templates != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        template: ${{ fromJson(needs.detect-changes.outputs.templates) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Build and start devcontainer
+        run: |
+          devcontainer up \
+            --workspace-folder "src/${{ matrix.template }}"
+
+      - name: Run tests
+        run: |
+          devcontainer exec \
+            --workspace-folder "src/${{ matrix.template }}" \
+            bash /workspace/test/${{ matrix.template }}/test.sh

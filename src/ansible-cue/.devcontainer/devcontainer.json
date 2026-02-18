@@ -1,0 +1,23 @@
+{
+    "build": {
+        "dockerfile": "./Containerfile"
+    },
+    "containerUser": "dev",
+    "updateRemoteUserUID": false,
+    "features": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/ansible-core": {
+            "target_version": "2.18.2",
+            "target_python_version": "3.12"
+        },
+        "ghcr.io/infrashift/trusted-devcontainer-features/python": {
+            "target_version": "3.12"
+        },
+        "ghcr.io/infrashift/trusted-devcontainer-features/cuelang": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/git": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/git-lfs": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/grype": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/syft": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/jq": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/yq": {}
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "id": "ansible-cue",
+    "version": "1.0.0",
+    "name": "Ansible + CUE (Trusted)",
+    "description": "A trusted Ansible and CUE development environment based on UBI9 optimized for infrastructure-as-code workflows.",
+    "publisher": "InfraShift",
+    "options": {},
+    "platforms": [
+        "linux/amd64",
+        "linux/arm64"
+    ],
+    "keywords": [
+        "ansible",
+        "cue",
+        "cuelang",
+        "iac",
+        "infrastructure",
+        "ubi9",
+        "trusted",
+        "secure"
+    ]
+}
