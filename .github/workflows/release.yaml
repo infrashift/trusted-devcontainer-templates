@@ -38,9 +38,10 @@ jobs:
           set -euo pipefail
           for template in $TEMPLATES; do
             echo "::group::Testing ${template}"
-            devcontainer up --workspace-folder "src/${template}"
+            devcontainer up --workspace-folder "src/${template}" \
+              --mount "type=bind,source=${GITHUB_WORKSPACE}/test,target=/tmp/tdt-test"
             devcontainer exec --workspace-folder "src/${template}" \
-              bash /workspace/test/${template}/test.sh
+              bash /tmp/tdt-test/${template}/test.sh
             echo "::endgroup::"
           done
 

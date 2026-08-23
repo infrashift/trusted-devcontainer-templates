@@ -3,7 +3,7 @@ title: "ADR-003: Non-Root dev User"
 description: Decision to create a non-root user named 'dev' with UID 1001 for container development.
 ---
 
-**Status:** Accepted
+**Status:** Accepted — amended
 
 ## Context
 
@@ -48,3 +48,9 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
 | **`vscode` user (UID 1000)** | Couples templates to VS Code; UID 1000 often conflicts with host user |
 | **Root user** | Security risk; features may install to wrong locations |
 | **Dynamic UID** | `updateRemoteUserUID: true` causes inconsistent file ownership across rebuilds |
+
+## Amendment: the features repository now agrees
+
+The "Negatives" above noted that *"UID 1001 differs from the features repo's UID 1000 (`vscode` user)"*. That conflict is resolved: the features repository has superseded its own ADR-003 and standardized on `dev`/1001 (features ADR-011, *Non-Root dev User Alignment*).
+
+Features no longer hardcode the identity at all. They derive it from `_REMOTE_USER` and `_REMOTE_USER_HOME`, which the devcontainer CLI guarantees, and fail loudly rather than falling back to a guess. The previous `vscode` + `/home/dev` fallback — wrong under either convention — has been removed.

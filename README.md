@@ -1,6 +1,6 @@
 # Trusted DevContainer Templates
 
-Security-hardened [dev container templates](https://containers.dev/implementors/templates/) built on Red Hat UBI9 base images with full supply-chain attestations.
+Security-hardened [dev container templates](https://containers.dev/implementors/templates/) built on trusted Fedora 43 base images with full supply-chain attestations.
 
 Every template ships with SBOM, CVE scan results, SLSA v1.0 provenance, and dual-signed OCI artifacts so you can verify exactly what you're running.
 
@@ -22,7 +22,7 @@ All templates support `linux/amd64` and `linux/arm64`.
 
 Every layer in the stack is controlled and auditable:
 
-- **Base image** — [`infrashift/trusted-base-images/trusted/ubi9-standard`](https://ghcr.io/infrashift/trusted-base-images/trusted/ubi9-standard) pinned by digest
+- **Base image** — [`infrashift/trusted-base-images/trusted/fedora43-minimal`](https://ghcr.io/infrashift/trusted-base-images/trusted/fedora43-minimal) pinned by digest
 - **Features** — installed from [`infrashift/trusted-devcontainer-features`](https://github.com/infrashift/trusted-devcontainer-features) via the dev container feature mechanism
 - **Containerfile drift detection** — all templates share a canonical `shared/Containerfile`; the [`sync-containerfile.yaml`](.github/workflows/sync-containerfile.yaml) workflow fails if any template's copy diverges
 - **Non-root user** — containers run as the `dev` user (UID 1001)

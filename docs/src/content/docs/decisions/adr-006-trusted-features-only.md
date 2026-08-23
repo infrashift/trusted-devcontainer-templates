@@ -3,7 +3,7 @@ title: "ADR-006: Trusted Features Only"
 description: Decision to exclusively use features from the InfraShift trusted-devcontainer-features collection.
 ---
 
-**Status:** Accepted
+**Status:** Accepted — amended
 
 ## Context
 
@@ -52,3 +52,21 @@ Every feature reference uses the `ghcr.io/infrashift/trusted-devcontainer-featur
 | **Allowlist of approved third-party features** | Ongoing review burden; trust model is per-feature, not per-org |
 | **Feature vendoring (fork + rebuild)** | Maintenance overhead; version tracking becomes complex |
 | **No features (bake everything into Containerfile)** | Loses composability; massive Containerfiles; no feature reuse |
+
+## Amendment: transitive resolution via `dependsOn`
+
+This ADR assumes the feature list in `devcontainer.json` is the complete, auditable set. Under
+[ADR-008](/trusted-devcontainer-templates/decisions/adr-008-ansible-bootstrap-contract/) that is no longer strictly true: every trusted feature
+declares `dependsOn` the `bootstrap` feature, so the runtime may install a feature the template did not
+name.
+
+The trust boundary is unchanged. `dependsOn` targets are absolute OCI references, and every one resolves
+inside `ghcr.io/infrashift/trusted-devcontainer-features/` — the same namespace, pipeline, and signing keys
+as any directly listed feature. No third-party feature can enter this way.
+
+Two practices keep the audit surface honest:
+
+- Our templates list `bootstrap` explicitly even though `dependsOn` makes it redundant, so reading a
+  `devcontainer.json` still shows what will be installed.
+- Reviewing a feature means reviewing its `dependsOn` block, since that is now part of what a template
+  transitively pulls in.

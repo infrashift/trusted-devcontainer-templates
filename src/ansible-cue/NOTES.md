@@ -1,6 +1,6 @@
 # Ansible + CUE (Trusted) Template
 
-This template provides a hardened Ansible and CUE development environment built on a trusted UBI9 base image, optimized for infrastructure-as-code workflows.
+This template provides a hardened Ansible and CUE development environment built on a trusted Fedora 43 base image, optimized for infrastructure-as-code workflows.
 
 ## Included Tools
 

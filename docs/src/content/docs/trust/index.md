@@ -9,7 +9,7 @@ Trusted DevContainer Templates implement a layered trust model. Every layer in t
 
 | Layer | Trust Mechanism |
 |---|---|
-| **Base image** | UBI9 pinned by SHA256 digest — no floating tags |
+| **Base image** | Fedora 43 pinned by SHA256 digest — no floating tags |
 | **Containerfile** | Single canonical source with automated drift detection |
 | **Features** | Exclusively from `infrashift/trusted-devcontainer-features` |
 | **Build evidence** | Signed SBOM, CVE report, and SLSA provenance per template |
@@ -18,7 +18,7 @@ Trusted DevContainer Templates implement a layered trust model. Every layer in t
 
 ## How It Works
 
-1. **Base image pinning** — The shared Containerfile references a UBI9 image by `@sha256:` digest, not by tag. This ensures reproducibility and prevents supply-chain attacks via tag mutation.
+1. **Base image pinning** — The shared Containerfile references a Fedora 43 image by `@sha256:` digest, not by tag. This ensures reproducibility and prevents supply-chain attacks via tag mutation.
 
 2. **Feature provenance** — All features are sourced from a single InfraShift-controlled repository. Each feature is itself built, tested, and signed through a similar pipeline.
 

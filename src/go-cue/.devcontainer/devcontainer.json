@@ -5,6 +5,7 @@
     "containerUser": "dev",
     "updateRemoteUserUID": false,
     "features": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/golang": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/cuelang": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/git": {},

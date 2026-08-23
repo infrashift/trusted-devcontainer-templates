@@ -21,7 +21,7 @@ devcontainer templates apply \
 This creates a `.devcontainer/` directory in your project with:
 
 - **`devcontainer.json`** — feature declarations and container user configuration
-- **`Containerfile`** — UBI9 base image (pinned by digest), non-root `dev` user, uv bootstrap
+- **`Containerfile`** — Fedora 43 Minimal base image (pinned by digest), non-root `dev` user, and the package baseline features depend on
 
 ## What You Get
 
@@ -29,7 +29,7 @@ Every template provides:
 
 | Layer | What it does |
 |---|---|
-| **UBI9 base image** | Enterprise-grade RHEL 9 foundation, pinned by SHA256 digest |
+| **Fedora 43 base image** | Enterprise-grade RHEL 9 foundation, pinned by SHA256 digest |
 | **Non-root `dev` user** | UID 1001, ready for rootless container workflows |
 | **Trusted features** | Language runtimes, CLI tools, and security scanners from InfraShift |
 | **Security tooling** | Grype (CVE scanning) and Syft (SBOM generation) pre-installed |

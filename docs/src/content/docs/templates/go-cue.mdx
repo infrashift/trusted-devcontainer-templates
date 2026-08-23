@@ -1,6 +1,6 @@
 ---
 title: Go + CUE
-description: Trusted Go and CUE development environment based on UBI9.
+description: Trusted Go and CUE development environment based on Fedora 43.
 ---
 
 import FeatureList from '../../../components/FeatureList.astro';
@@ -34,12 +34,12 @@ devcontainer templates apply \
 
 The Containerfile is shared across all templates. It provides:
 
-1. UBI9 base image pinned by digest
+1. Fedora 43 base image pinned by digest
 2. Non-root `dev` user (UID 1001)
 3. uv pre-installed for feature bootstrap
 
 ```dockerfile
-FROM ghcr.io/infrashift/trusted-base-images/trusted/ubi9-standard@sha256:f938c...
+FROM ghcr.io/infrashift/trusted-base-images/trusted/fedora43-minimal@sha256:f938c...
 
 ARG USERNAME=dev
 ARG USER_UID=1001

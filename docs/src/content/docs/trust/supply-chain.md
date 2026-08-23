@@ -7,10 +7,10 @@ Each layer of a trusted template has explicit provenance controls.
 
 ## Base Image Digest
 
-The shared Containerfile pins the UBI9 base image by SHA256 digest:
+The shared Containerfile pins the Fedora 43 base image by SHA256 digest:
 
 ```dockerfile
-FROM ghcr.io/infrashift/trusted-base-images/trusted/ubi9-standard@sha256:f938c070dc5906b9915a0c056e85a002a00900af17a08bfa4783fb80a45ad889
+FROM ghcr.io/infrashift/trusted-base-images/trusted/fedora43-minimal@sha256:1ed67eb14da57087e206e45bba67a84264e213e8c545d64a9683fbc38bca3a65
 ```
 
 This means:

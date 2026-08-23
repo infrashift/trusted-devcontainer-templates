@@ -1,6 +1,6 @@
 # Python (Trusted) Template
 
-This template provides a hardened Python development environment built on a trusted UBI9 base image.
+This template provides a hardened Python development environment built on a trusted Fedora 43 base image.
 
 ## Included Tools
 

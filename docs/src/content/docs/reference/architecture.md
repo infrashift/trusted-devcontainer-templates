@@ -6,19 +6,24 @@ description: System architecture of the trusted dev container templates project.
 ## Layer Model
 
 ```
-┌─────────────────────────────────────────┐
-│           Published OCI Artifact        │  ← Signed + attested
-├─────────────────────────────────────────┤
-│         Dev Container Features          │  ← From trusted-devcontainer-features
-│   (language runtimes, tools, scanners)  │
-├─────────────────────────────────────────┤
-│         Shared Containerfile            │  ← Non-root dev user, uv bootstrap
-├─────────────────────────────────────────┤
-│      UBI9 Base Image (digest-pinned)    │  ← Enterprise RHEL 9 foundation
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│           Published OCI Artifact             │  ← Signed + attested
+├──────────────────────────────────────────────┤
+│         Dev Container Features               │  ← From trusted-devcontainer-features
+│   (language runtimes, tools, scanners)       │
+├──────────────────────────────────────────────┤
+│         bootstrap Feature                    │  ← Pinned uv + Ansible at /opt/bootstrap
+│   (pulled in automatically via dependsOn)    │
+├──────────────────────────────────────────────┤
+│         Shared Containerfile                 │  ← Non-root dev user, package baseline
+├──────────────────────────────────────────────┤
+│  Fedora 43 Minimal Base Image (digest-pinned)│  ← Trusted, signed, multi-arch
+└──────────────────────────────────────────────┘
 ```
 
-Each layer builds on the previous one. The base image is immutable (digest-pinned). The Containerfile adds the user and bootstrap tooling. Features add language-specific tools. The published artifact captures the complete stack.
+Each layer builds on the previous one. The base image is immutable (digest-pinned) and deliberately minimal, so the Containerfile lists the packages features depend on explicitly. The `bootstrap` feature then provisions the pinned Ansible environment every other feature installs through — it is not listed in the Containerfile, because features declare `dependsOn` it. The published artifact captures the complete stack.
+
+See [ADR-007](/trusted-devcontainer-templates/decisions/adr-007-fedora43-base-image/) and [ADR-008](/trusted-devcontainer-templates/decisions/adr-008-ansible-bootstrap-contract/).
 
 ## Directory Layout
 

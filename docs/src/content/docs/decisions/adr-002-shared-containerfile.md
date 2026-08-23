@@ -3,7 +3,7 @@ title: "ADR-002: Shared Containerfile"
 description: Decision to use a single canonical Containerfile shared across all templates.
 ---
 
-**Status:** Accepted
+**Status:** Accepted — amended
 
 ## Context
 
@@ -16,6 +16,11 @@ Maintain a single canonical Containerfile at `shared/Containerfile`. Each templa
 1. A CI workflow (`sync-containerfile.yaml`) that diffs all copies
 2. A local `make check-sync` target for developer convenience
 3. A `make sync-containerfiles` target to propagate changes
+
+**Amendment.** Both checks originally globbed only `src/*/.devcontainer/Containerfile`, which left this
+repository's own `.devcontainer/Containerfile` — a seventh copy — outside the drift gate. It had already
+diverged. The managed set is now enumerated once, as `MANAGED_CONTAINERFILES` in the `Makefile`, and
+covers all seven files.
 
 ## Consequences
 

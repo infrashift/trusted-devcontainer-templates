@@ -30,11 +30,11 @@ make sync-containerfiles
     "id": "<template-name>",
     "version": "1.0.0",
     "name": "<Display Name> (Trusted)",
-    "description": "A trusted <language> development environment based on UBI9.",
+    "description": "A trusted <language> development environment based on Fedora 43.",
     "publisher": "InfraShift",
     "options": {},
     "platforms": ["linux/amd64", "linux/arm64"],
-    "keywords": ["<language>", "ubi9", "trusted", "secure"]
+    "keywords": ["<language>", "fedora43", "trusted", "secure"]
 }
 ```
 

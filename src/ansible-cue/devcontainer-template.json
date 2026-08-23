@@ -2,7 +2,7 @@
     "id": "ansible-cue",
     "version": "1.0.0",
     "name": "Ansible + CUE (Trusted)",
-    "description": "A trusted Ansible and CUE development environment based on UBI9 optimized for infrastructure-as-code workflows.",
+    "description": "A trusted Ansible and CUE development environment based on Fedora 43 optimized for infrastructure-as-code workflows.",
     "publisher": "InfraShift",
     "options": {},
     "platforms": [
@@ -15,7 +15,8 @@
         "cuelang",
         "iac",
         "infrastructure",
-        "ubi9",
+        "fedora",
+        "fedora43",
         "trusted",
         "secure"
     ]

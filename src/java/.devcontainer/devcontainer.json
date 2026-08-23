@@ -5,6 +5,7 @@
     "containerUser": "dev",
     "updateRemoteUserUID": false,
     "features": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/openjdk": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/git": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/git-lfs": {},

@@ -5,6 +5,7 @@
     "containerUser": "dev",
     "updateRemoteUserUID": false,
     "features": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/ansible-core": {
             "target_version": "2.18.2",
             "target_python_version": "3.12"

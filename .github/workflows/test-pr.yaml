@@ -53,13 +53,14 @@ jobs:
       - name: Build and start devcontainer
         run: |
           devcontainer up \
-            --workspace-folder "src/${{ matrix.template }}"
+            --workspace-folder "src/${{ matrix.template }}" \
+            --mount "type=bind,source=${GITHUB_WORKSPACE}/test,target=/tmp/tdt-test"
 
       - name: Run tests
         run: |
           devcontainer exec \
             --workspace-folder "src/${{ matrix.template }}" \
-            bash /workspace/test/${{ matrix.template }}/test.sh
+            bash /tmp/tdt-test/${{ matrix.template }}/test.sh
 
   cve-scan:
     needs: detect-changes
