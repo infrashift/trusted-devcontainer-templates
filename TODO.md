@@ -22,6 +22,38 @@ Fixed in `1e0157f` — added `environment` with PATH to the npm version check ta
 
 Fixed in `1e0157f` — set `become: false` in all 20 `activate-feature.yml` files. Published as v1.0.1. Superseded by the bootstrap runner: the playbook now runs as the target user, so no per-task privilege handling remains.
 
+### ~~13. Features repo: all four `make test*` targets are dead~~ RESOLVED
+
+Fixed. The dead targets (`test`, `test-feature`, `test-scenarios`, `test-integration`) and the
+orphaned `build-test-base` are gone — they required a `test/` tree that the repo deliberately replaced
+with template-based integration tests in `f431c72`. The Makefile now exposes `check-contract`,
+`test-template`, `test-contract`, `test` (contract check plus all six templates) and `clean`. The
+stale `test-all` entry in `.PHONY` is gone, `bunx` vs `npx` is no longer inconsistent, and the
+`test-templates` target name no longer shadows the `test-templates/` directory. README,
+`getting-started.md` and `contributing.md` now document the targets that exist.
+
+### ~~14. Features repo: maintainer devcontainer references a user that does not exist~~ RESOLVED
+
+Fixed. `.devcontainer/devcontainer.json` now declares `"containerUser": "dev"` with
+`"updateRemoteUserUID": false`, matching the image (which only ever creates `dev`/1001), ADR-011 and
+all six test templates. Its build context also moved from `".."` to `"."`: the Containerfile `COPY`s
+nothing, so the old setting shipped the entire repo — roughly 250MB of `docs/node_modules` — to the
+daemon on every build.
+
+### ~~15. Features repo: `latest` never upgrades~~ RESOLVED
+
+Fixed by resolving the dist-tag rather than dropping it. `claude-code` and `openai-codex` now query
+the npm registry for what `latest` points at *before* comparing against what is installed, so the
+install is always pinned to a concrete version and the post-install assert checks that version
+exactly instead of accepting any semver.
+
+Verified end to end: downgrading to 2.1.240 and then requesting `latest` upgraded to 2.1.241
+(`changed=1`), where the previous logic would have skipped the install entirely; requesting `latest`
+again reported `changed=0`.
+
+Contract tests pin these two to the version actually installed rather than passing `latest`, so the
+idempotency check cannot race an npm publish mid-test. The resolution path is exercised by the build.
+
 ---
 
 ## infrashift/trusted-devcontainer-templates
@@ -79,30 +111,31 @@ arm64 now fails **loudly** where a digest is missing rather than producing a bro
 that is not the same as arm64 working. Still to do: run `devcontainer build --platform linux/arm64`
 against each template and fill in whatever arm64 digests turn out to be missing.
 
-### 13. Features repo: all four `make test*` targets are dead
+### 16. Features repo: the maintainer devcontainer cannot be built
 
-`test`, `test-feature`, `test-scenarios` and `test-integration` in
-`infrashift/trusted-devcontainer-features` all shell out to `devcontainers/cli features test`, which
-requires a `test/<feature>/test.sh` tree that does not exist in that repo. `README.md` still documents
-them as the testing story. The working path is now `make test-templates` (build + smoke tests +
-contract tests over all six templates). Either build the `test/` tree or delete the dead targets and
-point the README at the new ones. `.PHONY` also lists a `test-all` target that does not exist, and the
-Makefile uses `bunx` while CI uses `npx`.
+Found while verifying #14. `.devcontainer/devcontainer.json` references its features as `"../src/git"`,
+`"../src/golang"` and so on, but the devcontainer CLI requires a local feature path to be a **child of
+the `.devcontainer/` folder**:
 
-### 14. Features repo: maintainer devcontainer references a user that does not exist
+```
+Local file path parse error. Resolved path must be a child of the .devcontainer/ folder.
+Parsed: .../devcontainer-features/src/git
+Error: ERR: Feature '../src/git' could not be processed.
+```
 
-`.devcontainer/devcontainer.json` declares `"containerUser": "vscode"` with
-`"updateRemoteUserUID": true`, but `.devcontainer/Containerfile` only ever creates `dev` (1001) —
-there is no `vscode` user in the image. A missed spot in the ADR-011 dev-user alignment. Its
-`"build": {"context": ".."}` also disagrees with `make build-test-base`, which builds with
-`.devcontainer/` as the context.
+This is pre-existing and independent of #14 — the paths are unchanged in `HEAD`, so this environment
+has never come up. The user and build-context fixes in #14 are still correct (verified directly
+against the built image: it provides `dev`/1001 and has no `vscode` user), but they cannot be
+exercised end to end until this is resolved.
 
-### 15. Features repo: `latest` never upgrades
+Two options, neither free:
 
-`claude-code` and `openai-codex` default `target_version` to the npm dist-tag `latest`. Their install
-task is gated on `rc != 0 or (version != "latest" and version not in stdout)`, so once anything is
-installed, a request for `latest` skips the install forever — an old build satisfies `latest`
-indefinitely. Contract tests assert this is idempotent, which it is; the question is whether
-idempotent is the right behaviour for a floating tag. Either resolve the dist-tag to a concrete
-version before comparing, or drop `latest` as an option value.
+- **Reference the published features** (`ghcr.io/infrashift/trusted-devcontainer-features/<id>`), as
+  the templates repo does. `git` and `golang` are anonymously pullable today, but `bootstrap` is new
+  on this branch and not yet published, and every other feature `dependsOn` it — so this only works
+  after the next release to `main`. It also means the maintainer environment runs released features,
+  not the working tree, which is arguably correct: local features are exercised by `make test`.
+- **Copy `src/*` into `.devcontainer/` first**, the way `make test-template` and CI prepare the test
+  templates. Works against the working tree, but needs a prepare step before the environment can be
+  opened, which is awkward for an IDE-launched devcontainer.
 
