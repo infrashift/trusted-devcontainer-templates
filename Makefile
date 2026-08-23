@@ -23,8 +23,17 @@ test-template: ## Test one template (TEMPLATE=python)
 	bunx @devcontainers/cli exec --workspace-folder "src/$(TEMPLATE)" \
 		bash $(TEST_MOUNT)/$(TEMPLATE)/test.sh
 
+.PHONY: check-policy
+check-policy: ## Check and unit-test the release gate policy (.github/pdp)
+	@command -v opa > /dev/null || { \
+		echo "opa not found. Install from https://github.com/open-policy-agent/opa/releases"; \
+		exit 1; \
+	}
+	opa check --strict .github/pdp/
+	opa test .github/pdp/ -v
+
 .PHONY: test
-test: ## Test ALL templates sequentially
+test: check-policy ## Test ALL templates sequentially
 	@for t in $(TEMPLATES); do \
 		echo "── Testing $$t ──"; \
 		$(MAKE) test-template TEMPLATE=$$t; \

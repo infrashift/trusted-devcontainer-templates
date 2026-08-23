@@ -101,23 +101,60 @@ Fixed — added `make clean-containers`. Run it before `make test` when features
 
 Both `make check-sync` and `sync-containerfile.yaml` globbed only `src/*/.devcontainer/Containerfile`, leaving this repo's own `.devcontainer/Containerfile` unchecked — and it had already drifted by a blank line. The managed set is now enumerated once as `MANAGED_CONTAINERFILES` in the `Makefile` and covers all seven files. See ADR-002.
 
+### ~~10. OPA policy uses Rego syntax that OPA 1.x rejects~~ RESOLVED
+
+Fixed, but the original diagnosis was wrong in a way that mattered. OPA 1.x does **not** reject
+`violation_security_threshold[msg] if { … }` — `opa check --strict` passes it. Rego v1 reads the
+bracket form as a partial **object** rather than a partial set, so the rule silently changed shape
+instead of failing:
+
+| `cve_summary` | old policy returns | correct |
+|---|---|---|
+| 2 critical, 1 high | `{"…has 1 high CVEs":true,"…has 2 critical CVEs":true}` | `["…has 1 high CVEs","…has 2 critical CVEs"]` |
+| **0 / 0 (clean)** | **`{}`** | `[]` |
+
+The gate is `if [ "$violations" != "[]" ] && [ -n "$violations" ]`. On a clean scan OPA returns `{}`,
+which is neither `[]` nor empty — so the gate **blocked every release regardless of CVE counts**, and
+would have done so on the first tag ever pushed. Not a latent break waiting on a future OPA; it was
+already broken against OPA 1.x.
+
+The rules now use `contains msg if`. Verified by replaying the gate's own shell logic against OPA
+1.19.1: old policy blocked a clean scan, the fixed policy allows a clean scan (`[]`) and blocks
+2 critical + 1 high (`["…","…"]`).
+
+Three things guard it now:
+
+- **`.github/pdp/policies_test.rego`** — six cases, including one asserting a clean scan marshals to
+  exactly `"[]"`, which is what fails if the rule ever reverts to a partial object.
+- **The gate counts with `jq 'length'`** instead of comparing against the literal `[]`. A string
+  compare treats any unexpected shape as a violation; counting is correct for both shapes, so this
+  alone would have kept clean releases passing.
+- **A `policy` job in `test-pr.yaml`**, which runs `opa check --strict` and `opa test` on every PR.
+  It does not depend on `detect-changes`, and `.github/pdp/**` and `.github/workflows/**` are now
+  trigger paths — previously nothing ran on a policy change, and the gate was first exercised at the
+  moment it was trusted to block a release. `make check-policy` runs the same checks locally and is a
+  prerequisite of `make test`.
+
+OPA is also pinned: `v1.19.1`, downloaded from the GitHub release and verified against the sha256 the
+release publishes (`c9f985ce…c0839`), rather than tracking `downloads/latest`. The checksum was
+confirmed against the actual 60,535,858-byte asset, and that binary runs the policy tests green. A
+gate's verdict should not change because a new OPA shipped between two runs.
+
 ---
 
 ## Open
 
+> **All three are blocked on the same thing.** Every template references
+> `ghcr.io/infrashift/trusted-devcontainer-features/bootstrap`, and that package has never been
+> published — the registry answers `NAME_UNKNOWN`, while `git` is at `1.0.1`. This repo pulls features
+> straight from GHCR with no local staging, so no template can currently be built here: `make test`,
+> `make test-template`, the PR CVE scan and the release gate all resolve features first. #11 and #12
+> need templates that build; #9 cannot pin a digest for an image that does not exist. All three unblock
+> once the features work on `feature/container-improvements` lands on `main` and releases.
+
 ### 9. Feature references are not digest-pinned
 
 `devcontainer.json` references features by bare name (`ghcr.io/infrashift/trusted-devcontainer-features/git`), which resolves to `:latest` — a mutable tag. This is the one remaining unpinned link in the supply chain; the base image is digest-pinned and `uv`/`ansible-core` are now version-pinned with checksum verification. Pinning features by digest is on the roadmap.
-
-### 10. OPA policy uses Rego syntax that OPA 1.x rejects
-
-`.github/pdp/policies.rego` defines `violation_security_threshold[msg] if { … }`. Under OPA 1.x strict parsing a partial set requires `contains`:
-
-```rego
-violation_security_threshold contains msg if { … }
-```
-
-`release.yaml` downloads OPA `latest`, so this will break the release gate the moment the runner picks up an OPA build that enforces it. No tag has been pushed yet, so the release path has never run. Also worth pinning the OPA version rather than tracking `latest`.
 
 ### 11. Measure the CVE delta from the Fedora migration
 

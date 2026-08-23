@@ -76,11 +76,28 @@ jobs:
       - name: Install grype
         uses: anchore/scan-action/download-grype@v6
 
+      # Pinned, not `downloads/latest`: the gate's verdict must not change
+      # because a new OPA shipped between two runs. Checksum from the release's
+      # own opa_linux_amd64_static.sha256.
       - name: Install OPA
+        env:
+          OPA_VERSION: v1.19.1
+          OPA_SHA256: c9f985ce0d345f5484006ade2c695ed9e3f308e4441139e46695c5c182ac0839
         run: |
-          curl -fsSL -o /usr/local/bin/opa \
-            https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
-          chmod +x /usr/local/bin/opa
+          set -euo pipefail
+          curl -fsSL --retry 3 -o /tmp/opa \
+            "https://github.com/open-policy-agent/opa/releases/download/${OPA_VERSION}/opa_linux_amd64_static"
+          echo "${OPA_SHA256}  /tmp/opa" | sha256sum -c -
+          install -m 0755 /tmp/opa /usr/local/bin/opa
+          opa version
+
+      # The release gate is only as good as the policy behind it, and this is
+      # the first thing to run before any template is built.
+      - name: Test the release policy
+        run: |
+          set -euo pipefail
+          opa check --strict .github/pdp/
+          opa test .github/pdp/ -v
 
       - name: Scan all templates
         run: |
@@ -136,7 +153,10 @@ jobs:
               "data.tdt.pdp.violation_security_threshold" \
               --format raw)
 
-            if [ "$violations" != "[]" ] && [ -n "$violations" ]; then
+            # Count with jq rather than comparing against the literal "[]".
+            # A string compare reads any unexpected shape as a violation, so a
+            # policy returning `{}` on a clean scan failed every release.
+            if [ "$(printf '%s' "$violations" | jq 'length')" -gt 0 ]; then
               echo "::error::Policy violations for ${template}: ${violations}"
               exit 1
             fi
