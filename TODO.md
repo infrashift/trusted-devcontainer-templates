@@ -54,6 +54,33 @@ again reported `changed=0`.
 Contract tests pin these two to the version actually installed rather than passing `latest`, so the
 idempotency check cannot race an npm publish mid-test. The resolution path is exercised by the build.
 
+### ~~16. Features repo: the maintainer devcontainer cannot be built~~ RESOLVED
+
+Fixed. `.devcontainer/devcontainer.json` referenced its features as `"../src/<id>"`, which the
+devcontainer CLI rejects — a local feature path must be a child of the folder holding
+`devcontainer.json`. Pre-existing and unchanged in `HEAD`, so that environment had never come up.
+
+Neither option originally recorded was taken. Referencing the published features would have pinned the
+maintainer environment to released versions rather than the working tree, and `bootstrap` is not
+published yet. Requiring a manual prepare step before opening the environment would have been easy to
+forget.
+
+Instead the staging step runs automatically: `scripts/prepare-devcontainer.sh` copies `src/*` into
+`.devcontainer/`, and `devcontainer.json` invokes it through `initializeCommand`, which the CLI runs on
+the host **before** it resolves features. This was verified with a throwaway workspace whose only
+feature existed solely after the copy — it resolved and ran, confirming the ordering rather than
+assuming it. It is the same staging `make test-template` and CI already perform for the test
+templates. Staged copies are gitignored, with a negation so the tracked `SKELETON-feature` survives,
+and the script clears previously staged features first so one deleted from `src/` cannot linger.
+
+Verified end to end: the environment now builds, reports `remoteUser: dev`, completes 18 feature plays
+with no failures, and provides the full toolchain (git, go, cue, jq, yq, uv, ruff, grype, syft, node,
+npm, pnpm, bun, claude, codex, java, dotnet, ansible).
+
+This also completes the verification of #14, which could not be exercised end to end before: the
+container runs as `uid=1001(dev)`, and the build context is now 2B rather than the ~250MB the old
+`".."` setting sent to the daemon.
+
 ---
 
 ## infrashift/trusted-devcontainer-templates
@@ -110,32 +137,3 @@ checksums file), and an unpinned version/arch pair fails by name instead of skip
 arm64 now fails **loudly** where a digest is missing rather than producing a broken container — but
 that is not the same as arm64 working. Still to do: run `devcontainer build --platform linux/arm64`
 against each template and fill in whatever arm64 digests turn out to be missing.
-
-### 16. Features repo: the maintainer devcontainer cannot be built
-
-Found while verifying #14. `.devcontainer/devcontainer.json` references its features as `"../src/git"`,
-`"../src/golang"` and so on, but the devcontainer CLI requires a local feature path to be a **child of
-the `.devcontainer/` folder**:
-
-```
-Local file path parse error. Resolved path must be a child of the .devcontainer/ folder.
-Parsed: .../devcontainer-features/src/git
-Error: ERR: Feature '../src/git' could not be processed.
-```
-
-This is pre-existing and independent of #14 — the paths are unchanged in `HEAD`, so this environment
-has never come up. The user and build-context fixes in #14 are still correct (verified directly
-against the built image: it provides `dev`/1001 and has no `vscode` user), but they cannot be
-exercised end to end until this is resolved.
-
-Two options, neither free:
-
-- **Reference the published features** (`ghcr.io/infrashift/trusted-devcontainer-features/<id>`), as
-  the templates repo does. `git` and `golang` are anonymously pullable today, but `bootstrap` is new
-  on this branch and not yet published, and every other feature `dependsOn` it — so this only works
-  after the next release to `main`. It also means the maintainer environment runs released features,
-  not the working tree, which is arguably correct: local features are exercised by `make test`.
-- **Copy `src/*` into `.devcontainer/` first**, the way `make test-template` and CI prepare the test
-  templates. Works against the working tree, but needs a prepare step before the environment can be
-  opened, which is awkward for an IDE-launched devcontainer.
-
