@@ -34,6 +34,31 @@ NAMESPACE="${NAMESPACE:-infrashift/trusted-devcontainer-features}"
 BASE="${REGISTRY}/${NAMESPACE}"
 
 
+# Every ghcr.io call goes through one of these two. Both --check and pin mode
+# run in CI against a registry that rate-limits and occasionally 5xxs, and a
+# single dropped token request used to fail the whole gate.
+#
+#   --retry 3 --retry-delay 2   timeouts, 5xx and 429
+#   --retry-connrefused         a refused connection, which curl does not treat
+#                               as transient by default
+#
+# Deliberately NOT --retry-all-errors: a 404 here means the feature or digest
+# genuinely is not published, which is a real finding this script should report
+# promptly rather than retry three times first.
+#
+# --max-time bounds a SINGLE attempt, not the whole retry sequence, so the
+# worst case is roughly 3 x max-time plus the delays.
+registry_get() {
+    curl -sSfL --retry 3 --retry-delay 2 --retry-connrefused --max-time 20 "$@"
+}
+
+# HEAD variant. -f matters as much as the retry flags do: without it curl calls
+# a 503 a success, hands back a response with no docker-content-digest header,
+# and the retry never fires because curl saw nothing wrong.
+registry_head() {
+    curl -sSfI --retry 3 --retry-delay 2 --retry-connrefused --max-time 20 "$@"
+}
+
 # Read a published feature's metadata annotation, by the digest the template pins.
 # Reading the DIGEST rather than :latest matters -- the point is to compare a
 # template against the exact artifact it will install, not against whatever
@@ -43,8 +68,8 @@ feature_metadata() {
     digest=$(grep -hoE "${BASE}/${name}@sha256:[0-9a-f]{64}" "${FILES[@]}" | head -1 | sed 's/.*@//')
     [ -n "$digest" ] || return 1
     local token
-    token=$(curl -sSfL --max-time 20 "https://ghcr.io/token?scope=repository:${NAMESPACE}/${name}:pull&service=ghcr.io" | jq -r .token) || return 1
-    curl -sSfL --max-time 20 -H "Authorization: Bearer ${token}" \
+    token=$(registry_get "https://ghcr.io/token?scope=repository:${NAMESPACE}/${name}:pull&service=ghcr.io" | jq -r .token) || return 1
+    registry_get -H "Authorization: Bearer ${token}" \
         -H "Accept: application/vnd.oci.image.manifest.v1+json" \
         "https://ghcr.io/v2/${NAMESPACE}/${name}/manifests/${digest}" \
       | jq -r '.annotations["dev.containers.metadata"] // empty' || return 1
@@ -117,11 +142,15 @@ mapfile -t NAMES < <(grep -hoE "${BASE}/[a-z0-9-]+" "${FILES[@]}" | sed "s|${BAS
 
 declare -A DIGEST=()
 for name in "${NAMES[@]}"; do
-    token=$(curl -sSfL "https://ghcr.io/token?scope=repository:${NAMESPACE}/${name}:pull&service=ghcr.io" | jq -r .token)
-    d=$(curl -sSI -H "Authorization: Bearer ${token}" \
+    token=$(registry_get "https://ghcr.io/token?scope=repository:${NAMESPACE}/${name}:pull&service=ghcr.io" | jq -r .token)
+    # `|| true` so that a failed fetch, or a response without the header, falls
+    # through to the explicit error below. Without it `set -e` kills the script
+    # on the assignment and the operator gets no message at all -- which is how
+    # a registry blip used to read as a silent exit.
+    d=$(registry_head -H "Authorization: Bearer ${token}" \
           -H "Accept: application/vnd.oci.image.manifest.v1+json" \
           "https://ghcr.io/v2/${NAMESPACE}/${name}/manifests/latest" \
-        | grep -i '^docker-content-digest' | tr -d '\r' | awk '{print $2}')
+        | grep -i '^docker-content-digest' | tr -d '\r' | awk '{print $2}' || true)
     if ! [[ "$d" =~ ^sha256:[0-9a-f]{64}$ ]]; then
         echo "::error::could not resolve a digest for ${name}: got ${d@Q}" >&2
         exit 1
