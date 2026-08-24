@@ -8,6 +8,16 @@
     "containerUser": "dev",
     "updateRemoteUserUID": false,
     "customizations": {
+        // No "extensions" list, deliberately. An extension is marketplace code
+        // that runs inside the container with the workspace mounted, and none
+        // of this repository's supply chain reaches it: extensions are not
+        // digest-pinned, carry no checksum, never appear in the SBOM syft
+        // builds, and resolve to whatever the marketplace serves that minute.
+        // Everything else here is pinned precisely because that matters, so
+        // shipping an unpinnable code path to every consumer would undo the
+        // point. Until that gap can be closed the choice belongs to the
+        // developer, in the devcontainer.json that builds their concrete
+        // container from this template -- not to us, from here.
         "vscode": {
             "settings": {
                 "json.schemas": [
@@ -25,12 +35,7 @@
                     }
                 ],
                 "terminal.integrated.defaultProfile.linux": "bash"
-            },
-            "extensions": [
-                "usernamehw.indent-one-space",
-                "DavidAnson.vscode-markdownlint",
-                "bierner.github-markdown-preview"
-            ]
+            }
         }
     },
     "features": {
