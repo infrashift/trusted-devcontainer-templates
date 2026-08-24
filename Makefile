@@ -42,6 +42,14 @@ check-policy: ## Check, format-check and unit-test the PDP, with a coverage floo
 		printf 'coverage: %.1f%%\n' "$$cov"; \
 		awk -v c="$$cov" 'BEGIN{ if (c+0 < 85) { print "coverage below the 85% floor"; exit 1 } }'
 
+.PHONY: pin-features
+pin-features: ## Re-resolve and pin every template's feature references by digest
+	./scripts/pin-features.sh
+
+.PHONY: check-pins
+check-pins: ## Verify every template feature reference is digest-pinned
+	./scripts/pin-features.sh --check
+
 .PHONY: check-workflows
 check-workflows: ## Lint workflows for pinning and required-context drift
 	./scripts/lint-workflows.sh
@@ -57,7 +65,7 @@ repo-gate: ## Run the repository-scoped PDP against the working tree
 # Everything CI's repo-gate job runs, minus the container builds. Fast enough to
 # run before every push.
 .PHONY: check
-check: check-sync check-workflows check-policy repo-gate ## Run every static check
+check: check-sync check-pins check-workflows check-policy repo-gate ## Run every static check
 	@echo "── all static checks passed ──"
 
 .PHONY: test

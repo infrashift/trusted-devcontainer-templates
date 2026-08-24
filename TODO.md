@@ -205,6 +205,31 @@ One bug found while building this, worth recording because it is the same shape 
 gate's unpinned-action grep exited 1 when *nothing* was unpinned, and under `set -o pipefail` that
 aborted the gate at exactly the moment the repository was clean. Fixed with an explicit `|| true`.
 
+### ~~9. Feature references are not digest-pinned~~ RESOLVED
+
+Fixed. All 47 references across the five templates now carry `@sha256:…`. The base image was already
+digest-pinned, `uv` and `ansible-core` version-pinned with checksum verification, and every tool in
+`tools.lock` carries a sha256 — features were the last mutable link, and they are the thing that
+actually installs software into a developer's container.
+
+`scripts/pin-features.sh` resolves and rewrites; `--check` asserts and runs in `pr-gate` and
+`make check`. Each distinct feature is resolved **once** and applied everywhere, so five templates
+sharing a feature cannot end up pinned to five digests resolved seconds apart. The sed matches a bare
+ref *or* an existing pin, so re-running re-pins instead of appending a second digest, and the script
+asserts its own output rather than trusting the loop ran.
+
+Digest support was verified before any of this was written, not assumed: a throwaway workspace
+referencing `bootstrap@sha256:…` and `jq@sha256:…` built successfully. `src/python` then built with
+all nine of its features pinned.
+
+Re-pinning is deliberate and produces a reviewable diff — `make pin-features`. A feature update
+should be a visible change to this repository, not something that happens to a build.
+
+**One level deep, and that is worth stating.** This pins what the templates declare. It does not pin
+what those features declare among *themselves*: a feature's `dependsOn` still names a sibling by bare
+reference, which resolves to `:latest`. So a template's immediate inputs are immutable while its
+transitive ones are not. See #20.
+
 ---
 
 ## Open
@@ -216,10 +241,6 @@ aborted the gate at exactly the moment the repository was clean. Fixed with an e
 > `make test-template`, the PR CVE scan and the release gate all resolve features first. #11 and #12
 > need templates that build; #9 cannot pin a digest for an image that does not exist. All three unblock
 > once the features work on `feature/container-improvements` lands on `main` and releases.
-
-### 9. Feature references are not digest-pinned
-
-`devcontainer.json` references features by bare name (`ghcr.io/infrashift/trusted-devcontainer-features/git`), which resolves to `:latest` — a mutable tag. This is the one remaining unpinned link in the supply chain; the base image is digest-pinned and `uv`/`ansible-core` are now version-pinned with checksum verification. Pinning features by digest is on the roadmap.
 
 ### 11. Measure the CVE delta from the Fedora migration
 
@@ -295,3 +316,24 @@ Two things found while checking this, both worth keeping in mind:
 - **Free plan, public repos.** Deployment protection rules and branch protection are public-repo
   features on GitHub Free. Both repos here are public, so both work. Making either private without a
   Team plan would silently remove them.
+
+### 20. Feature-to-feature dependencies are still resolved by tag
+
+#9 pinned every reference the templates declare. It could not pin the ones the features declare among
+themselves: each feature's `dependsOn` names a sibling as
+`ghcr.io/infrashift/trusted-devcontainer-features/bootstrap`, with no digest, so the devcontainer CLI
+resolves it to `:latest` at build time.
+
+The practical effect is that a template pinned to `python@sha256:f041…` still pulls whatever
+`bootstrap:latest` is when it builds. The immediate inputs are immutable; the transitive ones are
+not, and a digest-pinned template that silently changes underneath is arguably worse than an honestly
+unpinned one, because the pin implies a guarantee it does not deliver.
+
+Closing it means embedding digests at publish time in the features repo, extending
+`scripts/rewrite-feature-refs.sh` (which already rewrites `./bootstrap` to a registry reference — the
+same file, one step further). That is **ordered**: `bootstrap` must be published before anything can
+reference its digest, so a single publish pass cannot do it. Options are a two-phase publish, or a
+dependency-ordered one that resolves each feature's digest as it goes.
+
+Not urgent — every feature in the chain is signed and the registry is ours — but the pin should mean
+what it says.

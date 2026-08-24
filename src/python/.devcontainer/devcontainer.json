@@ -5,16 +5,16 @@
     "containerUser": "dev",
     "updateRemoteUserUID": false,
     "features": {
-        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/python": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:0bb69a6a2da1d4728cdcde2c6f12350ddbcba271e3376b182a65635f1efedde7": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/python@sha256:f04103377fc93111e3c29adc1ccc848283021e25d16ef66a89a12aedca917a58": {
             "target_version": "3.12"
         },
-        "ghcr.io/infrashift/trusted-devcontainer-features/uv-ruff": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/git": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/git-lfs": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/grype": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/syft": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/jq": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/yq": {}
+        "ghcr.io/infrashift/trusted-devcontainer-features/uv-ruff@sha256:5656ee2c004be001c77a93b917f2c803420068bbf2a27d90fb1a75234e86fbb9": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/git@sha256:b6320b2771b5279eed4e04a70b130df0cadf187b880dfec4739defb506440c45": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/git-lfs@sha256:fae037baa6a974e792915b594cc2b5ce3caf9bcf625e048573fecfb1c6fc7459": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/grype@sha256:ff7244373f61bec52dd0cb5a0bfa65b59fc398dd78c1ddeacd754ad346ed13a5": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/syft@sha256:07a53e26928f4cf9515dc294928b613dde4164e16a9a3886a162e3ef7cfc8ac7": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/jq@sha256:5f1fe75b3cfcfda5881a83d16e200bebfb887756600288412e63de115677dbc5": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/yq@sha256:c39dcad793e93ac8bf6797f3216fede278cf20dc7bef4bb7b99173121b8950f6": {}
     }
 }
