@@ -22,6 +22,13 @@ on:
       # against them, or the verdict on file was produced by different rules.
       - '.github/workflows/review.yml'
       - '.github/workflows/release.yml'
+      # This file too. It was missing while pr-gate.yml's BUILD_PATHS already
+      # listed it, so the two lists the KEEP IN SYNC comment governs had drifted:
+      # a PR changing only build.yml had review/cve-policy seeded to pending and
+      # then never ran build.yml to resolve it -- blocked forever. The same
+      # argument as the two above applies anyway: changing how templates are
+      # built, scanned or signed must re-validate them.
+      - '.github/workflows/build.yml'
 
 permissions: {}
 
