@@ -65,10 +65,14 @@ jq --arg now "$EVALUATED_AT" --arg t "$TEMPLATE" '{
     severity:  .vulnerability.severity,
     package:   .artifact.name,
     version:   .artifact.version,
-    # grype omits fixState entirely when it has nothing to say. Defaulting to
-    # "unknown" keeps the field inside the policy'"'"'s closed enum instead of
-    # producing a null that would trip FIX_STATE_UNKNOWN on every finding.
-    fix_state: (.vulnerability.fix.state // "unknown"),
+    # grype emits fix.state as an EMPTY STRING when it has nothing to say -- it
+    # does not omit the field, which is what this previously assumed. jq'"'"'s //
+    # only substitutes for null or false, so "" passed straight through and
+    # tripped FIX_STATE_UNKNOWN in the policy. Seven findings per template did
+    # exactly that, and the resulting FAIL was invisible behind a FAIL the CVE
+    # counts explained on their own.
+    fix_state: (if ((.vulnerability.fix.state // "") | length) == 0
+                then "unknown" else .vulnerability.fix.state end),
     # WHERE the finding lives, so an exception can be scoped to the artifact its
     # justification actually describes. Without this the policy can only match on
     # CVE id, and a stdlib CVE waived for one Go binary is silently waived in
@@ -80,6 +84,16 @@ jq --arg now "$EVALUATED_AT" --arg t "$TEMPLATE" '{
     type:      (.artifact.type // "unknown")
   } ]
 }' "${DIR}/cve-report.json" > "${DIR}/scan-input.json"
+
+# Assert the normalised vocabulary before the policy ever sees it. A grype
+# release that adds a fix state should fail HERE, naming the value, rather than
+# arriving as one policy violation per finding.
+UNKNOWN_STATES=$(jq -r '[.matches[].fix_state] | map(select(. as $s | ["fixed","not-fixed","wont-fix","unknown"] | index($s) | not)) | unique | join(", ")' "${DIR}/scan-input.json")
+if [ -n "$UNKNOWN_STATES" ]; then
+    echo "::error::grype reported fix state(s) outside the known set: ${UNKNOWN_STATES}" >&2
+    echo "::error::Update the fix_states set in .github/pdp/policies.rego and the mapping above." >&2
+    exit 1
+fi
 
 echo "CVE summary for ${TEMPLATE}:"
 jq -r '[.matches[].severity] | group_by(.) | map("  \(.[0]): \(length)") | .[]' "${DIR}/scan-input.json"
