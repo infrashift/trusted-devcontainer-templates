@@ -505,3 +505,111 @@ test_both_scopes_must_match if {
 	d := pdp.decision with input as scan([right_pkg_wrong_loc]) with data.waivers as [both]
 	d.verdict == "FAIL"
 }
+
+# ===========================================================================
+# Remediation: vendored vs direct
+# ===========================================================================
+#
+# A High with an available fix blocks because a fix implies action is possible.
+# That is true when the finding names the artifact we install, and false when it
+# names a dependency vendored inside one -- a stdlib finding in the grype binary
+# is fixed by nobody but Anchore. These cases came from real scans.
+
+high_typed(pkg, typ) := {
+	"id": "CVE-2026-7000",
+	"severity": "High",
+	"package": pkg,
+	"fix_state": "fixed",
+	"type": typ,
+	"location": "/somewhere",
+}
+
+crit_typed(typ) := object.union(high_typed("stdlib", typ), {"id": "CVE-2026-7001", "severity": "Critical"})
+
+# --- direct: still blocks ---------------------------------------------------
+
+test_high_in_an_rpm_still_blocks if {
+	d := pdp.decision with input as scan([high_typed("sqlite-libs", "rpm")])
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+}
+
+test_high_in_a_python_distribution_still_blocks if {
+	d := pdp.decision with input as scan([high_typed("ansible-core", "python")])
+	d.verdict == "FAIL"
+}
+
+test_high_in_an_installed_binary_still_blocks if {
+	d := pdp.decision with input as scan([high_typed("python", "binary")])
+	d.verdict == "FAIL"
+}
+
+# --- vendored: recorded, not blocking ---------------------------------------
+
+test_high_in_a_vendored_go_module_is_recorded if {
+	d := pdp.decision with input as scan([high_typed("stdlib", "go-module")])
+	d.verdict == "PASS"
+	d.counts.blocking == 0
+	d.counts.recorded == 1
+}
+
+test_high_in_a_vendored_npm_dependency_is_recorded if {
+	d := pdp.decision with input as scan([high_typed("minimatch", "npm")])
+	d.verdict == "PASS"
+	d.counts.recorded == 1
+}
+
+test_high_in_a_vendored_dotnet_dependency_is_recorded if {
+	d := pdp.decision with input as scan([high_typed("System.Security.Cryptography.Xml", "dotnet")])
+	d.verdict == "PASS"
+}
+
+# --- the carve-out must be earned, not granted by absence -------------------
+
+test_high_with_an_unknown_type_still_blocks if {
+	d := pdp.decision with input as scan([high_typed("mystery", "unknown")])
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+}
+
+test_high_with_no_type_field_still_blocks if {
+	no_type := object.remove(high_typed("mystery", "rpm"), {"type"})
+	d := pdp.decision with input as scan([no_type])
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+}
+
+# --- Critical is unaffected anywhere ----------------------------------------
+
+test_critical_in_a_vendored_module_still_blocks if {
+	d := pdp.decision with input as scan([crit_typed("go-module")])
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+}
+
+test_critical_in_a_vendored_npm_dependency_still_blocks if {
+	d := pdp.decision with input as scan([crit_typed("npm")])
+	d.verdict == "FAIL"
+}
+
+# A vendored Critical is still waivable -- that is the decision it deserves.
+test_vendored_critical_can_be_waived_explicitly if {
+	w := {
+		"id": "EXC-V",
+		"cves": ["CVE-2026-7001"],
+		"expires": "2026-12-01T00:00:00Z",
+		"owner": "@ryancraig",
+		"justification": "Vendored in a binary we cannot rebuild; accepted and dated deliberately.",
+	}
+	d := pdp.decision with input as scan([crit_typed("go-module")]) with data.waivers as [w]
+	d.verdict == "PASS"
+	d.counts.waived == 1
+}
+
+# An unfixable High was already recorded; being vendored must not change that.
+test_vendored_high_without_a_fix_is_still_recorded_once if {
+	nofix := object.union(high_typed("stdlib", "go-module"), {"fix_state": "not-fixed"})
+	d := pdp.decision with input as scan([nofix])
+	d.verdict == "PASS"
+	d.counts.recorded == 1
+}

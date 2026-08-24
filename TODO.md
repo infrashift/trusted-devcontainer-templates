@@ -272,7 +272,7 @@ controls are behind. By location — `go` 38 (go-cue), `cue` 17, `node` 11, `dot
 11, uv-managed `python` 11, npm's bundled `tar` 27 across three copies, residual `grype` 8 and
 `syft` 7. Refresh those the way round 1 refreshed the first four.
 
-### 21. The CVE gate cannot tell what we control from what we do not
+### ~~21. The CVE gate cannot tell what we control from what we do not~~ RESOLVED
 
 The gate blocks on `severity: High, fix_state: fixed` because a fix being available implies action is
 possible. That holds for anything this org versions — round 1 of #11 proved it, clearing 69 raw
@@ -287,6 +287,37 @@ Worth considering: treat a `go-module` finding whose location is a distro-packag
 `recorded` rather than `blocking`, and reserve waivers for genuine one-off risk acceptance. That is a
 change to what the gate means, so it should follow evidence rather than one bad night — the evidence
 is now in the exception register's justifications.
+
+**Resolved.** `policies.rego` now distinguishes a finding that names an artifact we install from one
+that names a dependency vendored inside it, using grype's own artifact type:
+
+| | types | remedy | verdict |
+|---|---|---|---|
+| direct | `rpm`, `python`, `binary` | bump the version we pin | **blocking** |
+| vendored | `go-module`, `npm`, `dotnet`, `java-archive` | only the artifact's builder can act | recorded |
+
+**Critical is unaffected** and blocks wherever it lives. Downgrading those would use the distinction
+to avoid a decision rather than describe one — a Critical in a binary we cannot rebuild is exactly
+what should force an owned, dated waiver. The carve-out is also earned rather than granted by
+absence: an unknown or missing `type` keeps blocking.
+
+Effect on the real scans:
+
+| Template | before | after | what blocks |
+|---|---:|---:|---|
+| `python`, `java`, `ansible-cue`, `go-cue` | 15–18 | **6** | `ansible-core`, `python`, `sqlite-libs` |
+| `dotnet-node` | 32 | **7** | those plus npm's bundled `tar` (Critical) |
+
+Every remaining blocker is a package this org pins, except `sqlite-libs` — a base-image RPM whose
+base is already on its newest digest. The gate now blocks on what can actually be done.
+
+The register shrank from 41 CVEs across two entries to **8 across one**. The fzf entry was deleted
+outright: its findings were all vendored Highs, recorded automatically now. A waiver that suppresses
+nothing is not harmless — it reads as a reviewed accepted risk and returns for renewal every 90 days
+carrying no information.
+
+**The compensating obligation** is #22: this stays honest only while the artifacts are current, and
+nothing checks that yet.
 
 
 
@@ -383,3 +414,20 @@ dependency-ordered one that resolves each feature's digest as it goes.
 
 Not urgent — every feature in the chain is signed and the registry is ours — but the pin should mean
 what it says.
+
+### 22. Nothing asserts that pinned tool versions are current
+
+#21 stopped the gate blocking on dependencies vendored inside artifacts we cannot rebuild, on the
+grounds that the real remedy is keeping those artifacts current. That reasoning holds only if
+something checks currency, and nothing does.
+
+Both refresh rounds found tools well behind — syft 1.42 against 1.51, grype 0.108 against 0.117,
+cue 0.15.4 against 0.17.1 — and both were found by reading a CVE report, not by a check. The gate now
+records those findings rather than blocking, so the next time this drifts there will be no red build
+to notice it. #21 removed the accidental alarm without adding the deliberate one.
+
+Blocking on any drift would be too brittle: a release hours old should not fail a build. More likely
+warn beyond a threshold, and surface the list in the PR summary the way the CVE table already is.
+
+`scripts/check-version-pins.sh` in the features repo already parses every declared default and is the
+natural place for it.

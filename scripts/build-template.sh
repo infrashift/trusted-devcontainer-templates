@@ -73,7 +73,11 @@ jq --arg now "$EVALUATED_AT" --arg t "$TEMPLATE" '{
     # justification actually describes. Without this the policy can only match on
     # CVE id, and a stdlib CVE waived for one Go binary is silently waived in
     # every Go binary -- which is exactly what EXC-2026-0001 was doing.
-    location:  ((.artifact.locations // [])[0].path // "")
+    location:  ((.artifact.locations // [])[0].path // ""),
+    # grype'"'"'s artifact type, which is what distinguishes a package we install
+    # from a dependency vendored inside one. See the remediation section of the
+    # policy.
+    type:      (.artifact.type // "unknown")
   } ]
 }' "${DIR}/cve-report.json" > "${DIR}/scan-input.json"
 

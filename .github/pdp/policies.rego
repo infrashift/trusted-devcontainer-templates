@@ -63,6 +63,45 @@ severities := {"Critical", "High", "Medium", "Low", "Negligible", "Unknown"}
 fix_states := {"fixed", "not-fixed", "wont-fix", "unknown"}
 
 # ---------------------------------------------------------------------------
+# REMEDIATION: WHO CAN ACTUALLY FIX THIS
+#
+# The gate blocks a High with an available fix because a fix being available
+# implies action is possible. That holds when the vulnerable package IS the
+# thing this org installs and versions -- bumping the feature clears it, which
+# two rounds of refresh demonstrated.
+#
+# It does not hold for a dependency vendored INSIDE something we install. A
+# stdlib finding in the grype binary is not fixed by any version we can choose;
+# only Anchore can rebuild it. Blocking there gates a release on a third party's
+# build schedule while reporting it as an actionable defect, and the only escape
+# is a waiver that expires and gets re-derived every 90 days.
+#
+# DIRECT -- the finding names the artifact we install, so a version bump is the
+#   remedy and blocking is correct:
+#     rpm      sqlite-libs, git       (a system package we chose)
+#     python   ansible-core           (a distribution we pin)
+#     binary   python                 (an interpreter we pin)
+#
+# VENDORED -- the finding names a dependency of an artifact we install. The only
+#   remedy is upgrading the container, which is a different action tracked by the
+#   version pins, so these are RECORDED:
+#     go-module      stdlib, golang.org/x/crypto  inside git-lfs, syft, grype
+#     npm            minimatch, tar               inside npm's own node_modules
+#     dotnet         System.Security...Xml        inside the SDK
+#     java-archive   a jar inside a distribution
+#
+# CRITICAL IS UNAFFECTED. A Critical blocks wherever it lives, vendored or not.
+# Downgrading those would be using this distinction to avoid a decision rather
+# than to describe one -- a Critical in a binary we cannot rebuild is exactly
+# the case that deserves an explicit, owned, dated waiver.
+#
+# The compensating obligation: this only stays honest while the artifacts
+# themselves are current. That is what the version pins and the refresh rounds
+# are for, and it is a check on THIS repo rather than a hope about upstream.
+
+vendored_types := {"go-module", "npm", "dotnet", "java-archive"}
+
+# ---------------------------------------------------------------------------
 # Shared helpers
 
 # The register is loaded with `--data .github/pdp/exceptions.yaml`, whose single
@@ -269,6 +308,14 @@ candidate_blocking contains m if {
 	some m in object.get(input, ["matches"], [])
 	object.get(m, "severity", missing) == "High"
 	object.get(m, "fix_state", missing) == "fixed"
+	not vendored(m)
+}
+
+# An unknown or missing type is NOT treated as vendored: a finding whose
+# provenance we cannot establish keeps blocking. The carve-out has to be earned
+# by evidence, never granted by an absent field.
+vendored(m) if {
+	object.get(m, "type", missing) in vendored_types
 }
 
 blocking_findings contains f if {
