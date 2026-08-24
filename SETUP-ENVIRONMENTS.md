@@ -14,12 +14,15 @@ anything without a review verdict signed by `review.pub`.
 | 1. Three keypairs generated | done — three distinct keys |
 | 2. Public halves committed | done — `8d8d7d3` |
 | 3. Environments + secrets | done — all three hold their own key and password |
-| 4. Environment reviewers | **not configured** — `protection_rules` is empty on all three |
+| 4. Environment reviewers | done — `ryancraig` on Review-Actor and Release-Actor, `prevent_self_review: false` |
+| 4b. Release-Actor ref restriction | **outstanding** |
 | 5. Teams | none, deliberately — see that step |
-| 6. Branch protection | **not configured** — no rulesets |
+| 6. Branch protection | done — ruleset `main`, requires a PR and the `repo-gate` check |
 
-So steps 1–3 are history, kept here because they are what you would repeat on a
-key rotation. Steps 4 and 6 are what is actually outstanding.
+Most of this is now history, kept because it is what you would repeat on a key
+rotation. Outstanding: the Release-Actor deployment branch policy in step 4b, and
+adding `build/gate` and `review/cve-policy` to the ruleset once a build has
+succeeded — see step 6.
 
 ```bash
 export ORG=infrashift
@@ -175,6 +178,61 @@ done
 reviewer, turn on *Prevent self-review*, and the gate becomes what the reference
 describes. Do that in the same change as enabling Code Owners review (step 5).
 
+### Restrict which refs may deploy to Release-Actor
+
+A reviewer controls *whether* a deployment proceeds. A deployment branch policy
+controls *what may ask*. Without one, any workflow in the repo that names
+`environment: Release-Actor` can request the release key from any ref — a branch,
+a fork's PR head, a scratch branch someone pushed. The reviewer prompt would
+still appear, but it is one mis-click away from signing something from an
+arbitrary ref, and the prompt does not show you which ref it came from.
+
+`release.yml` runs only on a `v*` tag, so the environment can say so:
+
+```bash
+# Both fields must be sent together: exactly one may be true, and passing null
+# for the whole object means "any ref", which is the state being fixed.
+gh api -X PUT "repos/${SLUG}/environments/Release-Actor" --input - <<'JSON'
+{
+  "deployment_branch_policy": {
+    "protected_branches": false,
+    "custom_branch_policies": true
+  },
+  "prevent_self_review": false,
+  "reviewers": [{"type": "User", "id": REVIEWER_ID}]
+}
+JSON
+
+gh api -X POST "repos/${SLUG}/environments/Release-Actor/deployment-branch-policies" \
+  -f name='v*' -f type=tag
+```
+
+> **`reviewers` and `prevent_self_review` are repeated on purpose.** This
+> endpoint creates *or replaces* the environment. Sending only
+> `deployment_branch_policy` clears the reviewer you added above, and the
+> environment silently goes back to deploying unattended. Substitute the real id
+> — `gh api users/ryancraig --jq .id` — and re-run the verification below
+> afterwards, every time.
+
+Verify both halves landed:
+
+```bash
+gh api "repos/${SLUG}/environments/Release-Actor" \
+  --jq '{rules: [.protection_rules[]?.type], policy: .deployment_branch_policy}'
+gh api "repos/${SLUG}/environments/Release-Actor/deployment-branch-policies" \
+  --jq '.branch_policies[] | "\(.type)  \(.name)"'
+```
+
+Expect `required_reviewers` in `rules`, `custom_branch_policies: true`, and one
+`tag  v*` policy.
+
+**Build-Actor and Review-Actor are deliberately left open.** Both are used by
+`build.yml` and `review.yml` on pull requests, where the deploying ref is
+whatever branch the PR came from. A branch policy there would reject every PR
+run. They are also the two actors that cannot publish anything: build signs
+evidence, review signs a verdict, and neither key can push to a registry. The
+ref restriction belongs on the actor that can.
+
 ---
 
 ## 5. Teams — not yet, and not silently
@@ -240,6 +298,28 @@ member it blocks every PR you open, because you cannot approve your own.
 Required status checks *are* worth turning on now. They gate on CI results
 rather than on a second human, so they work perfectly well solo — and they are
 the checks that actually catch the failure modes this pipeline was built for.
+
+**Add `repo-gate` first, and only `repo-gate`.** It runs static checks — no
+container builds, no feature resolution — so it passes today. `build/gate` and
+`review/cve-policy` both depend on templates that build, and every template
+references the `bootstrap` feature, which is not published yet. Making them
+required before then blocks the very PR that fixes it. Add them once a build has
+gone green once:
+
+```bash
+ID=$(gh api "repos/${SLUG}/rulesets" --jq '.[] | select(.name=="main") | .id')
+gh api "repos/${SLUG}/rulesets/${ID}" --jq '.rules' > /tmp/rules.json   # keep a copy first
+```
+
+then add `{"context": "build/gate"}` and `{"context": "review/cve-policy"}` to
+the `required_status_checks` array and `PUT` the ruleset back.
+
+One default worth knowing about: GitHub sets
+`require_extra_approval_for_unattributed_changes: true` on a new ruleset. A
+commit whose author email is not linked to a GitHub account counts as
+unattributed and needs an extra approval — which, at one member, nothing can
+supply. If a PR ever stalls asking for an approval you cannot give, that is the
+rule to look at.
 
 > The retired `Sync Containerfile Check` workflow may still be configured as a
 > required context. Remove it — the check now runs inside `repo-gate` as
