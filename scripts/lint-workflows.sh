@@ -48,7 +48,11 @@ done
 # --- 4. Required status contexts spelled identically everywhere ------------
 # pr-gate.yml seeds this context and review.yml resolves it. If the two strings
 # ever differ, the seeded check stays pending forever and every PR hangs.
-CONTEXTS=$(grep -rhoE '\-f context="[^"]+"' "$WF"/ | sed -E 's/.*context="([^"]+)".*/\1/' | sort -u)
+# `|| true` is load-bearing here for the same reason as everywhere else in this
+# file: a repo with no status-seeding workflow has no `-f context=` lines at
+# all, grep exits 1, and under `set -e` the linter would die at exactly the
+# moment it had nothing to complain about.
+CONTEXTS=$( { grep -rhoE '\-f context="[^"]+"' "$WF"/ || true; } | sed -E 's/.*context="([^"]+)".*/\1/' | sort -u)
 N=$(printf '%s\n' "$CONTEXTS" | grep -c . || true)
 if [ "$N" -gt 1 ]; then
   err "more than one status context string in use; they must match exactly:"
