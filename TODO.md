@@ -242,22 +242,32 @@ against each template and fill in whatever arm64 digests turn out to be missing.
 
 ### 18. The three-actor model needs GitHub-side setup that only a human can do
 
-Partly done. Verified against the API on 2026-08-23:
+Mostly done. Verified against the API:
 
 | Step | State |
 |---|---|
 | Three keypairs, three distinct keys | done |
 | `build.pub` / `review.pub` / `release.pub` committed | done — `8d8d7d3` |
 | `Build-Actor` / `Review-Actor` / `Release-Actor` with their own secrets | done |
-| Environment reviewers | **not configured** — `protection_rules` empty on all three |
-| Branch protection / required status checks | **not configured** — no rulesets |
+| Environment reviewers | done — `ryancraig` on Review-Actor and Release-Actor |
+| Release-Actor ref restriction | done — one `tag v*` policy |
+| Ruleset on `main` | done — requires a PR and `repo-gate` |
 
-Outstanding: add an environment reviewer (see #19 for what it does and does not buy), and set the
-required status checks to `repo-gate`, `build/gate` and `review/cve-policy`. **Remove** the retired
-`Sync Containerfile Check` context — nothing publishes it any more, and a required context that
-stops reporting blocks every PR forever.
+Required status checks should be added **in order**, not all at once:
 
-Also move `cosign.key` out of the working tree now that the three keypairs exist.
+- `repo-gate` — static checks only, passes immediately. **Done.**
+- `build/gate` — **ready to add now.** Run 32684073015 built, tested, scanned and signed all five
+  templates.
+- `review/cve-policy` — wait until a PR has actually resolved it. It could not resolve on the PR
+  that introduced `review.yml`: a `workflow_run` workflow does not fire until its file is on the
+  default branch, so nothing listened for the build completing and the pending status `pr-gate.yml`
+  seeded had nothing to clear it. Requiring it earlier would have made that PR unmergeable and
+  forced an admin bypass on the change that introduces the gate.
+
+The retired `Sync Containerfile Check` context is **not** configured on the ruleset, so there is
+nothing to remove — an earlier note here claimed otherwise.
+
+Still to do: move `cosign.key` out of the working tree now that the three keypairs exist.
 
 ### 19. CODEOWNERS and the human gate were written for an org that does not exist
 

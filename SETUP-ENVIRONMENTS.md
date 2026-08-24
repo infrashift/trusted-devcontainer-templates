@@ -347,6 +347,23 @@ Then open a throwaway PR touching `src/python/` and confirm:
 4. After you approve, `review/cve-policy` resolves and a verdict table is posted
    as a PR comment.
 
+> **Steps 3 and 4 cannot happen on the PR that first introduces `review.yml`.**
+> A `workflow_run`-triggered workflow only fires if that workflow file already
+> exists on the **default branch**. Until `review.yml` is on `main`, GitHub has
+> no listener registered for "CI Build & Audit" completing, so nothing queues and
+> there is nothing to approve — while `pr-gate.yml` has already seeded
+> `review/cve-policy` as pending, which nothing will resolve.
+>
+> That is expected, not a misconfiguration, and it is the reason step 6 requires
+> only `repo-gate` at first. Had `review/cve-policy` been required, the PR that
+> introduces the gate would have been permanently unmergeable and every merge
+> after it would have needed an admin bypass — training exactly the habit this
+> pipeline exists to prevent.
+>
+> Merge that PR, then run this verification on the **next** one. The release path
+> is unaffected either way: `release.yml` runs its own build → review → publish
+> chain from the tag push, not from `workflow_run`.
+
 Then check the thing most likely to be quietly wrong — that the protection you
 think you configured is actually recorded:
 
