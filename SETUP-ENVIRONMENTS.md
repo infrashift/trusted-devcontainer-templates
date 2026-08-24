@@ -15,14 +15,15 @@ anything without a review verdict signed by `review.pub`.
 | 2. Public halves committed | done — `8d8d7d3` |
 | 3. Environments + secrets | done — all three hold their own key and password |
 | 4. Environment reviewers | done — `ryancraig` on Review-Actor and Release-Actor, `prevent_self_review: false` |
-| 4b. Release-Actor ref restriction | **outstanding** |
+| 4b. Release-Actor ref restriction | done — `custom_branch_policies`, one `tag v*` policy |
 | 5. Teams | none, deliberately — see that step |
 | 6. Branch protection | done — ruleset `main`, requires a PR and the `repo-gate` check |
 
-Most of this is now history, kept because it is what you would repeat on a key
-rotation. Outstanding: the Release-Actor deployment branch policy in step 4b, and
-adding `build/gate` and `review/cve-policy` to the ruleset once a build has
-succeeded — see step 6.
+All of this is now history, kept because it is what you would repeat on a key
+rotation. One thing is deliberately deferred rather than outstanding: `build/gate`
+and `review/cve-policy` are not yet required status checks, because every
+template references the `bootstrap` feature and it is not published, so those
+builds cannot pass. Add them once a build has gone green once — see step 6.
 
 ```bash
 export ORG=infrashift
