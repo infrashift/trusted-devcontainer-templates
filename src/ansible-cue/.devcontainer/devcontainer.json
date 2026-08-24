@@ -5,13 +5,13 @@
     "containerUser": "dev",
     "updateRemoteUserUID": false,
     "features": {
-        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:0bb69a6a2da1d4728cdcde2c6f12350ddbcba271e3376b182a65635f1efedde7": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/ansible-core@sha256:cf06acb5c47b02cc45eeee9c8035adc1824e3005bc41f77bcbe653ae97dd991e": {
-            "target_version": "2.18.2",
-            "target_python_version": "3.12"
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:071c527c9e6e7acc87556bc8ef6b495a59f2f5569ff97c796e95148a3c9fd97c": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/ansible-core@sha256:2107ed1c1498285f67b290ad1d43eda243d8691afa91684f9ed71117652873a3": {
+            "target_version": "2.21.3",
+            "target_python_version": "3.13"
         },
-        "ghcr.io/infrashift/trusted-devcontainer-features/python@sha256:f04103377fc93111e3c29adc1ccc848283021e25d16ef66a89a12aedca917a58": {
-            "target_version": "3.12"
+        "ghcr.io/infrashift/trusted-devcontainer-features/python@sha256:89a86b665bcb9c88cdda6fd5f55e041fb2cbd5973e369b12301d56a35b2297f7": {
+            "target_version": "3.13"
         },
         "ghcr.io/infrashift/trusted-devcontainer-features/cuelang@sha256:e728f9b57d5a9c0d79176a3231c941d57978d53ad1f2782b011dbbf8bb651a4b": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/git@sha256:b6320b2771b5279eed4e04a70b130df0cadf187b880dfec4739defb506440c45": {},

@@ -5,7 +5,7 @@
     "containerUser": "dev",
     "updateRemoteUserUID": false,
     "features": {
-        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:0bb69a6a2da1d4728cdcde2c6f12350ddbcba271e3376b182a65635f1efedde7": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:071c527c9e6e7acc87556bc8ef6b495a59f2f5569ff97c796e95148a3c9fd97c": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/dotnet@sha256:1d60ceb4f22eecb67a60a0143b3d511d6f8da4499033263d2c573392725de3f9": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/nodejs@sha256:1dd95815affd5bf32928f677b1c24cae2246dde6cd43d9795b6945000ffffd91": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/npm@sha256:a0134914a01d2df648011802f5a926d509f667af4830a6ccdfc0edbe63398e61": {},

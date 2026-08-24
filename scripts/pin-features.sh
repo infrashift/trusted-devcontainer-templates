@@ -33,6 +33,36 @@ REGISTRY="${REGISTRY:-ghcr.io}"
 NAMESPACE="${NAMESPACE:-infrashift/trusted-devcontainer-features}"
 BASE="${REGISTRY}/${NAMESPACE}"
 
+
+# Read a published feature's metadata annotation, by the digest the template pins.
+# Reading the DIGEST rather than :latest matters -- the point is to compare a
+# template against the exact artifact it will install, not against whatever
+# upstream happens to be serving now.
+feature_metadata() {
+    local name="$1" digest
+    digest=$(grep -hoE "${BASE}/${name}@sha256:[0-9a-f]{64}" "${FILES[@]}" | head -1 | sed 's/.*@//')
+    [ -n "$digest" ] || return 1
+    local token
+    token=$(curl -sSfL --max-time 20 "https://ghcr.io/token?scope=repository:${NAMESPACE}/${name}:pull&service=ghcr.io" | jq -r .token) || return 1
+    curl -sSfL --max-time 20 -H "Authorization: Bearer ${token}" \
+        -H "Accept: application/vnd.oci.image.manifest.v1+json" \
+        "https://ghcr.io/v2/${NAMESPACE}/${name}/manifests/${digest}" \
+      | jq -r '.annotations["dev.containers.metadata"] // empty' || return 1
+}
+
+# feature|option|value for every explicitly passed version option in a template.
+template_option_pins() {
+    python3 - "$1" <<'PYEOF' 2>/dev/null || true
+import json, sys
+doc = json.load(open(sys.argv[1]))
+for ref, opts in (doc.get("features") or {}).items():
+    name = ref.split("@")[0].rsplit("/", 1)[-1]
+    for k, v in (opts or {}).items():
+        if "version" in k and isinstance(v, str) and v:
+            print(f"{name}|{k}|{v}")
+PYEOF
+}
+
 CHECK_ONLY=0
 [ "${1:-}" = "--check" ] && CHECK_ONLY=1
 
@@ -54,6 +84,26 @@ if [ "$CHECK_ONLY" -eq 1 ]; then
             fi
         done < <(grep -oE "\"${BASE}/[a-z0-9-]+(@sha256:[0-9a-f]+)?\"" "$f" | tr -d '"')
     done
+    # --- explicit option values vs the pinned feature's own defaults ---------
+    # A template may pass an option explicitly, which makes it a SECOND copy of
+    # that feature's default. The features repo has been bitten twice by exactly
+    # this: a template kept requesting ansible-core 2.18.2 after the default moved
+    # to 2.21.3, so the image was built with one version while everything else
+    # assumed another. Divergence can be deliberate, so this WARNS rather than
+    # fails -- but it says so, every time, instead of waiting for a CVE report.
+    for f in "${FILES[@]}"; do
+        while IFS= read -r line; do
+            [ -n "$line" ] || continue
+            name="${line%%|*}"; rest="${line#*|}"
+            opt="${rest%%|*}"; val="${rest##*|}"
+            meta=$(feature_metadata "$name") || continue
+            want=$(jq -r --arg o "$opt" '.options[$o].default // empty' <<<"$meta" 2>/dev/null || true)
+            if [ -n "$want" ] && [ "$want" != "$val" ]; then
+                echo "::warning::$(basename "$(dirname "$(dirname "$f")")"): ${name}.${opt}=${val}, but the pinned feature declares ${want}"
+            fi
+        done < <(template_option_pins "$f")
+    done
+
     [ "$total" -gt 0 ] || { echo "::error::found 0 feature references; refusing to call that a pass" >&2; exit 1; }
     [ "$fail" -eq 0 ] || exit 1
     echo "OK: all ${total} feature reference(s) across ${#FILES[@]} template(s) are digest-pinned"
