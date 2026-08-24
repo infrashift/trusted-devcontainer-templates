@@ -21,17 +21,84 @@
 # make a red check go green. Before adding one, check whether a newer base
 # digest or feature release clears the finding instead.
 
-waivers: []
+waivers:
+  # --------------------------------------------------------------------------
+  # Both entries cover findings in DISTRO-PACKAGED binaries. `fix_state: fixed`
+  # is true of the Go MODULE -- a patched release exists -- but not of the
+  # binary: only the packager can rebuild against it. Nothing in this repository
+  # or in trusted-devcontainer-features can clear them, and the base image is
+  # already pinned to the newest published digest (latest == 20260818 ==
+  # sha256:1ed67eb1...), so there is no bump available either.
+  #
+  # These are NOT waived because they are inconvenient. Everything else the gate
+  # reported traces to feature versions this org controls, and those are being
+  # fixed rather than waived -- see TODO 11.
+  # --------------------------------------------------------------------------
 
-# --- Example. Delete before the first real entry. --------------------------
-#
-# - id: EXC-2026-0001
-#   cve: CVE-0000-00001
-#   templates: [python, ansible-cue]   # omit or [] for all templates
-#   issued:  "2026-08-23T00:00:00Z"
-#   expires: "2026-11-21T00:00:00Z"    # 90 days is the maximum window
-#   owner:   "@ryancraig"
-#   ticket:  "https://github.com/infrashift/trusted-devcontainer-templates/issues/1"
-#   justification: >-
-#     Fedora has not yet published a rebuilt package. The affected code path is
-#     not reachable from any template entrypoint; tracked upstream in <link>.
+  - id: EXC-2026-0001
+    templates: []          # every template installs git-lfs
+    issued: "2026-08-24T00:00:00Z"
+    expires: "2026-11-22T00:00:00Z"
+    owner: "@ryancraig"
+    justification: >-
+      36 findings inside /usr/bin/git-lfs, a Fedora RPM built with go1.25.1 and
+      carrying vulnerable golang.org/x/crypto and stdlib. The fixes grype cites
+      are Go TOOLCHAIN versions (1.25.6, 1.25.7, 1.26.0-rc.3), so clearing them
+      means Fedora rebuilding git-lfs with a newer Go. We install it via dnf and
+      cannot influence that. Re-evaluate when Fedora ships a rebuilt package, or
+      reconsider installing git-lfs from upstream release binaries instead --
+      which would trade distro packaging and signing for version control.
+    cves:
+    - GHSA-5cgq-3rg8-m6cv
+    - GHSA-89gr-r52h-f8rx
+    - GHSA-f5wc-c3c7-36mc
+    - GHSA-jppx-rxg9-jmrx
+    - GHSA-q4h4-gmj2-qvw2
+    - GHSA-rm3j-f69w-wqmq
+    - GHSA-vgwf-h737-ff37
+    - GHSA-w879-237q-wc7r
+    - GHSA-x527-x647-q7gg
+    - GO-2025-4006
+    - GO-2025-4007
+    - GO-2025-4009
+    - GO-2025-4013
+    - GO-2025-4116
+    - GO-2025-4155
+    - GO-2026-4337
+    - GO-2026-4341
+    - GO-2026-4601
+    - GO-2026-4870
+    - GO-2026-4918
+    - GO-2026-4946
+    - GO-2026-4947
+    - GO-2026-4970
+    - GO-2026-4971
+    - GO-2026-4977
+    - GO-2026-4981
+    - GO-2026-4986
+    - GO-2026-5026
+    - GO-2026-5037
+    - GO-2026-5038
+    - GO-2026-5942
+    - GO-2026-5970
+    - GO-2026-5972
+    - GO-2026-6088
+    - GO-2026-6089
+    - GO-2026-6090
+
+  - id: EXC-2026-0002
+    templates: []          # fzf ships in the base image, so it is in all of them
+    issued: "2026-08-24T00:00:00Z"
+    expires: "2026-11-22T00:00:00Z"
+    owner: "@ryancraig"
+    justification: >-
+      5 findings inside /usr/bin/fzf, which comes from the fedora43-minimal base
+      image rather than from any feature. The base is already pinned to the
+      newest digest published by trusted-base-images, so there is no newer image
+      to move to. Clearing these needs a base rebuild in that repository.
+    cves:
+    - GO-2026-5026
+    - GO-2026-5972
+    - GO-2026-6088
+    - GO-2026-6089
+    - GO-2026-6090

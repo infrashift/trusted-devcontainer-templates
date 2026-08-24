@@ -323,9 +323,25 @@ exceptions_applied contains e if {
 # Every field is required: a waiver missing any of them does not apply, so a
 # malformed entry fails closed into "still blocking" rather than open.
 
-waiver_for(m) := w if {
+# A waiver may name one CVE or a batch. A batch is not a shortcut: it exists so
+# that findings sharing ONE rationale -- 36 CVEs inside a single distro-packaged
+# binary nobody here can rebuild -- are one reviewed decision with one
+# justification, rather than 36 near-identical records nobody reads.
+waiver_cves(w) := cs if {
+	cs := object.get(w, "cves", null)
+	is_array(cs)
+	count(cs) > 0
+} else := [object.get(w, "cve", missing)]
+
+# Two waivers can legitimately cover the same finding: a stdlib CVE appears in
+# every Go binary, so an entry for git-lfs and an entry for fzf both name it.
+# A function that yields both is an eval_conflict_error -- the policy does not
+# fail closed, it fails to evaluate at all, which the release gate reports as a
+# crash rather than a verdict. Collect the matches and take the first by sort
+# order so the outcome is deterministic and the register can overlap freely.
+matching_waivers(m) := sort([w |
 	some w in waivers
-	object.get(w, "cve", missing) == object.get(m, "id", "<no-id>")
+	object.get(m, "id", "<no-id>") in waiver_cves(w)
 	waiver_scope_matches(w)
 	is_string(object.get(w, "id", null))
 	is_string(object.get(w, "owner", null))
@@ -333,6 +349,12 @@ waiver_for(m) := w if {
 	count(object.get(w, "justification", "")) >= 20
 	expiry := time.parse_rfc3339_ns(object.get(w, "expires", ""))
 	expiry > evaluated_at_ns
+])
+
+waiver_for(m) := w if {
+	ws := matching_waivers(m)
+	count(ws) > 0
+	w := ws[0]
 }
 
 # A waiver either names templates explicitly or applies to all of them. An

@@ -329,3 +329,94 @@ test_absent_register_waives_nothing if {
 	d := pdp.decision with input as scan([crit])
 	d.verdict == "FAIL"
 }
+
+# --- batched waivers -------------------------------------------------------
+
+batch_waiver := {
+	"id": "EXC-2026-0002",
+	"cves": ["CVE-2026-0001", "CVE-2026-0002"],
+	"expires": "2026-12-01T00:00:00Z",
+	"owner": "@ryancraig",
+	"justification": "Distro-packaged binary; only the packager can rebuild it against a patched module.",
+}
+
+test_batch_waiver_covers_every_listed_cve if {
+	d := pdp.decision with input as scan([crit, high_fixed]) with data.waivers as [batch_waiver]
+	d.verdict == "PASS"
+	d.counts.waived == 2
+	d.counts.blocking == 0
+}
+
+test_batch_waiver_does_not_cover_an_unlisted_cve if {
+	other := {"id": "CVE-2026-9999", "severity": "Critical", "package": "p", "fix_state": "fixed"}
+	d := pdp.decision with input as scan([other]) with data.waivers as [batch_waiver]
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+}
+
+# An empty `cves` list falls back to the single `cve` field. Documented here
+# because it is the surprising branch: `cves: []` reads like "waive nothing" but
+# a sibling `cve` still applies. The count(cs) > 0 guard in waiver_cves is what
+# makes this deliberate rather than accidental.
+test_empty_cves_list_falls_back_to_the_single_cve_field if {
+	empty := object.union(batch_waiver, {"cves": [], "cve": "CVE-2026-0001"})
+	d := pdp.decision with input as scan([crit]) with data.waivers as [empty]
+	d.verdict == "PASS"
+	d.counts.waived == 1
+}
+
+test_batch_waiver_still_expires if {
+	expired := object.union(batch_waiver, {"expires": "2026-01-01T00:00:00Z"})
+	d := pdp.decision with input as scan([crit, high_fixed]) with data.waivers as [expired]
+	d.verdict == "FAIL"
+	d.counts.blocking == 2
+}
+
+test_batch_waiver_still_needs_a_justification if {
+	bad := object.union(batch_waiver, {"justification": "too short"})
+	d := pdp.decision with input as scan([crit]) with data.waivers as [bad]
+	d.verdict == "FAIL"
+}
+
+# Two entries covering the same CVE is normal, not a mistake: a stdlib finding
+# appears in every Go binary, so a git-lfs waiver and an fzf waiver both name it.
+# Before matching_waivers existed this raised eval_conflict_error -- the policy
+# did not fail closed, it failed to evaluate, which the gate reports as a crash
+# rather than a verdict. Found by real scan data, not by the suite.
+overlapping_a := {
+	"id": "EXC-A",
+	"cves": ["CVE-2026-0001"],
+	"expires": "2026-12-01T00:00:00Z",
+	"owner": "@ryancraig",
+	"justification": "Distro-packaged binary A; only the packager can rebuild it.",
+}
+
+overlapping_b := {
+	"id": "EXC-B",
+	"cves": ["CVE-2026-0001"],
+	"expires": "2026-12-01T00:00:00Z",
+	"owner": "@ryancraig",
+	"justification": "Distro-packaged binary B, which shares the same stdlib finding.",
+}
+
+test_overlapping_waivers_resolve_deterministically if {
+	d := pdp.decision with input as scan([crit]) with data.waivers as [overlapping_a, overlapping_b]
+	d.verdict == "PASS"
+	d.counts.waived == 1
+	count(d.exceptions_applied) == 1
+}
+
+# Order in the register must not change the outcome.
+test_overlapping_waivers_are_order_independent if {
+	forward := pdp.decision with input as scan([crit]) with data.waivers as [overlapping_a, overlapping_b]
+	reverse := pdp.decision with input as scan([crit]) with data.waivers as [overlapping_b, overlapping_a]
+	forward == reverse
+}
+
+# An expired entry must not shadow a valid one covering the same CVE.
+test_expired_overlap_does_not_shadow_a_valid_waiver if {
+	expired := object.union(overlapping_a, {"expires": "2026-01-01T00:00:00Z"})
+	d := pdp.decision with input as scan([crit]) with data.waivers as [expired, overlapping_b]
+	d.verdict == "PASS"
+	d.counts.waived == 1
+}
