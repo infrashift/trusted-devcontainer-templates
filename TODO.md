@@ -166,9 +166,15 @@ including the one that only ran tests. `contents: write` now exists in exactly o
 
 **Three actors.** `Build-Actor` builds and signs evidence; `Review-Actor` verifies that signature
 against the build public key, evaluates the policy and signs a verdict; `Release-Actor` verifies the
-verdict against the review public key before publishing anything. Required Reviewers on the review
-environment are the human gate — the review key is unreachable until a person approves, so a
-Review-Actor signature *is* proof of approval, with no separate step anyone has to remember.
+verdict against the review public key before publishing anything. Each holds a different key, so a
+compromised build job cannot manufacture a passing verdict or publish — that part holds
+unconditionally, and it is the protection that matters for a solo project, because the realistic
+threat is a bad dependency or action rather than a rogue colleague.
+
+The *human gate* claim needs qualifying, and the original wording of this entry overstated it. It
+depends on Required Reviewers, which is not configured on any of the three environments — and the
+org has one member, so an approval is self-approval: a deliberate stop-and-look, not separation of
+duties. See #19.
 
 The reference promotes on PR merge, where the reviewed and promoted commits are the same SHA. This
 repo releases on a version tag, and a squash merge means the commit on `main` is not the PR head that
@@ -236,20 +242,46 @@ against each template and fill in whatever arm64 digests turn out to be missing.
 
 ### 18. The three-actor model needs GitHub-side setup that only a human can do
 
-The workflows, scripts, policy and runbook are in place, but `release.yml` fails closed until a
-person completes `SETUP-ENVIRONMENTS.md`:
+Partly done. Verified against the API on 2026-08-23:
 
-1. Generate three cosign keypairs in `/dev/shm` and commit `build.pub`, `review.pub` and
-   `release.pub` under `.github/pdp/public-keys/`. `scripts/review-template.sh` and
-   `scripts/verify-verdicts.sh` both refuse to run without them, pointing at the runbook.
-2. Create the `Build-Actor`, `Review-Actor` and `Release-Actor` environments, each with its own
-   `COSIGN_PRIVATE_KEY` and `COSIGN_PASSWORD`.
-3. Add Required Reviewers to `Review-Actor` and `Release-Actor`, with **Prevent self-review** on.
-   Without it the PR author can approve their own release and the second actor buys nothing.
-4. Create the three teams CODEOWNERS names, or those paths match nothing and "require review from
-   Code Owners" is a silent no-op.
-5. Set required status checks to `repo-gate`, `build/gate` and `review/cve-policy` — and **remove**
-   the retired `Sync Containerfile Check` context, which nothing publishes any more. A required
-   context that stops reporting blocks every PR forever.
+| Step | State |
+|---|---|
+| Three keypairs, three distinct keys | done |
+| `build.pub` / `review.pub` / `release.pub` committed | done — `8d8d7d3` |
+| `Build-Actor` / `Review-Actor` / `Release-Actor` with their own secrets | done |
+| Environment reviewers | **not configured** — `protection_rules` empty on all three |
+| Branch protection / required status checks | **not configured** — no rulesets |
 
-Also move `cosign.key` out of the working tree once the three keypairs exist.
+Outstanding: add an environment reviewer (see #19 for what it does and does not buy), and set the
+required status checks to `repo-gate`, `build/gate` and `review/cve-policy`. **Remove** the retired
+`Sync Containerfile Check` context — nothing publishes it any more, and a required context that
+stops reporting blocks every PR forever.
+
+Also move `cosign.key` out of the working tree now that the three keypairs exist.
+
+### 19. CODEOWNERS and the human gate were written for an org that does not exist
+
+`infrashift` has **one member** and **no teams** — `gh api orgs/infrashift/teams` returns an empty
+list. The hardening in #17 was ported from `trusted-service-containers`, which is written for a
+multi-person org, and the team structure came with it without being checked against reality.
+
+Three single-member teams provide no dual control. Worse, "Require review from Code Owners" **must
+stay off** while the org has one member: GitHub does not permit approving your own PR, so enabling it
+would block every PR and force an admin bypass on every merge — a protection that is routinely
+bypassed is worse than none, because it reads as enforced. The same applies to *Prevent self-review*
+on an environment, which would deadlock releases outright.
+
+CODEOWNERS now names `@ryancraig` and states at the top of the file that it auto-assigns reviewers
+and gates nothing. `SETUP-ENVIRONMENTS.md` steps 4 and 5 explain what key separation buys regardless
+of headcount, what an environment reviewer buys at one member (a stop-and-look, not separation of
+duties), and exactly what to change together when a second maintainer joins.
+
+Two things found while checking this, both worth keeping in mind:
+
+- **The reference repo has the same gap.** `trusted-service-containers` has no `required_reviewers`
+  on any of its three environments — only a `branch_policy` on `Release-Actor` — despite comments
+  describing the human gate as the core of its design. Its being private on a Free org may make it
+  unconfigurable there at all.
+- **Free plan, public repos.** Deployment protection rules and branch protection are public-repo
+  features on GitHub Free. Both repos here are public, so both work. Making either private without a
+  Team plan would silently remove them.

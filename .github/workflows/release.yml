@@ -121,9 +121,10 @@ jobs:
     name: Review ${{ matrix.template }}
     needs: [gate-check, build]
     runs-on: ubuntu-latest
-    # Required Reviewers on this environment are the human gate on the release.
-    # The review key is unreachable until a named person approves, so a
-    # Review-Actor signature is itself proof that approval happened.
+    # Holds the review key, which the build job does not have and publish
+    # verifies against. With Required Reviewers configured this also pauses for
+    # a person -- a stop-and-look while the org has one member, separation of
+    # duties once it has two. See SETUP-ENVIRONMENTS.md step 4.
     environment: Review-Actor
     permissions:
       contents: read

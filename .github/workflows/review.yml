@@ -1,10 +1,18 @@
 name: Review Attestations
 
-# Runs on workflow_run because it needs the Review-Actor environment, whose
-# Required Reviewers gate IS the human approval in this system. The review key
-# is physically unreachable until a named human approves the deployment, so a
-# Review-Actor signature is itself proof that approval happened -- no separate
-# "human signing" step that someone has to remember to run by hand.
+# Runs on workflow_run because it needs the Review-Actor environment, which holds
+# the review signing key.
+#
+# What that separation actually guarantees: this job signs with a key the build
+# job does not have, and release.yml verifies that signature before publishing.
+# A compromised build job therefore cannot manufacture a passing verdict. That
+# holds unconditionally.
+#
+# What it does NOT currently guarantee: human approval. Required Reviewers on
+# the environment would add that, but the org has one member, so an approval is
+# self-approval -- a deliberate stop-and-look, not separation of duties. Do not
+# describe a Review-Actor signature as proof a second person approved until a
+# second person exists. See SETUP-ENVIRONMENTS.md step 4.
 #
 # A workflow_run workflow cannot report a check against the PR, which is exactly
 # why pr-gate.yml seeds the `review/cve-policy` commit status and the summary
