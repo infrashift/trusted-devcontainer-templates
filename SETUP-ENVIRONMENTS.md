@@ -190,19 +190,24 @@ arbitrary ref, and the prompt does not show you which ref it came from.
 `release.yml` runs only on a `v*` tag, so the environment can say so:
 
 ```bash
-# Both fields must be sent together: exactly one may be true, and passing null
-# for the whole object means "any ref", which is the state being fixed.
-gh api -X PUT "repos/${SLUG}/environments/Release-Actor" --input - <<'JSON'
-{
-  "deployment_branch_policy": {
-    "protected_branches": false,
-    "custom_branch_policies": true
-  },
-  "prevent_self_review": false,
-  "reviewers": [{"type": "User", "id": REVIEWER_ID}]
-}
-JSON
+# The payload is built with jq, not a heredoc. A quoted heredoc (<<'JSON') does
+# no substitution, so a placeholder id is sent literally and the API rejects the
+# whole body as unparseable JSON -- with a message that names neither the field
+# nor the reason. An unquoted heredoc would substitute, but then every " and $
+# in the body is live. jq takes the id as a typed argument and emits valid JSON
+# either way.
+REVIEWER_ID=$(gh api users/ryancraig --jq .id)
 
+# reviewers and prevent_self_review are repeated ON PURPOSE -- see the note below.
+jq -n --argjson id "$REVIEWER_ID" '{
+  deployment_branch_policy: {protected_branches: false, custom_branch_policies: true},
+  prevent_self_review: false,
+  reviewers: [{type: "User", id: $id}]
+}' | gh api -X PUT "repos/${SLUG}/environments/Release-Actor" --input -
+
+# Only reachable once custom_branch_policies is true. If the PUT above failed,
+# this returns 404 -- which reads like a missing environment rather than a
+# missing prerequisite.
 gh api -X POST "repos/${SLUG}/environments/Release-Actor/deployment-branch-policies" \
   -f name='v*' -f type=tag
 ```
@@ -210,9 +215,9 @@ gh api -X POST "repos/${SLUG}/environments/Release-Actor/deployment-branch-polic
 > **`reviewers` and `prevent_self_review` are repeated on purpose.** This
 > endpoint creates *or replaces* the environment. Sending only
 > `deployment_branch_policy` clears the reviewer you added above, and the
-> environment silently goes back to deploying unattended. Substitute the real id
-> — `gh api users/ryancraig --jq .id` — and re-run the verification below
-> afterwards, every time.
+> environment silently goes back to deploying unattended. Any later call to this
+> endpoint must carry them too — run the verification below afterwards, every
+> time.
 
 Verify both halves landed:
 
