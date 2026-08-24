@@ -17,7 +17,7 @@ anything without a review verdict signed by `review.pub`.
 | 4. Environment reviewers | done — `ryancraig` on Review-Actor and Release-Actor, `prevent_self_review: false` |
 | 4b. Release-Actor ref restriction | done — `custom_branch_policies`, one `tag v*` policy |
 | 5. Teams | none, deliberately — see that step |
-| 6. Branch protection | done — ruleset `main`, requires a PR and the `repo-gate` check |
+| 6. Branch protection | done — ruleset `main`, requires a PR and all three checks; 0 approvals, no bypass |
 
 All of this is now history, kept because it is what you would repeat on a key
 rotation. One thing is deliberately deferred rather than outstanding: `build/gate`
@@ -301,6 +301,36 @@ branches to be up to date.
 **Do not enable "require review from Code Owners" yet** — see step 5. With one
 member it blocks every PR you open, because you cannot approve your own.
 
+`required_approving_review_count` stays at **0**, and `bypass_actors` stays
+empty. This was tried the other way on 2026-08-24 and reverted the same day, so
+the reasoning is worth keeping.
+
+The attempt was to stage the rule: set the count to 1 and add a
+`RepositoryRole` 5 (admin) bypass, so it would enforce nothing now but already
+be correct when a second maintainer arrives. `current_user_can_bypass` returned
+`always`, which made it look safe.
+
+It was not. Every PR afterwards reported `REVIEW_REQUIRED` and `BLOCKED` — you
+cannot approve your own pull request, so at one member no approval can exist,
+and a bypass does not clear that state, it only offers an override on top of it.
+Three PRs across two repositories hit it before the count went back to 0, at
+which point they turned `CLEAN` immediately.
+
+Removing the bypass matters on its own terms. `bypass_mode: always` applies to
+the **whole ruleset**, so an admin could merge past `repo-gate`, `build/gate`
+and `review/cve-policy` — the checks that actually work today, because they gate
+on CI rather than on a second person. A bypass added to soften an approval rule
+quietly weakens the status checks too.
+
+```bash
+gh api "repos/${SLUG}/rulesets/${ID}" --jq '.bypass_actors, .current_user_can_bypass'
+# expect: []  and  "never"
+```
+
+**Raise the count to 1 and leave `bypass_actors` empty on the day a second
+maintainer joins** — not before, and never with a bypass as a workaround. That
+pairs with the step 5 changes rather than happening on its own.
+
 Required status checks *are* worth turning on now. They gate on CI results
 rather than on a second human, so they work perfectly well solo — and they are
 the checks that actually catch the failure modes this pipeline was built for.
@@ -325,7 +355,9 @@ One default worth knowing about: GitHub sets
 commit whose author email is not linked to a GitHub account counts as
 unattributed and needs an extra approval — which, at one member, nothing can
 supply. If a PR ever stalls asking for an approval you cannot give, that is the
-rule to look at.
+rule to look at. With `required_approving_review_count: 0` and no bypass actors
+it cannot currently bite — there is no approval requirement for it to add to —
+but it becomes live the moment the count is raised for a second maintainer.
 
 > The retired `Sync Containerfile Check` workflow may still be configured as a
 > required context. Remove it — the check now runs inside `repo-gate` as

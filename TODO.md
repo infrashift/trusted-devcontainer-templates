@@ -384,6 +384,37 @@ and gates nothing. `SETUP-ENVIRONMENTS.md` steps 4 and 5 explain what key separa
 of headcount, what an environment reviewer buys at one member (a stop-and-look, not separation of
 duties), and exactly what to change together when a second maintainer joins.
 
+**2026-08-24: approvals were raised to 1, then put back to 0. Keep them at 0.** This is recorded
+because the attempt produced a concrete answer, and the reasoning that led into it looked sound
+right up until it met GitHub.
+
+The idea was to *stage* the rule — set `required_approving_review_count: 1` and add a
+`RepositoryRole` 5 (admin) bypass with `bypass_mode: always`, so the requirement enforces nothing
+today but is already correct the day a second maintainer arrives. `current_user_can_bypass` returned
+`always`, so on paper the bypass made it survivable.
+
+It did not. Every PR opened afterwards reported `reviewDecision: REVIEW_REQUIRED` and
+`mergeStateStatus: BLOCKED` — three in a row across two repositories. GitHub does not let you approve
+your own pull request, so with one member no approval can ever exist, and the bypass does not clear
+that state; it only offers an override on top of it. The result was not a stop-and-look. It was an
+override on every single merge, which is the exact habit the paragraphs above argue against, arrived
+at by trying to avoid it.
+
+Setting the count back to 0 returned two of those PRs to `CLEAN` immediately.
+
+The bypass actor was removed at the same time, and that part matters independently. It existed only
+to make `1` survivable. Left in place with the count at 0 it would have done nothing useful and one
+harmful thing: `bypass_mode: always` covers the *whole* ruleset, so an admin could merge past
+`repo-gate`, `build/gate` and `review/cve-policy` — the checks that do work today, gate on CI rather
+than on headcount, and are the actual protection this repository has. `bypass_actors` is now empty
+and `current_user_can_bypass` reads `never`.
+
+So the position is unchanged from where this section started, now with evidence rather than
+inference: **approvals stay at 0 and `require_code_owner_review` stays `false` until a second human
+exists.** Neither is deferred out of laziness; both are unsatisfiable at one member, and a rule that
+cannot be satisfied is not a weaker control than none — it is a worse one, because it trains everyone
+to reach for the override.
+
 Two things found while checking this, both worth keeping in mind:
 
 - **The reference repo has the same gap.** `trusted-service-containers` has no `required_reviewers`
