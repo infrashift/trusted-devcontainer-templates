@@ -50,6 +50,10 @@ pin-features: ## Re-resolve and pin every template's feature references by diges
 check-pins: ## Verify every template feature reference is digest-pinned
 	./scripts/pin-features.sh --check
 
+.PHONY: check-assertions
+check-assertions: ## Verify smoke tests assert the versions their template requests
+	./scripts/check-test-assertions.sh
+
 .PHONY: check-workflows
 check-workflows: ## Lint workflows for pinning and required-context drift
 	./scripts/lint-workflows.sh
@@ -65,7 +69,7 @@ repo-gate: ## Run the repository-scoped PDP against the working tree
 # Everything CI's repo-gate job runs, minus the container builds. Fast enough to
 # run before every push.
 .PHONY: check
-check: check-sync check-pins check-workflows check-policy repo-gate ## Run every static check
+check: check-sync check-pins check-assertions check-workflows check-policy repo-gate ## Run every static check
 	@echo "── all static checks passed ──"
 
 .PHONY: test

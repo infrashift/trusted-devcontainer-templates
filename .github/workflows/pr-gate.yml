@@ -64,6 +64,9 @@ jobs:
         # that happens to a build.
         run: ./scripts/pin-features.sh --check
 
+      - name: Verify smoke tests assert the versions the templates request
+        run: ./scripts/check-test-assertions.sh
+
       - name: Verify Containerfile sync
         # The same invariant make check-sync enforces locally: all seven managed
         # Containerfiles byte-identical to shared/Containerfile.
