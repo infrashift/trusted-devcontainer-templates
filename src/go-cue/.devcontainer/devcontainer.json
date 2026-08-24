@@ -6,8 +6,8 @@
     "updateRemoteUserUID": false,
     "features": {
         "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:0bb69a6a2da1d4728cdcde2c6f12350ddbcba271e3376b182a65635f1efedde7": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/golang@sha256:9bbfca46f1572301d4d7a6d8a070ed6e6fffedee8ee8f20e4b8084b76a9fff3b": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/cuelang@sha256:0aaf99c4ca794509560d5d74de2849dbb6ebd28f049c77bd0a9fa7f6c52cbd2f": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/golang@sha256:1ccbd7f73dad8f30ee10f9eeb23ec74de9aeb2bcd7af360dffeae83acf23e38c": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/cuelang@sha256:e728f9b57d5a9c0d79176a3231c941d57978d53ad1f2782b011dbbf8bb651a4b": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/git@sha256:b6320b2771b5279eed4e04a70b130df0cadf187b880dfec4739defb506440c45": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/git-lfs@sha256:fae037baa6a974e792915b594cc2b5ce3caf9bcf625e048573fecfb1c6fc7459": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/grype@sha256:9144c7c9b6432b9b9745dca6800ad340f515097dec38a266be2b6a0726f4dc54": {},
