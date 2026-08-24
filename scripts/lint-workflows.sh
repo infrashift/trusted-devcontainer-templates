@@ -46,18 +46,40 @@ for f in "$WF"/*.y*ml; do
 done
 
 # --- 4. Required status contexts spelled identically everywhere ------------
-# pr-gate.yml seeds this context and review.yml resolves it. If the two strings
-# ever differ, the seeded check stays pending forever and every PR hangs.
+# pr-gate.yml seeds these contexts; something else has to report them. If a
+# seeded string and its reporter ever differ, the seeded check stays pending
+# forever and every PR hangs -- blocked, not failed, which is the slow kind of
+# broken.
+#
+# This used to assert there was exactly ONE context string. That caught typos
+# by construction, but only because a second legitimate context did not exist
+# yet; seeding build/gate alongside review/cve-policy made it fire on correct
+# code. The replacement keeps the typo protection without the arithmetic: every
+# string must come from a known set, so a misspelling is unknown and fails.
+#
 # `|| true` is load-bearing here for the same reason as everywhere else in this
 # file: a repo with no status-seeding workflow has no `-f context=` lines at
 # all, grep exits 1, and under `set -e` the linter would die at exactly the
 # moment it had nothing to complain about.
+KNOWN_CONTEXTS='build/gate review/cve-policy'
 CONTEXTS=$( { grep -rhoE '\-f context="[^"]+"' "$WF"/ || true; } | sed -E 's/.*context="([^"]+)".*/\1/' | sort -u)
-N=$(printf '%s\n' "$CONTEXTS" | grep -c . || true)
-if [ "$N" -gt 1 ]; then
-  err "more than one status context string in use; they must match exactly:"
-  printf '%s\n' "$CONTEXTS" | sed 's/^/       /' >&2
-fi
+for c in $CONTEXTS; do
+  case " $KNOWN_CONTEXTS " in
+    *" $c "*) : ;;
+    *) err "unknown status context ${c}; expected one of: ${KNOWN_CONTEXTS}" ;;
+  esac
+done
+
+# A seeded context needs something that actually reports it, or seeding it is
+# the only thing that ever will. Each must therefore either be resolved by
+# another workflow -- a second `-f context=` occurrence -- or match a job name
+# that publishes it as a check run.
+for c in $CONTEXTS; do
+  occurrences=$( { grep -rhoE "\-f context=\"${c}\"" "$WF"/ || true; } | grep -c . || true)
+  if [ "$occurrences" -lt 2 ] && ! grep -rqE "^\s*name:\s*${c}\s*$" "$WF"/; then
+    err "status context ${c} is seeded but nothing reports it: no second -f context= and no job named ${c}"
+  fi
+done
 
 # --- 5. The PR gate must not be path-filtered ------------------------------
 # A path-filtered workflow does not run at all, so its required contexts never

@@ -137,7 +137,10 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          # KEEP IN SYNC with the paths: filter in build.yml.
+          # KEEP IN SYNC with the paths: filter in build.yml. This one string
+          # decides BOTH seeded contexts below, so a path present here and
+          # absent there produces a required check that never reports -- which
+          # blocks the PR forever rather than failing it.
           BUILD_PATHS='^(src/|shared/|test/|tools\.lock$|scripts/|\.github/pdp/|\.github/workflows/(build|review|release)\.yml$)'
           CHANGED=$(gh pr diff "$PR_NUM" --repo "$REPO" --name-only)
           echo "$CHANGED" | sed 's/^/  /'
@@ -168,4 +171,33 @@ jobs:
             -f state="$STATE" \
             -f context="review/cve-policy" \
             -f description="$DESC" \
+            -f target_url="${GITHUB_SERVER_URL}/${REPO}/actions/runs/${GITHUB_RUN_ID}"
+
+      # build/gate has the same problem review/cve-policy has, for the same
+      # reason: build.yml is path-filtered, so a PR touching none of those paths
+      # never starts it, and a required context that never reports leaves the PR
+      # BLOCKED indefinitely -- not failed, just waiting. Observed on PR #6, a
+      # documentation-only change that sat blocked with every other check green.
+      #
+      # Only the false branch is seeded. When the PR does affect builds,
+      # build.yml runs and publishes build/gate itself, and seeding a success
+      # here would assert a green build before one had happened.
+      #
+      # Statuses attach to a commit SHA, and every push produces a new SHA that
+      # re-runs this job, so a seeded success cannot survive into a later push
+      # that does touch build paths.
+      - name: Publish build/gate status
+        if: steps.paths.outputs.affects_builds == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          # Context string must match the job name in build.yml EXACTLY, and
+          # must match the required status check configured on the main ruleset.
+          gh api -X POST "/repos/${REPO}/statuses/${SHA}" \
+            -f state="success" \
+            -f context="build/gate" \
+            -f description="No build-affecting paths changed." \
             -f target_url="${GITHUB_SERVER_URL}/${REPO}/actions/runs/${GITHUB_RUN_ID}"
