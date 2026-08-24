@@ -394,7 +394,7 @@ Two things found while checking this, both worth keeping in mind:
   features on GitHub Free. Both repos here are public, so both work. Making either private without a
   Team plan would silently remove them.
 
-### 20. Feature-to-feature dependencies are still resolved by tag
+### ~~20. Feature-to-feature dependencies are still resolved by tag~~ RESOLVED
 
 #9 pinned every reference the templates declare. It could not pin the ones the features declare among
 themselves: each feature's `dependsOn` names a sibling as
@@ -414,6 +414,33 @@ dependency-ordered one that resolves each feature's digest as it goes.
 
 Not urgent — every feature in the chain is signed and the registry is ours — but the pin should mean
 what it says.
+
+**Resolved.** The graph turned out to be two levels, not N: every feature `dependsOn` bootstrap and
+bootstrap depends on nothing, so a two-phase publish suffices — publish bootstrap, resolve its digest,
+rewrite the other 19, publish those. No topological sort.
+
+Only `dependsOn` is pinned. It is a *fetch*: the CLI pulls that feature and runs its `install.sh`.
+`installsAfter` is an ordering hint matched by id among features the consumer already selected, so a
+digest there could fail to match a consumer who pinned a different digest of the same sibling.
+
+The cost is real and has its own guard. A digest pin is immutable, so a bootstrap fix no longer
+reaches consumers the moment it publishes — a dependent carries its pinned digest until that
+dependent republishes, and `devcontainers/action` only publishes on a version change. Bumping
+bootstrap alone would publish bytes nothing points at while the release reported success.
+`scripts/check-bootstrap-fanout.sh` makes that unreachable.
+
+Two mistakes worth recording, both mine:
+
+- The first release after the mechanism landed **failed at verification**, because introducing the
+  pin changed the *shape* of published metadata without bumping any version, so nothing republished.
+  I had written that the release "will republish all 20 features" — an assumption stated as fact. The
+  fix was 19 version bumps.
+- `verify-published-refs.sh` originally checked only for *relative* references. It would have passed
+  a `dependsOn` that reads as an absolute registry reference and still resolves to `:latest` — pinned
+  in appearance, mutable in fact. It now requires a digest.
+
+Both were caught by the same thing: the check that reads metadata back **out of the registry**. Every
+working-tree check passed, because in the working tree the rewrite had genuinely succeeded.
 
 ### 22. Nothing asserts that pinned tool versions are current
 
