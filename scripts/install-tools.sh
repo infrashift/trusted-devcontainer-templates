@@ -74,15 +74,20 @@ install_gitleaks() {
 # syft and grype ship an installer that verifies the release checksum itself,
 # fetched at the pinned tag rather than from main. This replaces
 # anchore/sbom-action@v0 and anchore/scan-action@v6, both floating major refs.
+#
+# The version is passed WITH its leading v. Both installers resolve the argument
+# as a git tag, and the tags are v1.51.0 / v0.117.0 -- stripping the v yields
+# `received HTTP status=404 for .../releases/1.51.0`, then `unable to find
+# tag=''`, which reads like a bad pin rather than a malformed one.
 install_syft() {
   curl -sSfL "https://raw.githubusercontent.com/anchore/syft/${SYFT_VERSION}/install.sh" \
-    | sh -s -- -b "$BIN" "${SYFT_VERSION#v}"
+    | sh -s -- -b "$BIN" "${SYFT_VERSION}"
   syft version
 }
 
 install_grype() {
   curl -sSfL "https://raw.githubusercontent.com/anchore/grype/${GRYPE_VERSION}/install.sh" \
-    | sh -s -- -b "$BIN" "${GRYPE_VERSION#v}"
+    | sh -s -- -b "$BIN" "${GRYPE_VERSION}"
   grype version
 }
 
