@@ -2,7 +2,7 @@
     "id": "python",
     "version": "1.0.0",
     "name": "Python (Trusted)",
-    "description": "A trusted Python development environment based on UBI9 with uv, ruff, and security scanning tools.",
+    "description": "A trusted Python development environment based on Fedora 43 with uv, ruff, and security scanning tools.",
     "publisher": "InfraShift",
     "options": {},
     "platforms": [
@@ -13,7 +13,8 @@
         "python",
         "uv",
         "ruff",
-        "ubi9",
+        "fedora",
+        "fedora43",
         "trusted",
         "secure"
     ]

@@ -9,7 +9,12 @@ checkCommon
 
 check "ansible is installed" command -v ansible
 check "ansible-playbook is installed" command -v ansible-playbook
-check "python3 is installed" command -v python3
+# The python feature installs into uv's MANAGED store, not onto PATH, so
+# `command -v python3` asserts something the feature never promised -- and the
+# shared base ships no python at all. `uv python find` is the contract the
+# feature repo's own tests use; matching it keeps one definition of "installed"
+# across both repos.
+check "python 3.12 is installed" uv python find 3.12
 check "cue is installed" command -v cue
 
 reportResults

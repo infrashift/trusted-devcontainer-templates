@@ -2,7 +2,7 @@
     "id": "go-cue",
     "version": "1.0.0",
     "name": "Go + CUE (Trusted)",
-    "description": "A trusted Go and CUE development environment based on UBI9 for CLI/TUI development with security scanning tools.",
+    "description": "A trusted Go and CUE development environment based on Fedora 43 for CLI/TUI development with security scanning tools.",
     "publisher": "InfraShift",
     "options": {},
     "platforms": [
@@ -15,7 +15,8 @@
         "cue",
         "cuelang",
         "cli",
-        "ubi9",
+        "fedora",
+        "fedora43",
         "trusted",
         "secure"
     ]

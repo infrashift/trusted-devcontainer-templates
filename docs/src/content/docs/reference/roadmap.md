@@ -13,7 +13,7 @@ description: Planned templates and enhancements for the trusted dev container te
 
 ## Security Enhancements
 
-- **Automated base image digest updates** — Dependabot or Renovate bot to propose PRs when new UBI9 digests are available
+- **Automated base image digest updates** — Dependabot or Renovate bot to propose PRs when new Fedora 43 digests are available
 - **Feature version pinning** — pin feature references by digest in addition to the current tag-based references
 - **SLSA Build Level 3** — move to a reusable workflow pattern to achieve SLSA L3 isolation requirements
 - **Attestation verification in CI** — verify feature attestations before building templates

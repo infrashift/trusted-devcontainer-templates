@@ -1,0 +1,37 @@
+# CVE exception register.
+#
+# An entry here moves a finding from `blocking` to `waived`. It never HIDES it:
+# waived findings appear in the PR comment table and in the signed review
+# verdict, carrying this entry's id, owner, expiry and justification.
+#
+# Every field is required. An entry missing `expires` or `justification` -- or
+# carrying a justification under 20 characters -- waives NOTHING, and is
+# reported as WAIVER_NO_EXPIRY or WAIVER_NO_JUSTIFICATION so the author finds
+# out why rather than assuming it worked.
+#
+# Expiry is evaluated against the workflow's `evaluated_at`, never a wall clock
+# inside the policy, so a decision made today replays identically in a year --
+# which is what makes a signed verdict worth signing. An expired waiver is
+# reported as WAIVER_EXPIRED and suppresses nothing.
+#
+# `templates` scopes the waiver. Omit it, or leave it empty, to apply to every
+# template -- deliberate and visible here rather than implied by omission.
+#
+# An exception is an accepted risk with an owner and a date. It is not a way to
+# make a red check go green. Before adding one, check whether a newer base
+# digest or feature release clears the finding instead.
+
+waivers: []
+
+# --- Example. Delete before the first real entry. --------------------------
+#
+# - id: EXC-2026-0001
+#   cve: CVE-0000-00001
+#   templates: [python, ansible-cue]   # omit or [] for all templates
+#   issued:  "2026-08-23T00:00:00Z"
+#   expires: "2026-11-21T00:00:00Z"    # 90 days is the maximum window
+#   owner:   "@ryancraig"
+#   ticket:  "https://github.com/infrashift/trusted-devcontainer-templates/issues/1"
+#   justification: >-
+#     Fedora has not yet published a rebuilt package. The affected code path is
+#     not reachable from any template entrypoint; tracked upstream in <link>.

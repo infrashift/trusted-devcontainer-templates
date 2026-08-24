@@ -1,0 +1,176 @@
+name: CI Build & Audit
+
+# Builds every affected template, scans it, and signs the resulting evidence
+# with the BUILD key. It decides nothing: the verdict is review.yml's job, and
+# publishing is release.yml's. Separating who builds from who judges is the
+# whole point of the three-actor split -- a single job holding one key that
+# builds, grades its own work and publishes it can only ever attest that it did
+# what it did.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      # KEEP IN SYNC with BUILD_PATHS in pr-gate.yml's seed-review-status job.
+      - 'src/**'
+      - 'shared/**'
+      - 'test/**'
+      - 'tools.lock'
+      - 'scripts/**'
+      - '.github/pdp/**'
+      # Changing the gate or the promotion logic must re-validate every template
+      # against them, or the verdict on file was produced by different rules.
+      - '.github/workflows/review.yml'
+      - '.github/workflows/release.yml'
+
+permissions: {}
+
+concurrency:
+  group: build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  matrix-setup:
+    name: Compute Matrix
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      build_matrix: ${{ steps.compute.outputs.build_matrix }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0   # need history to diff against the PR base
+
+      - name: Compute selective matrix
+        id: compute
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+
+          ALL=$(find src -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort \
+                | jq -R -s -c 'split("\n") | map(select(length > 0) | {template: .})')
+
+          # A change to the shared Containerfile, the policy, the tooling or the
+          # orchestration re-validates everything: the gate is only as
+          # trustworthy as its last evaluation.
+          if git diff --name-only "$BASE_SHA" HEAD \
+               | grep -qE '^(shared/|scripts/|tools\.lock$|test/|\.github/(pdp/|workflows/(review|release)\.yml$))'; then
+            echo "shared input, policy or orchestration changed -> full matrix"
+            FINAL="$ALL"
+          else
+            CHANGED=$(git diff --name-only "$BASE_SHA" HEAD -- 'src/*' \
+                      | cut -d/ -f2 | sort -u \
+                      | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            if [ "$CHANGED" = "[]" ]; then
+              echo "no template-affecting change detected -> full matrix (fallback)"
+              FINAL="$ALL"
+            else
+              # Intersect with ALL so a deleted template cannot resurrect itself.
+              FINAL=$(jq -c --argjson all "$ALL" --argjson ch "$CHANGED" \
+                '[ $all[] | select(.template as $t | $ch | index($t)) ]' <<<'null')
+            fi
+          fi
+
+          echo "$FINAL" > build-matrix.json
+          jq -r '.[] | "  \(.template)"' build-matrix.json
+
+          # ---- Injection guard, at the trust boundary -------------------
+          # build-matrix.json crosses into `run:` blocks here and in review.yml
+          # and release.yml. On a fork PR its contents derive from directory
+          # names in the PR head, which the author controls.
+          if ! jq -e '
+            type == "array" and length > 0 and length <= 32 and
+            all(.[];
+              type == "object" and
+              ((keys_unsorted | sort) == ["template"]) and
+              (.template | type == "string" and test("^[a-z0-9][a-z0-9-]{0,63}$"))
+            )' build-matrix.json > /dev/null; then
+            echo "::error::Computed matrix failed schema validation -- check src/ directory names"
+            cat build-matrix.json
+            exit 1
+          fi
+
+          echo "build_matrix=$(jq -c '.' build-matrix.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: build-matrix
+          path: build-matrix.json
+
+  build-and-audit:
+    name: Build ${{ matrix.template }}
+    needs: matrix-setup
+    if: needs.matrix-setup.outputs.build_matrix != '[]'
+    runs-on: ubuntu-latest
+    environment: Build-Actor
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.matrix-setup.outputs.build_matrix) }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+        with:
+          cosign-release: v2.6.1   # keep in lockstep with tools.lock
+
+      - name: Install pinned tools
+        run: sudo BIN=/usr/local/bin ./scripts/install-tools.sh syft grype devcontainer-cli
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build, test, scan and sign evidence
+        env:
+          # Matrix values reach the script through env, never through shell
+          # interpolation inside the run: block.
+          TEMPLATE: ${{ matrix.template }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BUILD_RUN_ID: ${{ github.run_id }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: ./scripts/build-template.sh
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: evidence-${{ matrix.template }}
+          path: evidence/
+          # A missing evidence directory means the build produced nothing to
+          # review. Failing here is the difference between "no findings" and
+          # "no scan".
+          if-no-files-found: error
+
+  # A single aggregate context. NEVER make individual matrix legs required
+  # checks: job names change with the matrix, and a required context that stops
+  # reporting blocks every PR forever.
+  gate:
+    name: build/gate
+    needs: [matrix-setup, build-and-audit]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate
+        env:
+          SETUP: ${{ needs.matrix-setup.result }}
+          BUILD: ${{ needs.build-and-audit.result }}
+        run: |
+          set -euo pipefail
+          echo "matrix-setup=$SETUP build=$BUILD"
+          for r in "$SETUP" "$BUILD"; do
+            case "$r" in
+              success|skipped) : ;;
+              *) echo "::error::a build leg did not succeed (${r})"; exit 1 ;;
+            esac
+          done
+          echo "all legs succeeded or were skipped"

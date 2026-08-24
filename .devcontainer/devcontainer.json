@@ -34,6 +34,7 @@
         }
     },
     "features": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/git": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/git-lfs": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/golang": {},

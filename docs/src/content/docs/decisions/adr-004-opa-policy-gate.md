@@ -3,7 +3,7 @@ title: "ADR-004: OPA Policy Gate"
 description: Decision to use Open Policy Agent as a release gate for CVE thresholds.
 ---
 
-**Status:** Accepted
+**Status:** Accepted — amended
 
 ## Context
 
@@ -40,3 +40,15 @@ The scan job extracts CVE counts, builds a JSON input, and queries OPA. If viola
 | **Grype fail-on severity flag** | Binary pass/fail; no configurable thresholds per severity |
 | **Custom Go policy tool** | Over-engineered; OPA already provides this capability |
 | **GitHub Actions conditions** | Inline `if:` conditions don't scale and aren't auditable |
+
+## Amendment: Fedora base cadence
+
+[ADR-007](/trusted-devcontainer-templates/decisions/adr-007-fedora43-base-image/) moves templates from UBI9 to Fedora 43. Fedora carries newer
+packages and publishes advisories faster, so this zero-tolerance gate on Critical and High findings sits on
+a noisier base than the one it was written for.
+
+The gate is deliberately unchanged: a Critical or High CVE should block a release regardless of how quickly
+the distribution moves. What changes is the expected maintenance load — base digest bumps will be needed
+more often, and the absence of any allowlist or severity-budget mechanism (noted above as a consequence) is
+felt sooner. If the gate proves too brittle in practice, the fix is an explicit, time-boxed exception
+mechanism recorded in a new ADR, not a quiet loosening of the threshold.

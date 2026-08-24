@@ -1,6 +1,6 @@
 # Go + CUE (Trusted) Template
 
-This template provides a hardened Go and CUE development environment built on a trusted UBI9 base image, specialized for CLI/TUI development.
+This template provides a hardened Go and CUE development environment built on a trusted Fedora 43 base image, specialized for CLI/TUI development.
 
 ## Included Tools
 

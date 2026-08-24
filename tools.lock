@@ -1,0 +1,25 @@
+# Pinned tool versions for the CI pipeline.
+#
+# Nothing here may be installed from a mutable ref. Before this file existed,
+# release.yaml installed the devcontainer CLI from npm with no version, syft via
+# anchore/sbom-action/download-syft@v0, grype via anchore/scan-action/download-grype@v6
+# and OPA from `downloads/latest` -- all in the `scan` job, which is the job that
+# holds COSIGN_PRIVATE_KEY. Anyone able to move one of those refs had code
+# execution alongside the signing key.
+#
+# Checksums live in scripts/install-tools.sh next to the download that uses them,
+# so a version bump that forgets its checksum fails loudly instead of silently
+# skipping verification.
+#
+# cosign: v2, not v3, deliberately. cosign v3 defaults to --new-bundle-format=true
+# and writes attestations as OCI referrers; v2 writes the legacy
+# sha256-<digest>.att layout. The sibling repos (trusted-service-containers,
+# trusted-base-images) read the v2 layout. Migrate the org together, never one
+# repo at a time.
+
+COSIGN_VERSION=v2.6.1
+SYFT_VERSION=v1.51.0
+GRYPE_VERSION=v0.117.0
+OPA_VERSION=v1.19.1
+GITLEAKS_VERSION=v8.30.1
+DEVCONTAINER_CLI_VERSION=0.88.0

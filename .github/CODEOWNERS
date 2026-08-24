@@ -1,0 +1,63 @@
+# Ownership is the last line of defence when a change is textually innocuous but
+# semantically a policy change. Moving a tool version in tools.lock, pinning a
+# feature by digest, or widening a CVE threshold all look like routine edits and
+# are all trust decisions.
+#
+# ---------------------------------------------------------------------------
+# THIS FILE AUTO-ASSIGNS REVIEWERS. IT IS NOT A MERGE REQUIREMENT.
+#
+# `infrashift` has one member. Enabling "Require review from Code Owners" while
+# that is true would block every pull request: GitHub does not let you approve
+# your own PR, so the only way to merge would be an admin bypass on every
+# change -- which trains the habit of bypassing the gate and leaves a repo whose
+# protection is nominal.
+#
+# So the paths below exist to surface *what kind of change this is* on the PR,
+# and to be correct the day the org grows. They do not gate anything today.
+#
+# When a second maintainer joins: create the teams, swap the owners below, and
+# turn on "Require review from Code Owners" in the same change -- see
+# SETUP-ENVIRONMENTS.md. Until then, do not enable it.
+#
+# Two owners on one line would mean EITHER may approve, not both. GitHub has no
+# "one approval from each team" primitive; genuine dual control needs Required
+# Reviewers on an environment, and needs more than one person to exist.
+# ---------------------------------------------------------------------------
+
+*                                   @ryancraig
+
+# --- Trust decisions -------------------------------------------------------
+# The policy that decides whether a release may proceed, and the keys used to
+# verify the evidence it decides on.
+/.github/pdp/                       @ryancraig
+/.github/pdp/policies.rego          @ryancraig
+/.github/pdp/policies_test.rego     @ryancraig
+/.github/pdp/public-keys/           @ryancraig
+
+# Tool versions and their checksums. These binaries run in the job that holds a
+# signing key, so a version bump here is a supply-chain decision.
+/tools.lock                         @ryancraig
+/scripts/install-tools.sh           @ryancraig
+
+# --- Pipeline engines ------------------------------------------------------
+/.github/workflows/                 @ryancraig
+/scripts/                           @ryancraig
+
+# --- What ships inside a template ------------------------------------------
+# The shared Containerfile is copied into every template, so one edit changes
+# all five published images.
+/shared/                            @ryancraig
+# Feature references and their pins decide what code runs in a developer's
+# container.
+/src/                               @ryancraig
+
+# --- Repository security posture -------------------------------------------
+/.github/CODEOWNERS                 @ryancraig
+/.gitleaks.toml                     @ryancraig
+/.gitignore                         @ryancraig
+/SETUP-ENVIRONMENTS.md              @ryancraig
+
+# --- Documentation ---------------------------------------------------------
+/docs/                              @ryancraig
+/README.md                          @ryancraig
+/TODO.md                            @ryancraig

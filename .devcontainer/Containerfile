@@ -1,9 +1,38 @@
-FROM ghcr.io/infrashift/trusted-base-images/trusted/ubi9-standard@sha256:f938c070dc5906b9915a0c056e85a002a00900af17a08bfa4783fb80a45ad889
+FROM ghcr.io/infrashift/trusted-base-images/trusted/fedora43-minimal@sha256:1ed67eb14da57087e206e45bba67a84264e213e8c545d64a9683fbc38bca3a65
 
 USER root
 
-# Silence subscription-manager messages (TODO: move to base image)
-RUN echo "enabled=0" >> /etc/yum/pluginconf.d/subscription-manager.conf
+# Base package baseline.
+#
+# Feature prerequisites — the devcontainer feature mechanism cannot work without these:
+#   tar, gzip        ansible.builtin.unarchive and every tool-tarball download
+#   curl             binary downloads (--allowerasing swaps curl-minimal for full curl)
+#   util-linux       runuser, used to drop from root to the target user
+#                    (util-linux-core does NOT ship su/runuser on Fedora)
+#
+# Interactive-use baseline — fedora43-minimal ships none of these:
+#   procps-ng, diffutils, findutils, less, which, fzf
+#
+# Shared runtime libraries. These are linked against by userland tools installed
+# by features (bun needs unzip; the .NET SDK and OpenJDK need libicu and
+# openssl-libs). Keeping them here rather than in each feature means those
+# features stay entirely userland and never need the privileged lane.
+RUN dnf5 -y install --allowerasing --setopt=install_weak_deps=False \
+        tar \
+        gzip \
+        curl \
+        util-linux \
+        unzip \
+        libicu \
+        openssl-libs \
+        procps-ng \
+        diffutils \
+        findutils \
+        less \
+        which \
+        fzf \
+    && dnf5 clean all \
+    && rm -rf /var/cache/dnf
 
 # Create the devcontainer user
 ARG USERNAME=dev
@@ -13,9 +42,10 @@ ARG USER_GID=1001
 RUN groupadd --gid ${USER_GID} ${USERNAME} \
     && useradd -m -s /bin/bash --uid ${USER_UID} --gid ${USER_GID} ${USERNAME}
 
-# Install uv for feature bootstrap
-RUN curl -LsSf https://astral.sh/uv/install.sh | env INSTALLER_NO_MODIFY_PATH=1 UV_INSTALL_DIR=/usr/local/bin sh \
-    && uv --version
+# uv and the pinned Ansible bootstrap environment (/opt/bootstrap) are provided
+# by the 'bootstrap' devcontainer feature, which every other feature dependsOn.
+# They are deliberately not baked in here: pinning and checksum verification
+# live with the feature that owns them.
 
 USER ${USERNAME}
 

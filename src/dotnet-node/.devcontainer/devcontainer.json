@@ -5,6 +5,7 @@
     "containerUser": "dev",
     "updateRemoteUserUID": false,
     "features": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/dotnet": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/nodejs": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/npm": {},

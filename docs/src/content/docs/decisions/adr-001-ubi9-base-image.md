@@ -3,7 +3,7 @@ title: "ADR-001: UBI9 Base Image"
 description: Decision to use Red Hat Universal Base Image 9 as the foundation for all templates.
 ---
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-007](/trusted-devcontainer-templates/decisions/adr-007-fedora43-base-image/)
 
 ## Context
 

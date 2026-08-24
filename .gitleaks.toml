@@ -1,0 +1,86 @@
+# Secret-scanning configuration.
+#
+# NEVER leave this file empty. gitleaks treats an empty config as "zero rules":
+# it scans successfully, finds nothing, and exits 0 -- indistinguishable from a
+# clean scan. A sibling repo in this org shipped this file at 0 bytes while its
+# pipeline wrote a literal "gitleaks_passed": true into a signed attestation,
+# in a checkout that had three live cosign private keys in it.
+#
+# Three independent guards prevent a repeat here:
+#   1. [extend] useDefault below.
+#   2. A size + content assertion in CI, before gitleaks runs.
+#   3. GITLEAKS_CONFIG_EMPTY / GITLEAKS_DEFAULTS_DISABLED in policies.rego,
+#      which read the MEASURED byte count rather than a hardcoded boolean.
+#
+# This repo's own exposure is concrete: an encrypted cosign.key currently sits
+# untracked in the working tree. It has never been committed -- verified against
+# full history -- and `**/*.key` in .gitignore keeps it out, but a scanner that
+# actually runs is the guard that does not depend on remembering.
+
+title = "trusted-devcontainer-templates"
+
+[extend]
+useDefault = true
+
+# --- Repository-specific rules ---------------------------------------------
+
+[[rules]]
+id          = "cosign-sigstore-private-key"
+description = "Cosign / Sigstore private key block"
+regex       = '''-----BEGIN (ENCRYPTED )?SIGSTORE PRIVATE KEY-----'''
+keywords    = ["SIGSTORE PRIVATE KEY"]
+tags        = ["key", "cosign", "critical"]
+
+[[rules]]
+id          = "pem-private-key-block"
+description = "Any PEM-encoded private key block"
+regex       = '''-----BEGIN (RSA |EC |DSA |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY( BLOCK)?-----'''
+keywords    = ["PRIVATE KEY"]
+tags        = ["key", "critical"]
+
+[[rules]]
+id          = "jwt-token"
+description = "JWT (e.g. a sigstore-audience OIDC token pasted into a predicate)"
+regex       = '''eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}'''
+keywords    = ["eyJ"]
+tags        = ["token", "jwt"]
+
+[[rules]]
+id          = "github-pat"
+description = "GitHub personal access token"
+regex       = '''\b(ghp|gho|ghu|ghs|ghr|github_pat)_[A-Za-z0-9_]{22,}\b'''
+keywords    = ["ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_"]
+tags        = ["token", "github"]
+
+[[rules]]
+id          = "anthropic-api-key"
+description = "Anthropic API key (the templates ship AI assistant features)"
+regex       = '''\bsk-ant-[A-Za-z0-9_-]{20,}\b'''
+keywords    = ["sk-ant-"]
+tags        = ["token", "anthropic"]
+
+[[rules]]
+id          = "openai-api-key"
+description = "OpenAI API key (the templates ship AI assistant features)"
+regex       = '''\bsk-(proj-)?[A-Za-z0-9_-]{32,}\b'''
+keywords    = ["sk-proj-", "sk-"]
+tags        = ["token", "openai"]
+
+# --- Allowlist -------------------------------------------------------------
+# Narrow and justified. Each entry is somewhere a scanner would otherwise be
+# right to complain.
+
+[allowlist]
+description = "Public keys, generated output, and policy test fixtures"
+paths = [
+  # Public halves of signing keypairs. Not secrets -- downstream consumers need
+  # them to verify, and they say PUBLIC KEY, not PRIVATE KEY.
+  '''\.github/pdp/public-keys/.*\.pub$''',
+  '''^docs/(dist|node_modules|\.astro)/''',
+  '''^\.github/pdp/policies_test\.rego$''',
+]
+regexes = [
+  # Placeholder digests in docs and fixtures.
+  '''sha256:0{64}''',
+  '''sha256:<fill>''',
+]

@@ -2,7 +2,7 @@
   {
     "id": "ansible-cue",
     "name": "Ansible + CUE (Trusted)",
-    "description": "A trusted Ansible and CUE development environment based on UBI9 optimized for infrastructure-as-code workflows.",
+    "description": "A trusted Ansible and CUE development environment based on Fedora 43 optimized for infrastructure-as-code workflows.",
     "version": "1.0.0",
     "testStatus": "passing",
     "category": "infrastructure",
@@ -15,7 +15,7 @@
       ],
       "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
     },
-    "keywords": ["ansible", "cue", "cuelang", "iac", "infrastructure", "ubi9", "trusted", "secure"],
+    "keywords": ["ansible", "cue", "cuelang", "iac", "infrastructure", "fedora43", "trusted", "secure"],
     "useCases": [
       "Infrastructure-as-code development with Ansible playbooks and roles",
       "CUE-based configuration validation and generation",
@@ -26,7 +26,7 @@
   {
     "id": "dotnet-node",
     "name": ".NET + Node.js (Trusted)",
-    "description": "A trusted .NET and Node.js development environment based on UBI9 with security scanning tools and supply-chain tooling.",
+    "description": "A trusted .NET and Node.js development environment based on Fedora 43 with security scanning tools and supply-chain tooling.",
     "version": "1.0.0",
     "testStatus": "passing",
     "category": "web",
@@ -40,7 +40,7 @@
       ],
       "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
     },
-    "keywords": ["dotnet", "csharp", "nodejs", "typescript", "ubi9", "trusted", "secure"],
+    "keywords": ["dotnet", "csharp", "nodejs", "typescript", "fedora43", "trusted", "secure"],
     "useCases": [
       "Full-stack web development with ASP.NET and React/Vue/Angular",
       "Blazor applications with Node.js build tooling",
@@ -51,7 +51,7 @@
   {
     "id": "go-cue",
     "name": "Go + CUE (Trusted)",
-    "description": "A trusted Go and CUE development environment based on UBI9 for CLI/TUI development with security scanning tools.",
+    "description": "A trusted Go and CUE development environment based on Fedora 43 for CLI/TUI development with security scanning tools.",
     "version": "1.0.0",
     "testStatus": "passing",
     "category": "systems",
@@ -63,7 +63,7 @@
       ],
       "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
     },
-    "keywords": ["go", "golang", "cue", "cuelang", "cli", "ubi9", "trusted", "secure"],
+    "keywords": ["go", "golang", "cue", "cuelang", "cli", "fedora43", "trusted", "secure"],
     "useCases": [
       "CLI and TUI application development in Go",
       "CUE-based configuration and schema validation",
@@ -74,7 +74,7 @@
   {
     "id": "java",
     "name": "Java (Trusted)",
-    "description": "A trusted Java development environment based on UBI9 with OpenJDK, security scanning tools, and supply-chain tooling.",
+    "description": "A trusted Java development environment based on Fedora 43 with OpenJDK, security scanning tools, and supply-chain tooling.",
     "version": "1.0.0",
     "testStatus": "passing",
     "category": "enterprise",
@@ -85,7 +85,7 @@
       ],
       "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
     },
-    "keywords": ["java", "openjdk", "ubi9", "trusted", "secure"],
+    "keywords": ["java", "openjdk", "fedora43", "trusted", "secure"],
     "useCases": [
       "Enterprise Java application development with Spring Boot",
       "Microservices with Quarkus or Micronaut",
@@ -96,7 +96,7 @@
   {
     "id": "python",
     "name": "Python (Trusted)",
-    "description": "A trusted Python development environment based on UBI9 with uv, ruff, and security scanning tools.",
+    "description": "A trusted Python development environment based on Fedora 43 with uv, ruff, and security scanning tools.",
     "version": "1.0.0",
     "testStatus": "passing",
     "category": "data-science",
@@ -108,7 +108,7 @@
       ],
       "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
     },
-    "keywords": ["python", "uv", "ruff", "ubi9", "trusted", "secure"],
+    "keywords": ["python", "uv", "ruff", "fedora43", "trusted", "secure"],
     "useCases": [
       "Python application development with modern tooling (uv, ruff)",
       "Data science and machine learning workflows",
