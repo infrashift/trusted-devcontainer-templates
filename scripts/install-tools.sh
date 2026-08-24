@@ -24,6 +24,12 @@ esac
 # Checksums are keyed by version AND arch. An unpinned pair fails by name rather
 # than silently skipping verification -- the same rule the feature roles follow
 # for their downloads.
+# Every post-install check below runs "$BIN/<tool>", never the bare name. A bare
+# name resolves through PATH, so on a machine that already has the tool the
+# script happily reports a DIFFERENT binary than the one it just wrote -- which
+# is how a wrong version, or a failed install, reads as success. Observed:
+# BIN=/tmp/... installed grype 0.117.0 while `grype version` printed the
+# 0.115.0 already on PATH.
 sha_for() {
   local key="$1"
   case "$key" in
@@ -55,7 +61,7 @@ install_opa() {
   verify "$tmp/opa" "opa:${OPA_VERSION}:${GOARCH}"
   install -m 0755 "$tmp/opa" "$BIN/opa"
   rm -rf "$tmp"
-  opa version
+  "$BIN/opa" version
 }
 
 install_gitleaks() {
@@ -68,7 +74,7 @@ install_gitleaks() {
   tar -xzf "$tmp/g.tar.gz" -C "$tmp" gitleaks
   install -m 0755 "$tmp/gitleaks" "$BIN/gitleaks"
   rm -rf "$tmp"
-  gitleaks version
+  "$BIN/gitleaks" version
 }
 
 # syft and grype ship an installer that verifies the release checksum itself,
@@ -82,13 +88,13 @@ install_gitleaks() {
 install_syft() {
   curl -sSfL "https://raw.githubusercontent.com/anchore/syft/${SYFT_VERSION}/install.sh" \
     | sh -s -- -b "$BIN" "${SYFT_VERSION}"
-  syft version
+  "$BIN/syft" version
 }
 
 install_grype() {
   curl -sSfL "https://raw.githubusercontent.com/anchore/grype/${GRYPE_VERSION}/install.sh" \
     | sh -s -- -b "$BIN" "${GRYPE_VERSION}"
-  grype version
+  "$BIN/grype" version
 }
 
 install_devcontainer_cli() {
