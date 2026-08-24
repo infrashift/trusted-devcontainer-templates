@@ -30,6 +30,22 @@ esac
 # is how a wrong version, or a failed install, reads as success. Observed:
 # BIN=/tmp/... installed grype 0.117.0 while `grype version` printed the
 # 0.115.0 already on PATH.
+
+# Every download below goes through fetch(). Retrying only where a retry can
+# help is the whole point of the flag choice:
+#
+#   --retry 3 --retry-delay 2   timeouts, 5xx and 429 -- the registry or the
+#                               release CDN having a bad second
+#   --retry-connrefused         the connection refused before a response, which
+#                               curl does not count as transient on its own
+#
+# NOT --retry-all-errors. That would also retry a 404, and a 404 here means a
+# wrong pin in tools.lock, not a flaky network -- three retries would turn a
+# clear "this version does not exist" into a slow one.
+fetch() {
+  curl -sSfL --retry 3 --retry-delay 2 --retry-connrefused --max-time 120 "$@"
+}
+
 sha_for() {
   local key="$1"
   case "$key" in
@@ -56,7 +72,7 @@ verify() {
 
 install_opa() {
   local tmp; tmp=$(mktemp -d)
-  curl -sSfL --retry 3 -o "$tmp/opa" \
+  fetch -o "$tmp/opa" \
     "https://github.com/open-policy-agent/opa/releases/download/${OPA_VERSION}/opa_linux_${GOARCH}_static"
   verify "$tmp/opa" "opa:${OPA_VERSION}:${GOARCH}"
   install -m 0755 "$tmp/opa" "$BIN/opa"
@@ -68,7 +84,7 @@ install_gitleaks() {
   local tmp arch; tmp=$(mktemp -d)
   # gitleaks names its 64-bit x86 asset x64, not amd64. arm64 matches.
   case "$GOARCH" in amd64) arch=x64 ;; *) arch="$GOARCH" ;; esac
-  curl -sSfL --retry 3 -o "$tmp/g.tar.gz" \
+  fetch -o "$tmp/g.tar.gz" \
     "https://github.com/gitleaks/gitleaks/releases/download/${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION#v}_linux_${arch}.tar.gz"
   verify "$tmp/g.tar.gz" "gitleaks:${GITLEAKS_VERSION}:${GOARCH}"
   tar -xzf "$tmp/g.tar.gz" -C "$tmp" gitleaks
@@ -85,17 +101,25 @@ install_gitleaks() {
 # as a git tag, and the tags are v1.51.0 / v0.117.0 -- stripping the v yields
 # `received HTTP status=404 for .../releases/1.51.0`, then `unable to find
 # tag=''`, which reads like a bad pin rather than a malformed one.
-install_syft() {
-  curl -sSfL "https://raw.githubusercontent.com/anchore/syft/${SYFT_VERSION}/install.sh" \
-    | sh -s -- -b "$BIN" "${SYFT_VERSION}"
-  "$BIN/syft" version
+#
+# The installer is fetched to a FILE and then run, rather than piped straight
+# into sh. Piping cannot be retried safely: if the transfer dies half way, sh
+# has already executed everything that arrived, so a retry re-runs an installer
+# on top of a partial one. Landing it on disk first makes the download atomic
+# with respect to execution -- either fetch() returns a whole script or it fails
+# and nothing ran.
+install_anchore() {
+  local tool="$1" version="$2" tmp
+  tmp=$(mktemp -d)
+  fetch -o "$tmp/install.sh" \
+    "https://raw.githubusercontent.com/anchore/${tool}/${version}/install.sh"
+  sh "$tmp/install.sh" -b "$BIN" "$version"
+  rm -rf "$tmp"
+  "$BIN/${tool}" version
 }
 
-install_grype() {
-  curl -sSfL "https://raw.githubusercontent.com/anchore/grype/${GRYPE_VERSION}/install.sh" \
-    | sh -s -- -b "$BIN" "${GRYPE_VERSION}"
-  "$BIN/grype" version
-}
+install_syft()  { install_anchore syft  "${SYFT_VERSION}"; }
+install_grype() { install_anchore grype "${GRYPE_VERSION}"; }
 
 install_devcontainer_cli() {
   npm install -g "@devcontainers/cli@${DEVCONTAINER_CLI_VERSION}"
