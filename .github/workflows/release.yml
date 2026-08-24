@@ -1,0 +1,310 @@
+name: Release Templates
+
+# Three actors, one tag.
+#
+# The reference this is modelled on (infrashift/trusted-service-containers)
+# promotes on PR merge, where the reviewed commit and the promoted commit are
+# the same SHA. This repo releases on a version tag, and a squash merge means
+# the commit on main is NOT the PR head that review.yml graded -- so a verdict
+# from PR time cannot be matched to the tagged commit without pretending.
+#
+# So the chain re-runs here against the exact commit being published: build with
+# the BUILD key, verify and grade with the REVIEW key behind Required Reviewers,
+# publish and attest with the RELEASE key. PR-time review still does its job --
+# it blocks bad merges and gives fast feedback -- but nothing is published on
+# the strength of a verdict about different bytes.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  gate-check:
+    name: Gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.compute.outputs.matrix }}
+      version: ${{ steps.ids.outputs.version }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Derive identifiers
+        id: ids
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::malformed sha"; exit 1; }
+          # A tag is attacker-controllable text that reaches image tags below.
+          [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] \
+            || { echo "::error::tag ${REF_NAME} is not a semver v-tag; refusing to release"; exit 1; }
+          echo "version=${REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute the full matrix
+        id: compute
+        run: |
+          set -euo pipefail
+          # A release always covers every template. Selective matrices belong to
+          # PR builds; a partial release would publish an inconsistent set.
+          find src -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort \
+            | jq -R -s -c 'split("\n") | map(select(length > 0) | {template: .})' > build-matrix.json
+          if ! jq -e '
+            type == "array" and length > 0 and length <= 32 and
+            all(.[];
+              type == "object" and
+              ((keys_unsorted | sort) == ["template"]) and
+              (.template | type == "string" and test("^[a-z0-9][a-z0-9-]{0,63}$"))
+            )' build-matrix.json > /dev/null; then
+            echo "::error::matrix failed schema validation"; cat build-matrix.json; exit 1
+          fi
+          jq -r '.[] | "  \(.template)"' build-matrix.json
+          echo "matrix=$(jq -c '.' build-matrix.json)" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.template }}
+    needs: gate-check
+    runs-on: ubuntu-latest
+    environment: Build-Actor
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.gate-check.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+        with:
+          cosign-release: v2.6.1
+
+      - name: Install pinned tools
+        run: sudo BIN=/usr/local/bin ./scripts/install-tools.sh syft grype devcontainer-cli
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build, test, scan and sign evidence
+        env:
+          TEMPLATE: ${{ matrix.template }}
+          HEAD_SHA: ${{ github.sha }}
+          BUILD_RUN_ID: ${{ github.run_id }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: ./scripts/build-template.sh
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: evidence-${{ matrix.template }}
+          path: evidence/
+          if-no-files-found: error
+
+  review:
+    name: Review ${{ matrix.template }}
+    needs: [gate-check, build]
+    runs-on: ubuntu-latest
+    # Required Reviewers on this environment are the human gate on the release.
+    # The review key is unreachable until a named person approves, so a
+    # Review-Actor signature is itself proof that approval happened.
+    environment: Review-Actor
+    permissions:
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.gate-check.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+        with:
+          cosign-release: v2.6.1
+
+      - name: Install pinned tools
+        run: sudo BIN=/usr/local/bin ./scripts/install-tools.sh opa
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: evidence-${{ matrix.template }}
+          path: evidence/
+
+      - name: Verify build evidence and evaluate policy
+        env:
+          TEMPLATE: ${{ matrix.template }}
+          HEAD_SHA: ${{ github.sha }}
+          BUILD_RUN_ID: ${{ github.run_id }}
+          REVIEW_RUN_ID: ${{ github.run_id }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: ./scripts/review-template.sh
+
+      - name: Fail the release on a FAIL verdict
+        # Unlike PR review, where a FAIL is reported and the PR simply does not
+        # merge, a FAIL here must stop the publish. The verdict is signed and
+        # uploaded first, so the evidence of the refusal survives.
+        run: |
+          set -euo pipefail
+          v=$(jq -r '.verdict' review-verdict.json)
+          [ "$v" = "PASS" ] || { echo "::error::${{ matrix.template }} verdict is ${v}; refusing to publish"; exit 1; }
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: review-${{ matrix.template }}
+          path: |
+            review-verdict.json
+            review-verdict.json.sig
+          if-no-files-found: warn
+
+  publish:
+    name: Publish
+    needs: [gate-check, build, review]
+    runs-on: ubuntu-latest
+    environment: Release-Actor
+    permissions:
+      contents: read
+      packages: write
+      id-token: write   # required for the keyless Rekor pass
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+        with:
+          cosign-release: v2.6.1
+
+      - uses: imjasonh/setup-crane@31b88efe9de28ae0ffa220711af4b60be9435f6e # v0.4
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: evidence-*
+          path: staged/
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: review-*
+          path: verdicts/
+
+      - name: Verify every review verdict before publishing anything
+        # The release actor trusts the review actor's signature, not the review
+        # job's exit code. A verdict that was not signed by the review key, or
+        # that says anything other than PASS, stops the whole release -- before
+        # a single template is pushed, so a partial publish is not possible.
+        env:
+          MATRIX: ${{ needs.gate-check.outputs.matrix }}
+        run: ./scripts/verify-verdicts.sh
+
+      - name: Publish templates
+        uses: devcontainers/action@1082abd5d2bf3a11abccba70eef98df068277772 # v1
+        with:
+          publish-templates: "true"
+          base-path-to-templates: "./src"
+          generate-docs: "true"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attach attestations and dual-sign
+        env:
+          MATRIX: ${{ needs.gate-check.outputs.matrix }}
+          VERSION: ${{ needs.gate-check.outputs.version }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: ./scripts/publish-attest.sh
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: release-evidence
+          path: staged/
+          retention-days: 90
+
+  github-release:
+    name: GitHub Release
+    needs: [gate-check, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # the only job that needs it
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: release-evidence
+          path: staged/
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: review-*
+          path: verdicts/
+
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          generate_release_notes: true
+          files: |
+            staged/*/*/sbom.json
+            staged/*/*/sbom.json.sig
+            staged/*/*/cve-report.json
+            staged/*/*/cve-report.json.sig
+            staged/*/*/scan-input.json
+            staged/*/*/scan-input.json.sig
+            staged/*/*/provenance.json
+            staged/*/*/provenance.json.sig
+            staged/*/*/checksums.sha256
+            staged/*/*/checksums.sha256.sig
+            staged/*/*/evidence-manifest.json
+            staged/*/*/evidence-manifest.json.sig
+            verdicts/*/review-verdict.json
+            verdicts/*/review-verdict.json.sig
+
+  summary:
+    name: Release Summary
+    needs: [gate-check, build, review, publish, github-release]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report
+        env:
+          VERSION: ${{ needs.gate-check.outputs.version }}
+          BUILD: ${{ needs.build.result }}
+          REVIEW: ${{ needs.review.result }}
+          PUBLISH: ${{ needs.publish.result }}
+          GH_RELEASE: ${{ needs.github-release.result }}
+        run: |
+          set -euo pipefail
+          {
+            echo "## Release ${VERSION}"
+            echo
+            echo "| Stage | Actor | Result |"
+            echo "|---|---|---|"
+            echo "| Build & scan | Build-Actor | ${BUILD} |"
+            echo "| Verify & grade | Review-Actor | ${REVIEW} |"
+            echo "| Publish & attest | Release-Actor | ${PUBLISH} |"
+            echo "| GitHub release | — | ${GH_RELEASE} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for r in "$BUILD" "$REVIEW" "$PUBLISH" "$GH_RELEASE"; do
+            case "$r" in success|skipped) : ;; *) echo "::error::release stage did not succeed (${r})"; exit 1 ;; esac
+          done

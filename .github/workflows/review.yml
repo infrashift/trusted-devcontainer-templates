@@ -1,0 +1,264 @@
+name: Review Attestations
+
+# Runs on workflow_run because it needs the Review-Actor environment, whose
+# Required Reviewers gate IS the human approval in this system. The review key
+# is physically unreachable until a named human approves the deployment, so a
+# Review-Actor signature is itself proof that approval happened -- no separate
+# "human signing" step that someone has to remember to run by hand.
+#
+# A workflow_run workflow cannot report a check against the PR, which is exactly
+# why pr-gate.yml seeds the `review/cve-policy` commit status and the summary
+# job below resolves it.
+
+on:
+  workflow_run:
+    workflows: ["CI Build & Audit"]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  gate-check:
+    name: Resolve PR
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
+    outputs:
+      pr_number: ${{ steps.resolve.outputs.pr_number }}
+      head_sha: ${{ steps.resolve.outputs.head_sha }}
+    steps:
+      - name: Resolve PR number and head SHA
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          PR_JSON: ${{ toJSON(github.event.workflow_run.pull_requests) }}
+        run: |
+          set -euo pipefail
+          PR=$(jq -r '.[0].number // empty' <<<"$PR_JSON")
+          if [[ -z "$PR" ]]; then
+            # workflow_run.pull_requests is empty when the PR merged before the
+            # build finished, and in other cases GitHub does not document.
+            echo "workflow_run.pull_requests was empty; falling back to the commits API"
+            PR=$(gh api "/repos/${REPO}/commits/${HEAD_SHA}/pulls" --jq '.[0].number // empty' || true)
+          fi
+          # Guard against a captured error payload reaching a run: block.
+          [[ "$PR" =~ ^[0-9]+$ ]] || { echo "::error::could not resolve a PR number for ${HEAD_SHA}"; exit 1; }
+          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::malformed head sha"; exit 1; }
+          echo "pr_number=$PR" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "resolved PR #${PR} @ ${HEAD_SHA}"
+
+  matrix-setup:
+    name: Load Matrix
+    needs: gate-check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      matrix: ${{ steps.load.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.gate-check.outputs.head_sha }}
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: build-matrix
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Re-validate the matrix at the trust boundary
+        id: load
+        run: |
+          set -euo pipefail
+          # BYTE-IDENTICAL to the guard in build.yml. This artifact crosses a
+          # trust boundary: it was produced by a run whose workflow definition
+          # came from the PR head, and its values land in run: blocks here and
+          # in release.yml.
+          if ! jq -e '
+            type == "array" and length > 0 and length <= 32 and
+            all(.[];
+              type == "object" and
+              ((keys_unsorted | sort) == ["template"]) and
+              (.template | type == "string" and test("^[a-z0-9][a-z0-9-]{0,63}$"))
+            )' build-matrix.json > /dev/null; then
+            echo "::error::build-matrix.json failed schema validation at the review boundary"
+            cat build-matrix.json
+            exit 1
+          fi
+          echo "matrix=$(jq -c '.' build-matrix.json)" >> "$GITHUB_OUTPUT"
+          jq -r '.[] | "  \(.template)"' build-matrix.json
+
+  review:
+    name: Review ${{ matrix.template }}
+    needs: [gate-check, matrix-setup]
+    runs-on: ubuntu-latest
+    environment: Review-Actor
+    permissions:
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.matrix-setup.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ needs.gate-check.outputs.head_sha }}
+
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+        with:
+          cosign-release: v2.6.1
+
+      - name: Install pinned tools
+        run: sudo BIN=/usr/local/bin ./scripts/install-tools.sh opa
+
+      - name: Download build evidence
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: evidence-${{ matrix.template }}
+          path: evidence/
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify build evidence and evaluate policy
+        env:
+          TEMPLATE: ${{ matrix.template }}
+          HEAD_SHA: ${{ needs.gate-check.outputs.head_sha }}
+          PR_NUM: ${{ needs.gate-check.outputs.pr_number }}
+          BUILD_RUN_ID: ${{ github.event.workflow_run.id }}
+          REVIEW_RUN_ID: ${{ github.run_id }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: ./scripts/review-template.sh
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: review-${{ matrix.template }}
+          path: |
+            review-verdict.json
+            review-verdict.json.sig
+          if-no-files-found: warn
+
+  summary:
+    name: Review Summary
+    needs: [gate-check, review]
+    if: always() && needs.gate-check.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      statuses: write
+      actions: read
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: review-*
+          path: verdicts/
+          merge-multiple: false
+        continue-on-error: true
+
+      - name: Build the report
+        id: report
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          FILES=(verdicts/*/review-verdict.json)
+
+          {
+            echo "## Trusted DevContainer Templates — review"
+            echo
+            if [[ ${#FILES[@]} -eq 0 ]]; then
+              echo "No verdicts were produced. The review job did not complete."
+              echo "overall=error" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "| Template | Verdict | Blocking | Waived | Recorded |"
+            echo "|---|---|---:|---:|---:|"
+          } > /tmp/report.md
+
+          OVERALL=success
+          for f in "${FILES[@]}"; do
+            jq -r '"| `\(.template)` | **\(.verdict)** | \(.counts.blocking) | \(.counts.waived) | \(.counts.recorded) |"' "$f" >> /tmp/report.md
+            [[ "$(jq -r '.verdict' "$f")" == "PASS" ]] || OVERALL=failure
+          done
+
+          # Blocking findings, per template.
+          {
+            echo
+            echo "<details><summary>Blocking findings</summary>"
+            echo
+            for f in "${FILES[@]}"; do
+              t=$(jq -r '.template' "$f")
+              n=$(jq '.blocking | length' "$f")
+              [[ "$n" -eq 0 ]] && continue
+              echo "**\`${t}\`**"
+              echo
+              jq -r '.blocking[] | "- **\(.id)** \(.severity) in `\(.package)` (fix: \(.fix_state))"' "$f"
+              echo
+            done
+            echo "</details>"
+          } >> /tmp/report.md
+
+          # Waived CVEs get their own table: a waiver must be visible on the PR
+          # it applies to, not buried in a file nobody opens.
+          WAIVED_ROWS=$(for f in "${FILES[@]}"; do
+            jq -r '.template as $t | .exceptions_applied[]?
+                   | "| `\($t)` | \(.cve) | \(.waiver_id) | \(.expires) | \(.owner) |"' "$f"
+          done | sort -u)
+          if [[ -n "$WAIVED_ROWS" ]]; then
+            {
+              echo
+              echo "### Waived CVEs"
+              echo
+              echo "| Template | CVE | Exception | Expires | Owner |"
+              echo "|---|---|---|---|---|"
+              echo "$WAIVED_ROWS"
+              echo
+              echo "_A waived finding is an accepted risk with an owner and a date, not a silenced one._"
+            } >> /tmp/report.md
+          fi
+
+          cat /tmp/report.md >> "$GITHUB_STEP_SUMMARY"
+          echo "overall=$OVERALL" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on the PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ needs.gate-check.outputs.pr_number }}
+        run: gh pr comment "$PR" --repo "$REPO" --body-file /tmp/report.md
+        continue-on-error: true
+
+      - name: Resolve review/cve-policy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ needs.gate-check.outputs.head_sha }}
+          REVIEW_RESULT: ${{ needs.review.result }}
+          OVERALL: ${{ steps.report.outputs.overall }}
+        run: |
+          set -euo pipefail
+          if [[ "$REVIEW_RESULT" != "success" ]]; then
+            STATE=error; DESC="Review job did not complete."
+          elif [[ "$OVERALL" == "success" ]]; then
+            STATE=success; DESC="All templates passed the CVE and integrity policy."
+          else
+            STATE=failure; DESC="One or more templates failed policy."
+          fi
+          # Context string must match pr-gate.yml EXACTLY and must match the
+          # required status check on the main ruleset. Three places, one string.
+          gh api -X POST "/repos/${REPO}/statuses/${SHA}" \
+            -f state="$STATE" \
+            -f context="review/cve-policy" \
+            -f description="$DESC" \
+            -f target_url="${GITHUB_SERVER_URL}/${REPO}/actions/runs/${GITHUB_RUN_ID}"

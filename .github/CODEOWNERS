@@ -1,0 +1,51 @@
+# Ownership is the last line of defence when a change is textually innocuous but
+# semantically a policy change. Pinning a feature by digest, widening a CVE
+# threshold, or moving a tool version in tools.lock all look like routine edits
+# and are all trust decisions.
+#
+# NOTE: two teams on one line means EITHER may approve, not both. GitHub has no
+# "one approval from each team" primitive. Genuine dual control comes from
+# Required Reviewers on the Review-Actor and Release-Actor environments, not
+# from this file.
+#
+# All three teams must exist and have repository access, or CODEOWNERS matches
+# nothing and "require review from Code Owners" becomes a silent no-op. Verify:
+#   gh api orgs/infrashift/teams/<slug> --jq .slug
+
+*                                   @infrashift/platform-engineers
+
+# --- Trust decisions -------------------------------------------------------
+# The policy that decides whether a release may proceed, and the keys used to
+# verify the evidence it decides on.
+/.github/pdp/                       @infrashift/security-admins
+/.github/pdp/policies.rego          @infrashift/security-admins
+/.github/pdp/policies_test.rego     @infrashift/security-admins
+/.github/pdp/public-keys/           @infrashift/security-admins
+
+# Tool versions and their checksums. These binaries run in the job that holds
+# the signing key, so a version bump here is a supply-chain decision.
+/tools.lock                         @infrashift/security-admins @infrashift/devops-leads
+/scripts/install-tools.sh           @infrashift/security-admins @infrashift/devops-leads
+
+# --- Pipeline engines ------------------------------------------------------
+/.github/workflows/                 @infrashift/devops-leads @infrashift/security-admins
+/scripts/                           @infrashift/devops-leads
+
+# --- What ships inside a template ------------------------------------------
+# The shared Containerfile is copied into every template, so one edit changes
+# all five published images.
+/shared/                            @infrashift/devops-leads @infrashift/security-admins
+# Feature references and their pins decide what code runs in a developer's
+# container.
+/src/                               @infrashift/devops-leads @infrashift/security-admins
+
+# --- Repository security posture -------------------------------------------
+/.github/CODEOWNERS                 @infrashift/security-admins
+/.gitleaks.toml                     @infrashift/security-admins
+/.gitignore                         @infrashift/security-admins
+/SETUP-ENVIRONMENTS.md              @infrashift/security-admins
+
+# --- Documentation ---------------------------------------------------------
+/docs/                              @infrashift/platform-engineers
+/README.md                          @infrashift/platform-engineers
+/TODO.md                            @infrashift/platform-engineers

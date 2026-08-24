@@ -87,7 +87,7 @@ container runs as `uid=1001(dev)`, and the build context is now 2B rather than t
 
 ### ~~5. Makefile test path does not match devcontainer mount~~ RESOLVED
 
-Fixed properly. `devcontainer up --workspace-folder src/<t>` mounts **only** `src/<t>`, so the repo-level `test/` directory was unreachable from inside a template container under *any* relative path — the earlier `../../test/...` fix did not actually work either. All three call sites (`Makefile`, `test-pr.yaml`, `release.yaml`) now bind-mount `test/` to `/tmp/tdt-test` explicitly, rather than changing the published templates.
+Fixed properly. `devcontainer up --workspace-folder src/<t>` mounts **only** `src/<t>`, so the repo-level `test/` directory was unreachable from inside a template container under *any* relative path — the earlier `../../test/...` fix did not actually work either. All three call sites (`Makefile`, `test-pr.yaml`, `release.yaml`) now bind-mount `test/` to `/tmp/tdt-test` explicitly, rather than changing the published templates. Those two workflows were later replaced in the supply-chain hardening; the bind-mount now lives in `scripts/build-template.sh`, which both `build.yml` and `release.yml` call.
 
 ### ~~6. Shared Containerfile includes sudo as a workaround~~ RESOLVED
 
@@ -99,7 +99,7 @@ Fixed — added `make clean-containers`. Run it before `make test` when features
 
 ### ~~8. Root `.devcontainer/Containerfile` escaped the drift check~~ RESOLVED
 
-Both `make check-sync` and `sync-containerfile.yaml` globbed only `src/*/.devcontainer/Containerfile`, leaving this repo's own `.devcontainer/Containerfile` unchecked — and it had already drifted by a blank line. The managed set is now enumerated once as `MANAGED_CONTAINERFILES` in the `Makefile` and covers all seven files. See ADR-002.
+Both `make check-sync` and `sync-containerfile.yaml` (since retired — the check now runs inside `pr-gate.yml`'s `repo-gate` job) globbed only `src/*/.devcontainer/Containerfile`, leaving this repo's own `.devcontainer/Containerfile` unchecked — and it had already drifted by a blank line. The managed set is now enumerated once as `MANAGED_CONTAINERFILES` in the `Makefile` and covers all seven files. See ADR-002.
 
 ### ~~10. OPA policy uses Rego syntax that OPA 1.x rejects~~ RESOLVED
 
@@ -129,16 +129,75 @@ Three things guard it now:
 - **The gate counts with `jq 'length'`** instead of comparing against the literal `[]`. A string
   compare treats any unexpected shape as a violation; counting is correct for both shapes, so this
   alone would have kept clean releases passing.
-- **A `policy` job in `test-pr.yaml`**, which runs `opa check --strict` and `opa test` on every PR.
-  It does not depend on `detect-changes`, and `.github/pdp/**` and `.github/workflows/**` are now
-  trigger paths — previously nothing ran on a policy change, and the gate was first exercised at the
-  moment it was trusted to block a release. `make check-policy` runs the same checks locally and is a
-  prerequisite of `make test`.
+- **A policy job on every PR**, running `opa check --strict` and `opa test`. Previously nothing ran
+  on a policy change, and the gate was first exercised at the moment it was trusted to block a
+  release. This is now the `repo-gate` job in `pr-gate.yml`, which is deliberately not path-filtered
+  so it reports on every PR. `make check-policy` runs the same checks locally, plus a formatting
+  check and an 85% coverage floor.
 
 OPA is also pinned: `v1.19.1`, downloaded from the GitHub release and verified against the sha256 the
 release publishes (`c9f985ce…c0839`), rather than tracking `downloads/latest`. The checksum was
 confirmed against the actual 60,535,858-byte asset, and that binary runs the policy tests green. A
 gate's verdict should not change because a new OPA shipped between two runs.
+
+### ~~17. Workflows were not aligned with the org's hardened reference~~ RESOLVED
+
+`infrashift/trusted-service-containers` is the most complete supply-chain pipeline in the org, and
+its own `tools.lock` names the exact failure this repo had:
+
+> *"The reference repo installed syft, grype and opa from unpinned `main` / `latest` URLs into the
+> very job that holds the build signing key — a remote code execution path straight into the most
+> privileged step in the pipeline."*
+
+`release.yaml`'s `scan` job set `COSIGN_PRIVATE_KEY` and `COSIGN_PASSWORD`, then installed the
+devcontainer CLI unpinned from npm, syft via `anchore/sbom-action/download-syft@v0`, grype via
+`anchore/scan-action/download-grype@v6`, and checked out with `actions/checkout@v4`. Thirteen
+mutable refs in total, several of them running alongside the signing key.
+
+**Pinning.** `tools.lock` pins every tool; `scripts/install-tools.sh` installs them and verifies
+sha256 against a per-version, per-arch table, failing by name on an unpinned pair rather than
+skipping verification. The two anchore actions are gone entirely — syft and grype now come from their
+own pinned installers. Every remaining action is pinned to a full commit SHA with a `# vN` comment,
+and `bun-version: latest` is pinned too.
+
+**Least privilege.** Every workflow is `permissions: {}` at the top with per-job grants. Previously
+`release.yaml` granted `contents: write`, `packages: write` and `id-token: write` to all three jobs,
+including the one that only ran tests. `contents: write` now exists in exactly one job.
+
+**Three actors.** `Build-Actor` builds and signs evidence; `Review-Actor` verifies that signature
+against the build public key, evaluates the policy and signs a verdict; `Release-Actor` verifies the
+verdict against the review public key before publishing anything. Required Reviewers on the review
+environment are the human gate — the review key is unreachable until a person approves, so a
+Review-Actor signature *is* proof of approval, with no separate step anyone has to remember.
+
+The reference promotes on PR merge, where the reviewed and promoted commits are the same SHA. This
+repo releases on a version tag, and a squash merge means the commit on `main` is not the PR head that
+was graded. So the chain re-runs against the tagged commit rather than matching a verdict about
+different bytes to it.
+
+**Secret scanning.** `.gitleaks.toml` with `[extend] useDefault = true` plus five repo-specific
+rules, guarded three ways: a size and content assertion before the scan, `GITLEAKS_CONFIG_EMPTY` and
+`GITLEAKS_DEFAULTS_DISABLED` in the policy reading the *measured* byte count, and `SECRET_DETECTED`
+over real findings. This matters concretely: an encrypted `cosign.key` sits untracked in the working
+tree. History is clean — verified — and the scanner fires on the file, so the config is provably not
+vacuous.
+
+**CVE policy.** The gate now distinguishes fix state: Critical blocks, High *with a fix* blocks, High
+*with no fix available* is recorded. ADR-004's original rule was written against UBI9; Fedora 43
+publishes advisories faster, so blocking on unfixable Highs gates releases on a distro's backport
+schedule rather than on anything this repo controls. Waivers live in `.github/pdp/exceptions.yaml`,
+require an owner, a justification and an expiry, are evaluated against `evaluated_at` rather than a
+clock inside the policy, and surface in the PR comment and the signed verdict — waived, never hidden.
+
+**Guards against the guards.** `scripts/lint-workflows.sh` catches unpinned actions, missing version
+comments, workflow-level write grants, a path-filtered PR gate, divergent required-status-context
+strings, and untrusted `${{ github.event.* }}` interpolation inside `run:` blocks.
+`scripts/check-no-orphan-rego.sh` enforces one authoritative policy file. The policy suite is 38
+tests at 99% coverage with an 85% floor. `make check` runs all of it locally.
+
+One bug found while building this, worth recording because it is the same shape as #10: the repo
+gate's unpinned-action grep exited 1 when *nothing* was unpinned, and under `set -o pipefail` that
+aborted the gate at exactly the moment the repository was clean. Fixed with an explicit `|| true`.
 
 ---
 
@@ -174,3 +233,23 @@ checksums file), and an unpinned version/arch pair fails by name instead of skip
 arm64 now fails **loudly** where a digest is missing rather than producing a broken container — but
 that is not the same as arm64 working. Still to do: run `devcontainer build --platform linux/arm64`
 against each template and fill in whatever arm64 digests turn out to be missing.
+
+### 18. The three-actor model needs GitHub-side setup that only a human can do
+
+The workflows, scripts, policy and runbook are in place, but `release.yml` fails closed until a
+person completes `SETUP-ENVIRONMENTS.md`:
+
+1. Generate three cosign keypairs in `/dev/shm` and commit `build.pub`, `review.pub` and
+   `release.pub` under `.github/pdp/public-keys/`. `scripts/review-template.sh` and
+   `scripts/verify-verdicts.sh` both refuse to run without them, pointing at the runbook.
+2. Create the `Build-Actor`, `Review-Actor` and `Release-Actor` environments, each with its own
+   `COSIGN_PRIVATE_KEY` and `COSIGN_PASSWORD`.
+3. Add Required Reviewers to `Review-Actor` and `Release-Actor`, with **Prevent self-review** on.
+   Without it the PR author can approve their own release and the second actor buys nothing.
+4. Create the three teams CODEOWNERS names, or those paths match nothing and "require review from
+   Code Owners" is a silent no-op.
+5. Set required status checks to `repo-gate`, `build/gate` and `review/cve-policy` — and **remove**
+   the retired `Sync Containerfile Check` context, which nothing publishes any more. A required
+   context that stops reporting blocks every PR forever.
+
+Also move `cosign.key` out of the working tree once the three keypairs exist.
