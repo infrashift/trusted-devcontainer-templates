@@ -33,10 +33,19 @@ waivers:
   # These are NOT waived because they are inconvenient. Everything else the gate
   # reported traces to feature versions this org controls, and those are being
   # fixed rather than waived -- see TODO 11.
+  #
+  # SCOPING. Both entries carry `locations`, and that is load-bearing. The same
+  # stdlib and golang.org/x/* CVE ids appear inside EVERY Go binary in the image.
+  # Without a location scope these entries also suppressed 14 real findings in
+  # syft and grype -- artifacts they say nothing about, and whose versions this
+  # org does control. An exception must waive what its justification describes
+  # and nothing else.
   # --------------------------------------------------------------------------
 
   - id: EXC-2026-0001
     templates: []          # every template installs git-lfs
+    locations:             # ONLY this binary -- see the note on scoping below
+      - /usr/bin/git-lfs
     issued: "2026-08-24T00:00:00Z"
     expires: "2026-11-22T00:00:00Z"
     owner: "@ryancraig"
@@ -88,6 +97,8 @@ waivers:
 
   - id: EXC-2026-0002
     templates: []          # fzf ships in the base image, so it is in all of them
+    locations:
+      - /usr/bin/fzf
     issued: "2026-08-24T00:00:00Z"
     expires: "2026-11-22T00:00:00Z"
     owner: "@ryancraig"

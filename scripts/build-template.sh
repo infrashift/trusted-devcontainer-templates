@@ -68,7 +68,12 @@ jq --arg now "$EVALUATED_AT" --arg t "$TEMPLATE" '{
     # grype omits fixState entirely when it has nothing to say. Defaulting to
     # "unknown" keeps the field inside the policy'"'"'s closed enum instead of
     # producing a null that would trip FIX_STATE_UNKNOWN on every finding.
-    fix_state: (.vulnerability.fix.state // "unknown")
+    fix_state: (.vulnerability.fix.state // "unknown"),
+    # WHERE the finding lives, so an exception can be scoped to the artifact its
+    # justification actually describes. Without this the policy can only match on
+    # CVE id, and a stdlib CVE waived for one Go binary is silently waived in
+    # every Go binary -- which is exactly what EXC-2026-0001 was doing.
+    location:  ((.artifact.locations // [])[0].path // "")
   } ]
 }' "${DIR}/cve-report.json" > "${DIR}/scan-input.json"
 

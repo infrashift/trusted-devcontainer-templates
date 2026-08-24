@@ -343,6 +343,8 @@ matching_waivers(m) := sort([w |
 	some w in waivers
 	object.get(m, "id", "<no-id>") in waiver_cves(w)
 	waiver_scope_matches(w)
+	waiver_scope_field_matches(w, m, "packages", "package")
+	waiver_scope_field_matches(w, m, "locations", "location")
 	is_string(object.get(w, "id", null))
 	is_string(object.get(w, "owner", null))
 	is_string(object.get(w, "justification", null))
@@ -355,6 +357,35 @@ waiver_for(m) := w if {
 	ws := matching_waivers(m)
 	count(ws) > 0
 	w := ws[0]
+}
+
+# --- Scoping -----------------------------------------------------------------
+# A waiver must suppress what its justification describes and nothing else.
+# Matching on CVE id alone meant an entry written for 38 findings in
+# /usr/bin/git-lfs also silently waived the same stdlib CVE ids inside syft and
+# grype -- 14 real findings hidden by an exception that never mentions them.
+#
+# `packages` and `locations` are OPTIONAL and each fails CLOSED: omit one and
+# the waiver applies regardless of it; name it and the finding must match. A
+# scoped waiver therefore cannot match a finding whose field is absent or empty,
+# so evidence produced before `location` existed satisfies no location-scoped
+# entry rather than silently satisfying every one.
+
+waiver_scope_field_matches(w, _, field, _) if {
+	not object.get(w, field, null)
+}
+
+waiver_scope_field_matches(w, _, field, _) if {
+	vs := object.get(w, field, [])
+	count(vs) == 0
+}
+
+waiver_scope_field_matches(w, m, field, key) if {
+	vs := object.get(w, field, [])
+	count(vs) > 0
+	v := object.get(m, key, "")
+	v != ""
+	v in vs
 }
 
 # A waiver either names templates explicitly or applies to all of them. An

@@ -420,3 +420,88 @@ test_expired_overlap_does_not_shadow_a_valid_waiver if {
 	d.verdict == "PASS"
 	d.counts.waived == 1
 }
+
+# ===========================================================================
+# Waiver scoping
+# ===========================================================================
+#
+# The register matched on CVE id alone, so an entry justified as "38 findings in
+# /usr/bin/git-lfs" also waived the same stdlib CVE ids inside syft and grype --
+# 14 real findings, in artifacts the justification never mentions, whose
+# versions this org actually controls. Found by comparing what the register
+# claimed against where the waived CVEs really lived.
+
+crit_at(loc) := {
+	"id": "CVE-2026-0001",
+	"severity": "Critical",
+	"package": "golang.org/x/crypto",
+	"fix_state": "fixed",
+	"location": loc,
+}
+
+scoped_waiver := {
+	"id": "EXC-SCOPED",
+	"cves": ["CVE-2026-0001"],
+	"locations": ["/usr/bin/git-lfs"],
+	"expires": "2026-12-01T00:00:00Z",
+	"owner": "@ryancraig",
+	"justification": "Distro-packaged binary; only the packager can rebuild it against a patched module.",
+}
+
+test_location_scoped_waiver_applies_at_that_location if {
+	d := pdp.decision with input as scan([crit_at("/usr/bin/git-lfs")]) with data.waivers as [scoped_waiver]
+	d.verdict == "PASS"
+	d.counts.waived == 1
+}
+
+# The finding this fix exists for: same CVE, different binary, must still block.
+test_location_scoped_waiver_does_not_leak_to_another_binary if {
+	d := pdp.decision with input as scan([crit_at("/home/dev/.local/bin/syft")]) with data.waivers as [scoped_waiver]
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+	d.counts.waived == 0
+}
+
+# Fail closed: evidence produced before `location` existed must not satisfy a
+# location-scoped waiver just because the field is missing.
+test_location_scoped_waiver_does_not_match_a_finding_without_a_location if {
+	no_loc := object.remove(crit_at(""), {"location"})
+	d := pdp.decision with input as scan([no_loc]) with data.waivers as [scoped_waiver]
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+}
+
+test_empty_location_is_treated_as_absent if {
+	d := pdp.decision with input as scan([crit_at("")]) with data.waivers as [scoped_waiver]
+	d.verdict == "FAIL"
+}
+
+# An unscoped waiver keeps applying everywhere, so scoping is opt-in.
+test_unscoped_waiver_still_applies_regardless_of_location if {
+	unscoped := object.remove(scoped_waiver, {"locations"})
+	d := pdp.decision with input as scan([crit_at("/home/dev/.local/bin/syft")]) with data.waivers as [unscoped]
+	d.verdict == "PASS"
+}
+
+# --- package scoping -------------------------------------------------------
+
+pkg_waiver := object.union(object.remove(scoped_waiver, {"locations"}), {"packages": ["golang.org/x/crypto"]})
+
+test_package_scoped_waiver_applies_to_that_package if {
+	d := pdp.decision with input as scan([crit_at("/usr/bin/git-lfs")]) with data.waivers as [pkg_waiver]
+	d.verdict == "PASS"
+}
+
+test_package_scoped_waiver_does_not_cover_another_package if {
+	other := object.union(crit_at("/usr/bin/git-lfs"), {"package": "google.golang.org/grpc"})
+	d := pdp.decision with input as scan([other]) with data.waivers as [pkg_waiver]
+	d.verdict == "FAIL"
+}
+
+# Both dimensions must hold, not either.
+test_both_scopes_must_match if {
+	both := object.union(pkg_waiver, {"locations": ["/usr/bin/git-lfs"]})
+	right_pkg_wrong_loc := object.union(crit_at("/home/dev/.local/bin/syft"), {"package": "golang.org/x/crypto"})
+	d := pdp.decision with input as scan([right_pkg_wrong_loc]) with data.waivers as [both]
+	d.verdict == "FAIL"
+}
