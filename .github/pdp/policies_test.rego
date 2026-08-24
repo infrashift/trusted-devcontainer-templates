@@ -329,3 +329,287 @@ test_absent_register_waives_nothing if {
 	d := pdp.decision with input as scan([crit])
 	d.verdict == "FAIL"
 }
+
+# --- batched waivers -------------------------------------------------------
+
+batch_waiver := {
+	"id": "EXC-2026-0002",
+	"cves": ["CVE-2026-0001", "CVE-2026-0002"],
+	"expires": "2026-12-01T00:00:00Z",
+	"owner": "@ryancraig",
+	"justification": "Distro-packaged binary; only the packager can rebuild it against a patched module.",
+}
+
+test_batch_waiver_covers_every_listed_cve if {
+	d := pdp.decision with input as scan([crit, high_fixed]) with data.waivers as [batch_waiver]
+	d.verdict == "PASS"
+	d.counts.waived == 2
+	d.counts.blocking == 0
+}
+
+test_batch_waiver_does_not_cover_an_unlisted_cve if {
+	other := {"id": "CVE-2026-9999", "severity": "Critical", "package": "p", "fix_state": "fixed"}
+	d := pdp.decision with input as scan([other]) with data.waivers as [batch_waiver]
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+}
+
+# An empty `cves` list falls back to the single `cve` field. Documented here
+# because it is the surprising branch: `cves: []` reads like "waive nothing" but
+# a sibling `cve` still applies. The count(cs) > 0 guard in waiver_cves is what
+# makes this deliberate rather than accidental.
+test_empty_cves_list_falls_back_to_the_single_cve_field if {
+	empty := object.union(batch_waiver, {"cves": [], "cve": "CVE-2026-0001"})
+	d := pdp.decision with input as scan([crit]) with data.waivers as [empty]
+	d.verdict == "PASS"
+	d.counts.waived == 1
+}
+
+test_batch_waiver_still_expires if {
+	expired := object.union(batch_waiver, {"expires": "2026-01-01T00:00:00Z"})
+	d := pdp.decision with input as scan([crit, high_fixed]) with data.waivers as [expired]
+	d.verdict == "FAIL"
+	d.counts.blocking == 2
+}
+
+test_batch_waiver_still_needs_a_justification if {
+	bad := object.union(batch_waiver, {"justification": "too short"})
+	d := pdp.decision with input as scan([crit]) with data.waivers as [bad]
+	d.verdict == "FAIL"
+}
+
+# Two entries covering the same CVE is normal, not a mistake: a stdlib finding
+# appears in every Go binary, so a git-lfs waiver and an fzf waiver both name it.
+# Before matching_waivers existed this raised eval_conflict_error -- the policy
+# did not fail closed, it failed to evaluate, which the gate reports as a crash
+# rather than a verdict. Found by real scan data, not by the suite.
+overlapping_a := {
+	"id": "EXC-A",
+	"cves": ["CVE-2026-0001"],
+	"expires": "2026-12-01T00:00:00Z",
+	"owner": "@ryancraig",
+	"justification": "Distro-packaged binary A; only the packager can rebuild it.",
+}
+
+overlapping_b := {
+	"id": "EXC-B",
+	"cves": ["CVE-2026-0001"],
+	"expires": "2026-12-01T00:00:00Z",
+	"owner": "@ryancraig",
+	"justification": "Distro-packaged binary B, which shares the same stdlib finding.",
+}
+
+test_overlapping_waivers_resolve_deterministically if {
+	d := pdp.decision with input as scan([crit]) with data.waivers as [overlapping_a, overlapping_b]
+	d.verdict == "PASS"
+	d.counts.waived == 1
+	count(d.exceptions_applied) == 1
+}
+
+# Order in the register must not change the outcome.
+test_overlapping_waivers_are_order_independent if {
+	forward := pdp.decision with input as scan([crit]) with data.waivers as [overlapping_a, overlapping_b]
+	reverse := pdp.decision with input as scan([crit]) with data.waivers as [overlapping_b, overlapping_a]
+	forward == reverse
+}
+
+# An expired entry must not shadow a valid one covering the same CVE.
+test_expired_overlap_does_not_shadow_a_valid_waiver if {
+	expired := object.union(overlapping_a, {"expires": "2026-01-01T00:00:00Z"})
+	d := pdp.decision with input as scan([crit]) with data.waivers as [expired, overlapping_b]
+	d.verdict == "PASS"
+	d.counts.waived == 1
+}
+
+# ===========================================================================
+# Waiver scoping
+# ===========================================================================
+#
+# The register matched on CVE id alone, so an entry justified as "38 findings in
+# /usr/bin/git-lfs" also waived the same stdlib CVE ids inside syft and grype --
+# 14 real findings, in artifacts the justification never mentions, whose
+# versions this org actually controls. Found by comparing what the register
+# claimed against where the waived CVEs really lived.
+
+crit_at(loc) := {
+	"id": "CVE-2026-0001",
+	"severity": "Critical",
+	"package": "golang.org/x/crypto",
+	"fix_state": "fixed",
+	"location": loc,
+}
+
+scoped_waiver := {
+	"id": "EXC-SCOPED",
+	"cves": ["CVE-2026-0001"],
+	"locations": ["/usr/bin/git-lfs"],
+	"expires": "2026-12-01T00:00:00Z",
+	"owner": "@ryancraig",
+	"justification": "Distro-packaged binary; only the packager can rebuild it against a patched module.",
+}
+
+test_location_scoped_waiver_applies_at_that_location if {
+	d := pdp.decision with input as scan([crit_at("/usr/bin/git-lfs")]) with data.waivers as [scoped_waiver]
+	d.verdict == "PASS"
+	d.counts.waived == 1
+}
+
+# The finding this fix exists for: same CVE, different binary, must still block.
+test_location_scoped_waiver_does_not_leak_to_another_binary if {
+	d := pdp.decision with input as scan([crit_at("/home/dev/.local/bin/syft")]) with data.waivers as [scoped_waiver]
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+	d.counts.waived == 0
+}
+
+# Fail closed: evidence produced before `location` existed must not satisfy a
+# location-scoped waiver just because the field is missing.
+test_location_scoped_waiver_does_not_match_a_finding_without_a_location if {
+	no_loc := object.remove(crit_at(""), {"location"})
+	d := pdp.decision with input as scan([no_loc]) with data.waivers as [scoped_waiver]
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+}
+
+test_empty_location_is_treated_as_absent if {
+	d := pdp.decision with input as scan([crit_at("")]) with data.waivers as [scoped_waiver]
+	d.verdict == "FAIL"
+}
+
+# An unscoped waiver keeps applying everywhere, so scoping is opt-in.
+test_unscoped_waiver_still_applies_regardless_of_location if {
+	unscoped := object.remove(scoped_waiver, {"locations"})
+	d := pdp.decision with input as scan([crit_at("/home/dev/.local/bin/syft")]) with data.waivers as [unscoped]
+	d.verdict == "PASS"
+}
+
+# --- package scoping -------------------------------------------------------
+
+pkg_waiver := object.union(object.remove(scoped_waiver, {"locations"}), {"packages": ["golang.org/x/crypto"]})
+
+test_package_scoped_waiver_applies_to_that_package if {
+	d := pdp.decision with input as scan([crit_at("/usr/bin/git-lfs")]) with data.waivers as [pkg_waiver]
+	d.verdict == "PASS"
+}
+
+test_package_scoped_waiver_does_not_cover_another_package if {
+	other := object.union(crit_at("/usr/bin/git-lfs"), {"package": "google.golang.org/grpc"})
+	d := pdp.decision with input as scan([other]) with data.waivers as [pkg_waiver]
+	d.verdict == "FAIL"
+}
+
+# Both dimensions must hold, not either.
+test_both_scopes_must_match if {
+	both := object.union(pkg_waiver, {"locations": ["/usr/bin/git-lfs"]})
+	right_pkg_wrong_loc := object.union(crit_at("/home/dev/.local/bin/syft"), {"package": "golang.org/x/crypto"})
+	d := pdp.decision with input as scan([right_pkg_wrong_loc]) with data.waivers as [both]
+	d.verdict == "FAIL"
+}
+
+# ===========================================================================
+# Remediation: vendored vs direct
+# ===========================================================================
+#
+# A High with an available fix blocks because a fix implies action is possible.
+# That is true when the finding names the artifact we install, and false when it
+# names a dependency vendored inside one -- a stdlib finding in the grype binary
+# is fixed by nobody but Anchore. These cases came from real scans.
+
+high_typed(pkg, typ) := {
+	"id": "CVE-2026-7000",
+	"severity": "High",
+	"package": pkg,
+	"fix_state": "fixed",
+	"type": typ,
+	"location": "/somewhere",
+}
+
+crit_typed(typ) := object.union(high_typed("stdlib", typ), {"id": "CVE-2026-7001", "severity": "Critical"})
+
+# --- direct: still blocks ---------------------------------------------------
+
+test_high_in_an_rpm_still_blocks if {
+	d := pdp.decision with input as scan([high_typed("sqlite-libs", "rpm")])
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+}
+
+test_high_in_a_python_distribution_still_blocks if {
+	d := pdp.decision with input as scan([high_typed("ansible-core", "python")])
+	d.verdict == "FAIL"
+}
+
+test_high_in_an_installed_binary_still_blocks if {
+	d := pdp.decision with input as scan([high_typed("python", "binary")])
+	d.verdict == "FAIL"
+}
+
+# --- vendored: recorded, not blocking ---------------------------------------
+
+test_high_in_a_vendored_go_module_is_recorded if {
+	d := pdp.decision with input as scan([high_typed("stdlib", "go-module")])
+	d.verdict == "PASS"
+	d.counts.blocking == 0
+	d.counts.recorded == 1
+}
+
+test_high_in_a_vendored_npm_dependency_is_recorded if {
+	d := pdp.decision with input as scan([high_typed("minimatch", "npm")])
+	d.verdict == "PASS"
+	d.counts.recorded == 1
+}
+
+test_high_in_a_vendored_dotnet_dependency_is_recorded if {
+	d := pdp.decision with input as scan([high_typed("System.Security.Cryptography.Xml", "dotnet")])
+	d.verdict == "PASS"
+}
+
+# --- the carve-out must be earned, not granted by absence -------------------
+
+test_high_with_an_unknown_type_still_blocks if {
+	d := pdp.decision with input as scan([high_typed("mystery", "unknown")])
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+}
+
+test_high_with_no_type_field_still_blocks if {
+	no_type := object.remove(high_typed("mystery", "rpm"), {"type"})
+	d := pdp.decision with input as scan([no_type])
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+}
+
+# --- Critical is unaffected anywhere ----------------------------------------
+
+test_critical_in_a_vendored_module_still_blocks if {
+	d := pdp.decision with input as scan([crit_typed("go-module")])
+	d.verdict == "FAIL"
+	d.counts.blocking == 1
+}
+
+test_critical_in_a_vendored_npm_dependency_still_blocks if {
+	d := pdp.decision with input as scan([crit_typed("npm")])
+	d.verdict == "FAIL"
+}
+
+# A vendored Critical is still waivable -- that is the decision it deserves.
+test_vendored_critical_can_be_waived_explicitly if {
+	w := {
+		"id": "EXC-V",
+		"cves": ["CVE-2026-7001"],
+		"expires": "2026-12-01T00:00:00Z",
+		"owner": "@ryancraig",
+		"justification": "Vendored in a binary we cannot rebuild; accepted and dated deliberately.",
+	}
+	d := pdp.decision with input as scan([crit_typed("go-module")]) with data.waivers as [w]
+	d.verdict == "PASS"
+	d.counts.waived == 1
+}
+
+# An unfixable High was already recorded; being vendored must not change that.
+test_vendored_high_without_a_fix_is_still_recorded_once if {
+	nofix := object.union(high_typed("stdlib", "go-module"), {"fix_state": "not-fixed"})
+	d := pdp.decision with input as scan([nofix])
+	d.verdict == "PASS"
+	d.counts.recorded == 1
+}

@@ -21,17 +21,45 @@
 # make a red check go green. Before adding one, check whether a newer base
 # digest or feature release clears the finding instead.
 
-waivers: []
+waivers:
+  # --------------------------------------------------------------------------
+  # ONE entry, covering the Criticals vendored inside /usr/bin/git-lfs.
+  #
+  # This register was much larger. It listed 41 CVEs across two entries, because
+  # the gate blocked on every High-with-a-fix regardless of who could act on it.
+  # The remediation distinction in policies.rego now records a vendored High
+  # instead of blocking it, so those entries stopped doing anything and were
+  # removed -- including the fzf entry entirely. A waiver that suppresses nothing
+  # is not harmless: it reads as an accepted risk that someone reviewed, and it
+  # comes back for renewal every 90 days carrying no information.
+  #
+  # What remains is the case that genuinely needs a human decision. A CRITICAL
+  # blocks wherever it lives, vendored or not, because deciding to ship one is
+  # exactly the judgement a gate should force someone to make and sign.
+  # --------------------------------------------------------------------------
 
-# --- Example. Delete before the first real entry. --------------------------
-#
-# - id: EXC-2026-0001
-#   cve: CVE-0000-00001
-#   templates: [python, ansible-cue]   # omit or [] for all templates
-#   issued:  "2026-08-23T00:00:00Z"
-#   expires: "2026-11-21T00:00:00Z"    # 90 days is the maximum window
-#   owner:   "@ryancraig"
-#   ticket:  "https://github.com/infrashift/trusted-devcontainer-templates/issues/1"
-#   justification: >-
-#     Fedora has not yet published a rebuilt package. The affected code path is
-#     not reachable from any template entrypoint; tracked upstream in <link>.
+  - id: EXC-2026-0001
+    templates: []          # every template installs git-lfs
+    locations:             # this binary only -- the same CVE ids appear in every
+      - /usr/bin/git-lfs   # Go binary, and must keep blocking elsewhere
+    issued: "2026-08-24T00:00:00Z"
+    expires: "2026-11-22T00:00:00Z"
+    owner: "@ryancraig"
+    justification: >-
+      Critical findings in golang.org/x/crypto and the Go stdlib vendored into
+      /usr/bin/git-lfs, a Fedora RPM built with go1.25.1. The fixes grype cites
+      are Go TOOLCHAIN versions, so clearing them means Fedora rebuilding the
+      package; we install it via dnf and cannot influence that. The base image is
+      already pinned to the newest published digest, so there is no bump to take.
+      Re-evaluate when Fedora ships a rebuilt git-lfs, or reconsider installing
+      it from upstream release binaries -- which trades distro packaging and
+      signing for version control.
+    cves:
+    - GHSA-5cgq-3rg8-m6cv
+    - GHSA-89gr-r52h-f8rx
+    - GHSA-f5wc-c3c7-36mc
+    - GHSA-jppx-rxg9-jmrx
+    - GHSA-rm3j-f69w-wqmq
+    - GHSA-vgwf-h737-ff37
+    - GHSA-x527-x647-q7gg
+    - GO-2026-4337

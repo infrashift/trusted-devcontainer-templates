@@ -63,6 +63,45 @@ severities := {"Critical", "High", "Medium", "Low", "Negligible", "Unknown"}
 fix_states := {"fixed", "not-fixed", "wont-fix", "unknown"}
 
 # ---------------------------------------------------------------------------
+# REMEDIATION: WHO CAN ACTUALLY FIX THIS
+#
+# The gate blocks a High with an available fix because a fix being available
+# implies action is possible. That holds when the vulnerable package IS the
+# thing this org installs and versions -- bumping the feature clears it, which
+# two rounds of refresh demonstrated.
+#
+# It does not hold for a dependency vendored INSIDE something we install. A
+# stdlib finding in the grype binary is not fixed by any version we can choose;
+# only Anchore can rebuild it. Blocking there gates a release on a third party's
+# build schedule while reporting it as an actionable defect, and the only escape
+# is a waiver that expires and gets re-derived every 90 days.
+#
+# DIRECT -- the finding names the artifact we install, so a version bump is the
+#   remedy and blocking is correct:
+#     rpm      sqlite-libs, git       (a system package we chose)
+#     python   ansible-core           (a distribution we pin)
+#     binary   python                 (an interpreter we pin)
+#
+# VENDORED -- the finding names a dependency of an artifact we install. The only
+#   remedy is upgrading the container, which is a different action tracked by the
+#   version pins, so these are RECORDED:
+#     go-module      stdlib, golang.org/x/crypto  inside git-lfs, syft, grype
+#     npm            minimatch, tar               inside npm's own node_modules
+#     dotnet         System.Security...Xml        inside the SDK
+#     java-archive   a jar inside a distribution
+#
+# CRITICAL IS UNAFFECTED. A Critical blocks wherever it lives, vendored or not.
+# Downgrading those would be using this distinction to avoid a decision rather
+# than to describe one -- a Critical in a binary we cannot rebuild is exactly
+# the case that deserves an explicit, owned, dated waiver.
+#
+# The compensating obligation: this only stays honest while the artifacts
+# themselves are current. That is what the version pins and the refresh rounds
+# are for, and it is a check on THIS repo rather than a hope about upstream.
+
+vendored_types := {"go-module", "npm", "dotnet", "java-archive"}
+
+# ---------------------------------------------------------------------------
 # Shared helpers
 
 # The register is loaded with `--data .github/pdp/exceptions.yaml`, whose single
@@ -269,6 +308,14 @@ candidate_blocking contains m if {
 	some m in object.get(input, ["matches"], [])
 	object.get(m, "severity", missing) == "High"
 	object.get(m, "fix_state", missing) == "fixed"
+	not vendored(m)
+}
+
+# An unknown or missing type is NOT treated as vendored: a finding whose
+# provenance we cannot establish keeps blocking. The carve-out has to be earned
+# by evidence, never granted by an absent field.
+vendored(m) if {
+	object.get(m, "type", missing) in vendored_types
 }
 
 blocking_findings contains f if {
@@ -323,16 +370,69 @@ exceptions_applied contains e if {
 # Every field is required: a waiver missing any of them does not apply, so a
 # malformed entry fails closed into "still blocking" rather than open.
 
-waiver_for(m) := w if {
+# A waiver may name one CVE or a batch. A batch is not a shortcut: it exists so
+# that findings sharing ONE rationale -- 36 CVEs inside a single distro-packaged
+# binary nobody here can rebuild -- are one reviewed decision with one
+# justification, rather than 36 near-identical records nobody reads.
+waiver_cves(w) := cs if {
+	cs := object.get(w, "cves", null)
+	is_array(cs)
+	count(cs) > 0
+} else := [object.get(w, "cve", missing)]
+
+# Two waivers can legitimately cover the same finding: a stdlib CVE appears in
+# every Go binary, so an entry for git-lfs and an entry for fzf both name it.
+# A function that yields both is an eval_conflict_error -- the policy does not
+# fail closed, it fails to evaluate at all, which the release gate reports as a
+# crash rather than a verdict. Collect the matches and take the first by sort
+# order so the outcome is deterministic and the register can overlap freely.
+matching_waivers(m) := sort([w |
 	some w in waivers
-	object.get(w, "cve", missing) == object.get(m, "id", "<no-id>")
+	object.get(m, "id", "<no-id>") in waiver_cves(w)
 	waiver_scope_matches(w)
+	waiver_scope_field_matches(w, m, "packages", "package")
+	waiver_scope_field_matches(w, m, "locations", "location")
 	is_string(object.get(w, "id", null))
 	is_string(object.get(w, "owner", null))
 	is_string(object.get(w, "justification", null))
 	count(object.get(w, "justification", "")) >= 20
 	expiry := time.parse_rfc3339_ns(object.get(w, "expires", ""))
 	expiry > evaluated_at_ns
+])
+
+waiver_for(m) := w if {
+	ws := matching_waivers(m)
+	count(ws) > 0
+	w := ws[0]
+}
+
+# --- Scoping -----------------------------------------------------------------
+# A waiver must suppress what its justification describes and nothing else.
+# Matching on CVE id alone meant an entry written for 38 findings in
+# /usr/bin/git-lfs also silently waived the same stdlib CVE ids inside syft and
+# grype -- 14 real findings hidden by an exception that never mentions them.
+#
+# `packages` and `locations` are OPTIONAL and each fails CLOSED: omit one and
+# the waiver applies regardless of it; name it and the finding must match. A
+# scoped waiver therefore cannot match a finding whose field is absent or empty,
+# so evidence produced before `location` existed satisfies no location-scoped
+# entry rather than silently satisfying every one.
+
+waiver_scope_field_matches(w, _, field, _) if {
+	not object.get(w, field, null)
+}
+
+waiver_scope_field_matches(w, _, field, _) if {
+	vs := object.get(w, field, [])
+	count(vs) == 0
+}
+
+waiver_scope_field_matches(w, m, field, key) if {
+	vs := object.get(w, field, [])
+	count(vs) > 0
+	v := object.get(m, key, "")
+	v != ""
+	v in vs
 }
 
 # A waiver either names templates explicitly or applies to all of them. An

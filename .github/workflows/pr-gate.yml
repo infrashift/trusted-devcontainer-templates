@@ -58,6 +58,15 @@ jobs:
       - name: Lint workflows for drift
         run: ./scripts/lint-workflows.sh
 
+      - name: Verify feature references are digest-pinned
+        # A bare reference resolves to :latest. Re-pinning is a deliberate act
+        # with a reviewable diff -- `make pin-features` -- rather than something
+        # that happens to a build.
+        run: ./scripts/pin-features.sh --check
+
+      - name: Verify smoke tests assert the versions the templates request
+        run: ./scripts/check-test-assertions.sh
+
       - name: Verify Containerfile sync
         # The same invariant make check-sync enforces locally: all seven managed
         # Containerfiles byte-identical to shared/Containerfile.

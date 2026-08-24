@@ -205,6 +205,31 @@ One bug found while building this, worth recording because it is the same shape 
 gate's unpinned-action grep exited 1 when *nothing* was unpinned, and under `set -o pipefail` that
 aborted the gate at exactly the moment the repository was clean. Fixed with an explicit `|| true`.
 
+### ~~9. Feature references are not digest-pinned~~ RESOLVED
+
+Fixed. All 47 references across the five templates now carry `@sha256:…`. The base image was already
+digest-pinned, `uv` and `ansible-core` version-pinned with checksum verification, and every tool in
+`tools.lock` carries a sha256 — features were the last mutable link, and they are the thing that
+actually installs software into a developer's container.
+
+`scripts/pin-features.sh` resolves and rewrites; `--check` asserts and runs in `pr-gate` and
+`make check`. Each distinct feature is resolved **once** and applied everywhere, so five templates
+sharing a feature cannot end up pinned to five digests resolved seconds apart. The sed matches a bare
+ref *or* an existing pin, so re-running re-pins instead of appending a second digest, and the script
+asserts its own output rather than trusting the loop ran.
+
+Digest support was verified before any of this was written, not assumed: a throwaway workspace
+referencing `bootstrap@sha256:…` and `jq@sha256:…` built successfully. `src/python` then built with
+all nine of its features pinned.
+
+Re-pinning is deliberate and produces a reviewable diff — `make pin-features`. A feature update
+should be a visible change to this repository, not something that happens to a build.
+
+**One level deep, and that is worth stating.** This pins what the templates declare. It does not pin
+what those features declare among *themselves*: a feature's `dependsOn` still names a sibling by bare
+reference, which resolves to `:latest`. So a template's immediate inputs are immutable while its
+transitive ones are not. See #20.
+
 ---
 
 ## Open
@@ -217,11 +242,84 @@ aborted the gate at exactly the moment the repository was clean. Fixed with an e
 > need templates that build; #9 cannot pin a digest for an image that does not exist. All three unblock
 > once the features work on `feature/container-improvements` lands on `main` and releases.
 
-### 9. Feature references are not digest-pinned
+### 11. Measure the CVE delta from the Fedora migration — measured; remediation in progress
 
-`devcontainer.json` references features by bare name (`ghcr.io/infrashift/trusted-devcontainer-features/git`), which resolves to `:latest` — a mutable tag. This is the one remaining unpinned link in the supply chain; the base image is digest-pinned and `uv`/`ansible-core` are now version-pinned with checksum verification. Pinning features by digest is on the roadmap.
+**The premise was wrong.** Fedora is not the problem. Of 144 raw blocking findings on the `python`
+template, **2 were RPMs**. The base image is nearly clean, and it is already pinned to the newest
+published digest (`latest` == `20260818` == `sha256:1ed67eb1…`), so there is no bump available.
 
-### 11. Measure the CVE delta from the Fedora migration
+The load came from stale binaries this org ships. Two rounds so far, both measured with the same
+grype `0.117.0` and the same vulnerability DB, so the numbers compare:
+
+| Template | initial | after tool refresh | after waivers |
+|---|---:|---:|---:|
+| `ansible-cue` | 63 | 61 | **9** |
+| `python` | 69 | 54 | **15** |
+| `java` | 72 | 62 | **18** |
+| `go-cue` | 90 | 75 | **36** |
+| `dotnet-node` | 112 | 97 | **58** |
+
+Round 1 refreshed `syft` 1.42→1.51, `grype` 0.108→0.117, `jq` 1.7.1→1.8.2, `yq` 4.45→4.53. On
+`python` that cut raw matches 144 → 75; syft went 38 → 7 and grype 38 → 8.
+
+Round 2 waived 39 findings per template in `git-lfs` and `fzf` — see `.github/pdp/exceptions.yaml`.
+Both are distro-packaged, so `fix_state: fixed` describes the Go *module*, not the binary: only the
+packager can rebuild against it. That distinction matters and the gate does not currently model it —
+see #21.
+
+**What remains is actionable**, and is the same root cause as round 1: feature versions this org
+controls are behind. By location — `go` 38 (go-cue), `cue` 17, `node` 11, `dotnet` SDK 11, `java`
+11, uv-managed `python` 11, npm's bundled `tar` 27 across three copies, residual `grype` 8 and
+`syft` 7. Refresh those the way round 1 refreshed the first four.
+
+### ~~21. The CVE gate cannot tell what we control from what we do not~~ RESOLVED
+
+The gate blocks on `severity: High, fix_state: fixed` because a fix being available implies action is
+possible. That holds for anything this org versions — round 1 of #11 proved it, clearing 69 raw
+findings by bumping four features.
+
+It does not hold for a vendored Go module inside a distro-packaged binary. `fix_state: fixed` there
+means the *module* published a patch, not that Fedora rebuilt `git-lfs` against it. 41 findings were
+waived for exactly this reason, and a waiver is the wrong instrument for a permanent structural
+distinction — it expires, and in 90 days someone re-derives the same reasoning from scratch.
+
+Worth considering: treat a `go-module` finding whose location is a distro-packaged binary as
+`recorded` rather than `blocking`, and reserve waivers for genuine one-off risk acceptance. That is a
+change to what the gate means, so it should follow evidence rather than one bad night — the evidence
+is now in the exception register's justifications.
+
+**Resolved.** `policies.rego` now distinguishes a finding that names an artifact we install from one
+that names a dependency vendored inside it, using grype's own artifact type:
+
+| | types | remedy | verdict |
+|---|---|---|---|
+| direct | `rpm`, `python`, `binary` | bump the version we pin | **blocking** |
+| vendored | `go-module`, `npm`, `dotnet`, `java-archive` | only the artifact's builder can act | recorded |
+
+**Critical is unaffected** and blocks wherever it lives. Downgrading those would use the distinction
+to avoid a decision rather than describe one — a Critical in a binary we cannot rebuild is exactly
+what should force an owned, dated waiver. The carve-out is also earned rather than granted by
+absence: an unknown or missing `type` keeps blocking.
+
+Effect on the real scans:
+
+| Template | before | after | what blocks |
+|---|---:|---:|---|
+| `python`, `java`, `ansible-cue`, `go-cue` | 15–18 | **6** | `ansible-core`, `python`, `sqlite-libs` |
+| `dotnet-node` | 32 | **7** | those plus npm's bundled `tar` (Critical) |
+
+Every remaining blocker is a package this org pins, except `sqlite-libs` — a base-image RPM whose
+base is already on its newest digest. The gate now blocks on what can actually be done.
+
+The register shrank from 41 CVEs across two entries to **8 across one**. The fzf entry was deleted
+outright: its findings were all vendored Highs, recorded automatically now. A waiver that suppresses
+nothing is not harmless — it reads as a reviewed accepted risk and returns for renewal every 90 days
+carrying no information.
+
+**The compensating obligation** is #22: this stays honest only while the artifacts are current, and
+nothing checks that yet.
+
+
 
 ADR-004's gate blocks a release on any Critical or High CVE. Fedora 43 carries newer packages and publishes advisories faster than UBI9, so the gate now sits on a noisier base. Run `grype` against each built template and compare with the UBI9 baseline before tagging a release.
 
@@ -295,3 +393,41 @@ Two things found while checking this, both worth keeping in mind:
 - **Free plan, public repos.** Deployment protection rules and branch protection are public-repo
   features on GitHub Free. Both repos here are public, so both work. Making either private without a
   Team plan would silently remove them.
+
+### 20. Feature-to-feature dependencies are still resolved by tag
+
+#9 pinned every reference the templates declare. It could not pin the ones the features declare among
+themselves: each feature's `dependsOn` names a sibling as
+`ghcr.io/infrashift/trusted-devcontainer-features/bootstrap`, with no digest, so the devcontainer CLI
+resolves it to `:latest` at build time.
+
+The practical effect is that a template pinned to `python@sha256:f041…` still pulls whatever
+`bootstrap:latest` is when it builds. The immediate inputs are immutable; the transitive ones are
+not, and a digest-pinned template that silently changes underneath is arguably worse than an honestly
+unpinned one, because the pin implies a guarantee it does not deliver.
+
+Closing it means embedding digests at publish time in the features repo, extending
+`scripts/rewrite-feature-refs.sh` (which already rewrites `./bootstrap` to a registry reference — the
+same file, one step further). That is **ordered**: `bootstrap` must be published before anything can
+reference its digest, so a single publish pass cannot do it. Options are a two-phase publish, or a
+dependency-ordered one that resolves each feature's digest as it goes.
+
+Not urgent — every feature in the chain is signed and the registry is ours — but the pin should mean
+what it says.
+
+### 22. Nothing asserts that pinned tool versions are current
+
+#21 stopped the gate blocking on dependencies vendored inside artifacts we cannot rebuild, on the
+grounds that the real remedy is keeping those artifacts current. That reasoning holds only if
+something checks currency, and nothing does.
+
+Both refresh rounds found tools well behind — syft 1.42 against 1.51, grype 0.108 against 0.117,
+cue 0.15.4 against 0.17.1 — and both were found by reading a CVE report, not by a check. The gate now
+records those findings rather than blocking, so the next time this drifts there will be no red build
+to notice it. #21 removed the accidental alarm without adding the deliberate one.
+
+Blocking on any drift would be too brittle: a release hours old should not fail a build. More likely
+warn beyond a threshold, and surface the list in the PR summary the way the CVE table already is.
+
+`scripts/check-version-pins.sh` in the features repo already parses every declared default and is the
+natural place for it.
