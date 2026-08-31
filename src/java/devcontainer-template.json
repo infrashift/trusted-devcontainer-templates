@@ -1,6 +1,6 @@
 {
     "id": "java",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "Java (Trusted)",
     "description": "A trusted Java development environment based on Fedora 43 with OpenJDK, security scanning tools, and supply-chain tooling.",
     "publisher": "InfraShift",
