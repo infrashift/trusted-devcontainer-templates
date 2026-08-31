@@ -99,10 +99,23 @@ echo "CVE summary for ${TEMPLATE}:"
 jq -r '[.matches[].severity] | group_by(.) | map("  \(.[0]): \(length)") | .[]' "${DIR}/scan-input.json"
 
 # SLSA provenance for the build itself.
+#
+# Resolved out of the heredoc so a failure here is a failure of this script and
+# not a silently empty digest interpolated into signed evidence.
+IMAGE_ID="$(docker image inspect "$IMAGE" --format '{{.Id}}' | sed 's/sha256://')"
+[[ "$IMAGE_ID" =~ ^[0-9a-f]{64}$ ]] || {
+  echo "::error::malformed image id for ${IMAGE}: ${IMAGE_ID}" >&2; exit 1; }
+
+# This file is a full in-toto Statement, because that is what it is as EVIDENCE:
+# a signed claim about the image this build produced. What gets published is a
+# different subject -- the template artifact in the registry -- so publish-attest.sh
+# hands cosign only the `predicate` body and lets cosign bind it to that subject.
+# The image digest would be lost in that hand-off, so it is recorded a second
+# time under runDetails.byproducts, which travels with the predicate.
 cat > "${DIR}/provenance.json" <<EOF
 {
   "_type": "https://in-toto.io/Statement/v1",
-  "subject": [ { "name": "${TEMPLATE}", "digest": { "sha256": "$(docker image inspect "$IMAGE" --format '{{.Id}}' | sed 's/sha256://')" } } ],
+  "subject": [ { "name": "${TEMPLATE}", "digest": { "sha256": "${IMAGE_ID}" } } ],
   "predicateType": "https://slsa.dev/provenance/v1",
   "predicate": {
     "buildDefinition": {
@@ -115,11 +128,19 @@ cat > "${DIR}/provenance.json" <<EOF
     },
     "runDetails": {
       "builder": { "id": "https://github.com/${GITHUB_REPOSITORY}/actions/runs/${BUILD_RUN_ID}" },
-      "metadata": { "invocationId": "${BUILD_RUN_ID}", "startedOn": "${EVALUATED_AT}" }
+      "metadata": { "invocationId": "${BUILD_RUN_ID}", "startedOn": "${EVALUATED_AT}" },
+      "byproducts": [ { "name": "container-image", "digest": { "sha256": "${IMAGE_ID}" } } ]
     }
   }
 }
 EOF
+
+# Assert the output, not that the heredoc ran: this file is about to be signed
+# and then split apart at publish time, so both halves must be well formed here.
+jq -e '.predicate | has("buildDefinition") and has("runDetails")' \
+  "${DIR}/provenance.json" > /dev/null || {
+  echo "::error::provenance.json for ${TEMPLATE} is not a well-formed SLSA v1 statement" >&2
+  exit 1; }
 
 # A manifest binding this evidence set to the commit and run that produced it.
 # review.yml verifies the signature over THIS file, so a swapped scan-input.json
