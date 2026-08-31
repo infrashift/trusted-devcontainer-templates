@@ -234,13 +234,16 @@ transitive ones are not. See #20.
 
 ## Open
 
-> **All three are blocked on the same thing.** Every template references
-> `ghcr.io/infrashift/trusted-devcontainer-features/bootstrap`, and that package has never been
-> published — the registry answers `NAME_UNKNOWN`, while `git` is at `1.0.1`. This repo pulls features
-> straight from GHCR with no local staging, so no template can currently be built here: `make test`,
-> `make test-template`, the PR CVE scan and the release gate all resolve features first. #11 and #12
-> need templates that build; #9 cannot pin a digest for an image that does not exist. All three unblock
-> once the features work on `feature/container-improvements` lands on `main` and releases.
+> **The `bootstrap` blocker recorded here is resolved — 2026-08-31.** This note used to say that
+> `ghcr.io/infrashift/trusted-devcontainer-features/bootstrap` had never been published and the
+> registry answered `NAME_UNKNOWN`, blocking #9, #11 and #12. That is no longer true and had already
+> stopped being true when it was written down. The package exists (id `14610693`) and the digest all
+> five templates pin, `sha256:071c527c…`, is live and carries the tags `1.4.0 / 1.4 / 1 / latest`.
+> The evidence that it resolves: every `Build …` job in run
+> [32761905789](https://github.com/infrashift/trusted-devcontainer-templates/actions/runs/32761905789)
+> built, smoke-tested, scanned and signed all five templates on 2026-08-24, which cannot happen
+> without resolving `bootstrap` first. #9 is closed; #11 and #12 are unblocked and stand on their own
+> merits below.
 
 ### 11. Measure the CVE delta from the Fedora migration — measured; remediation in progress
 
@@ -489,3 +492,84 @@ warn beyond a threshold, and surface the list in the PR summary the way the CVE 
 
 `scripts/check-version-pins.sh` in the features repo already parses every declared default and is the
 natural place for it.
+
+### ~~23. The release would have failed the moment it attached SLSA provenance~~ RESOLVED
+
+The pipeline had never been run — no tag existed, `Release Templates` had zero runs, and GHCR held
+zero packages for this repo. The first `v*` tag would have got as far as the publish job and then
+stopped.
+
+`build-template.sh` writes `provenance.json` as a full in-toto **Statement** (`_type`, `subject`,
+`predicateType`, `predicate`), which is the right shape for signed build evidence: it binds the
+claim to the image the smoke test actually ran in. `publish-attest.sh` then handed that same file to
+`cosign attest --type slsaprovenance1 --predicate`. But `--predicate` takes the **predicate body** —
+cosign builds the Statement itself and binds the subject to the artifact being attested. cosign has
+a separate `--statement` flag for the other shape.
+
+Reproduced directly rather than reasoned about:
+
+```
+$ cosign attest-blob --type slsaprovenance1 --predicate evidence/python/provenance.json blob.txt
+Error: provenance predicate: required field buildDefinition missing
+```
+
+cosign validates the SLSA v1 predicate and refuses, because it was reading our `subject` /
+`predicateType` / `predicate` wrapper as the predicate. So this was a hard failure, not silent
+corruption — no bad attestation could have been published, but no release could have completed
+either. It went unnoticed because the publish path had never executed: `build/gate` exercises
+`build-template.sh` on every PR, and nothing exercises `publish-attest.sh`.
+
+**The fix.** `publish-attest.sh` extracts `.predicate` and passes that, letting cosign bind the
+subject to the published template digest. `build-template.sh` keeps the Statement as evidence and
+additionally records the built image digest under `predicate.runDetails.byproducts`, so that binding
+is not lost when only the predicate travels onward. Both ends assert their own output.
+
+Two things that were wrong for the same reason — nothing read the registry back — were fixed with it:
+
+- **The attested digest came from `:latest`, not the released version.** `devcontainers/action`
+  silently skips a template whose `version` already exists, and `:latest` still resolves in that
+  case, so a release that published nothing would have re-attested the *previous* artifact and gone
+  green. It now resolves `:${VERSION#v}` and fails with an actionable message, which also forces the
+  git tag and the `devcontainer-template.json` version fields to agree.
+- **Nothing verified that the attestations landed.** `publish-attest.sh` now re-reads each artifact
+  and verifies the signature and all three attestations against
+  `.github/pdp/public-keys/release.pub` — committed, needs no secret, and until now referenced by
+  nothing. It decodes the provenance payload and asserts `.predicate.buildDefinition` exists and the
+  subject digest is the artifact just published, so a regression of the shape bug cannot pass. A
+  final count guard rejects "attested 0 of 5".
+
+### 24. The attestation predicates are keyed-only, so they are not in Rekor
+
+`publish-attest.sh` signs the artifact twice — `cosign sign --key` and a bare keyless `cosign sign`
+— and the header explains why: offline verification against a committed key, plus a transparency-log
+entry a third party can audit without holding our keys.
+
+The three `cosign attest` calls only ever get the first half. The SBOM, vuln and provenance
+predicates carry a keyed signature and no Rekor entry, so the auditability claim the header makes
+covers the signature over the artifact but not the evidence attached to it.
+
+Fixing it is a second `cosign attest --yes` per type with no `--key`, which triples the Rekor entries
+per release (15 rather than 5). Worth doing deliberately, and worth doing across the org at once —
+see the `tools.lock:14-18` note about not migrating attestation formats one repo at a time.
+
+### 25. `build.yml` has no fork guard, so a fork PR fails instead of skipping
+
+`pr-gate.yml:127` skips its status-seeding job for forks with
+`github.event.pull_request.head.repo.full_name == github.repository`. `build.yml`'s `build-and-audit`
+has no such condition. A fork PR reaches `environment: Build-Actor`, receives no environment secrets
+because GitHub does not expose them to forks, and dies at `build-template.sh:14` on
+`: "${COSIGN_PRIVATE_KEY:?}"` — a red required check rather than a clean skip.
+
+Nothing has hit this yet because every PR so far has come from a branch in this repo. It matters the
+first time an outside contribution arrives, and the failure mode is misleading: it reads as a broken
+build rather than a policy that declines to hand a signing key to untrusted code.
+
+### 26. `review.yml` is the only workflow without a concurrency group
+
+`build.yml`, `pr-gate.yml`, `release.yml` and `deploy-docs.yaml` all declare one. `review.yml` does
+not, and it both writes the `review/cve-policy` commit status and posts a PR comment. Two pushes in
+quick succession start two `workflow_run` reviews that race to write the same status on different
+SHAs, and the loser can leave a stale verdict as the visible one.
+
+`concurrency: { group: review-${{ github.event.workflow_run.head_sha }}, cancel-in-progress: true }`
+matches what the other four do.
