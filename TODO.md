@@ -573,3 +573,34 @@ SHAs, and the loser can leave a stale verdict as the visible one.
 
 `concurrency: { group: review-${{ github.event.workflow_run.head_sha }}, cancel-in-progress: true }`
 matches what the other four do.
+
+### ~~27. The release attached one SBOM, not five~~ RESOLVED
+
+`v1.0.0` published and attested all five templates correctly, then failed in `github-release`. The
+job uploaded evidence with globs like `staged/*/*/sbom.json`, expecting the `*/*` to fan out across
+templates. A GitHub release asset name must be unique across the whole release, and every template
+produces a file called `sbom.json` — so the fan-out collapsed instead of fanning out.
+
+The release ended with **13 assets where 70 were intended**: one per distinct *filename*, each being
+whichever template won the race, with nothing recording which one that was. `softprops/action-gh-release`
+then failed outright trying to reconcile the collisions:
+
+```
+error updating release asset metadata for sbom.json: HttpError: Not Found
+##[error]Not Found - .../releases/assets#delete-a-release-asset
+```
+
+The quiet half is worse than the loud half. Had the action tolerated the collisions, the release
+would have gone green while silently publishing evidence for one template and labelling it as the
+evidence for the release — ambiguous provenance is worse than none, because it invites verification
+against the wrong artifact.
+
+**The fix.** A step qualifies every file with its template (`python-sbom.json`) before upload, and
+asserts the resulting count matches what was staged, so a future collision fails loudly rather than
+silently dropping files. `fail_on_unmatched_files: true` catches the other direction — a glob that
+matches nothing.
+
+The published packages and their attestations were never affected: all five verify against
+`release.pub` with `.predicate.buildDefinition` present and the subject bound to each template's own
+digest. Only the evidence copies attached to the GitHub release were lost, and those are reproducible
+from the run artifacts.

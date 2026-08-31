@@ -262,24 +262,61 @@ jobs:
           pattern: review-*
           path: verdicts/
 
+      # A release asset name must be unique across the whole release, and every
+      # template produces a file called sbom.json. Uploading
+      # staged/*/*/sbom.json therefore did not attach five SBOMs -- it attached
+      # one, whichever template won the race, with no way to tell which. v1.0.0
+      # got 13 assets where 70 were intended, and the upload failed outright
+      # trying to reconcile the collisions.
+      #
+      # Qualify every file with the template it belongs to before uploading.
+      - name: Flatten evidence into uniquely named release assets
+        env:
+          MATRIX: ${{ needs.gate-check.outputs.matrix }}
+        run: |
+          set -euo pipefail
+          mkdir -p assets
+
+          # The six files build-template.sh produces and signs, per template.
+          evidence_files="sbom.json cve-report.json scan-input.json provenance.json checksums.sha256 evidence-manifest.json"
+
+          templates=$(jq -r '.[].template' <<<"$MATRIX")
+          expected=0
+
+          for t in $templates; do
+            dir="staged/evidence-${t}/${t}"
+            [ -d "$dir" ] || { echo "::error::no staged evidence at ${dir}" >&2; exit 1; }
+            for f in $evidence_files; do
+              for candidate in "$f" "${f}.sig"; do
+                [ -f "${dir}/${candidate}" ] || {
+                  echo "::error::missing ${dir}/${candidate}" >&2; exit 1; }
+                cp "${dir}/${candidate}" "assets/${t}-${candidate}"
+                expected=$((expected + 1))
+              done
+            done
+
+            vdir="verdicts/review-${t}"
+            for candidate in review-verdict.json review-verdict.json.sig; do
+              [ -f "${vdir}/${candidate}" ] || {
+                echo "::error::missing ${vdir}/${candidate}" >&2; exit 1; }
+              cp "${vdir}/${candidate}" "assets/${t}-${candidate}"
+              expected=$((expected + 1))
+            done
+          done
+
+          # Assert the output, not that the loop ran. A collision would show up
+          # here as a count below what was staged.
+          actual=$(find assets -type f | wc -l)
+          [ "$actual" -eq "$expected" ] || {
+            echo "::error::staged ${expected} asset(s) but assets/ holds ${actual} -- names collided" >&2
+            exit 1; }
+          echo "prepared ${actual} uniquely named release asset(s)"
+
       - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           generate_release_notes: true
-          files: |
-            staged/*/*/sbom.json
-            staged/*/*/sbom.json.sig
-            staged/*/*/cve-report.json
-            staged/*/*/cve-report.json.sig
-            staged/*/*/scan-input.json
-            staged/*/*/scan-input.json.sig
-            staged/*/*/provenance.json
-            staged/*/*/provenance.json.sig
-            staged/*/*/checksums.sha256
-            staged/*/*/checksums.sha256.sig
-            staged/*/*/evidence-manifest.json
-            staged/*/*/evidence-manifest.json.sig
-            verdicts/*/review-verdict.json
-            verdicts/*/review-verdict.json.sig
+          fail_on_unmatched_files: true
+          files: assets/*
 
   summary:
     name: Release Summary
