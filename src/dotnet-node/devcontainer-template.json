@@ -1,6 +1,6 @@
 {
     "id": "dotnet-node",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": ".NET + Node.js (Trusted)",
     "description": "A trusted .NET and Node.js development environment based on Fedora 43 with security scanning tools and supply-chain tooling.",
     "publisher": "InfraShift",

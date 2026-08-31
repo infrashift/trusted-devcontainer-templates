@@ -1,6 +1,6 @@
 {
     "id": "python",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "Python (Trusted)",
     "description": "A trusted Python development environment based on Fedora 43 with uv, ruff, and security scanning tools.",
     "publisher": "InfraShift",

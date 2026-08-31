@@ -1,6 +1,6 @@
 {
     "id": "ansible-cue",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "Ansible + CUE (Trusted)",
     "description": "A trusted Ansible and CUE development environment based on Fedora 43 optimized for infrastructure-as-code workflows.",
     "publisher": "InfraShift",
