@@ -5,6 +5,7 @@ This template provides a hardened Java development environment built on a truste
 ## Included Tools
 
 - **OpenJDK** (latest LTS) via trusted devcontainer feature
+- **Maven** and **Gradle** build tools, installed in userland and linked into `~/.local/bin`
 - **Git** and **Git LFS** for version control
 - **Grype** and **Syft** for vulnerability scanning and SBOM generation
 - **jq** and **yq** for structured data processing

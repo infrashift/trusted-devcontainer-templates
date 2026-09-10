@@ -3,7 +3,7 @@
     "id": "ansible-cue",
     "name": "Ansible + CUE (Trusted)",
     "description": "A trusted Ansible and CUE development environment based on Fedora 43 optimized for infrastructure-as-code workflows.",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "testStatus": "passing",
     "category": "infrastructure",
     "platforms": ["linux/amd64", "linux/arm64"],
@@ -27,7 +27,7 @@
     "id": "dotnet-node",
     "name": ".NET + Node.js (Trusted)",
     "description": "A trusted .NET and Node.js development environment based on Fedora 43 with security scanning tools and supply-chain tooling.",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "testStatus": "passing",
     "category": "web",
     "platforms": ["linux/amd64", "linux/arm64"],
@@ -52,7 +52,7 @@
     "id": "go-cue",
     "name": "Go + CUE (Trusted)",
     "description": "A trusted Go and CUE development environment based on Fedora 43 for CLI/TUI development with security scanning tools.",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "testStatus": "passing",
     "category": "systems",
     "platforms": ["linux/amd64", "linux/arm64"],
@@ -74,18 +74,20 @@
   {
     "id": "java",
     "name": "Java (Trusted)",
-    "description": "A trusted Java development environment based on Fedora 43 with OpenJDK, security scanning tools, and supply-chain tooling.",
-    "version": "1.0.0",
+    "description": "A trusted Java development environment based on Fedora 43 with OpenJDK, Maven, Gradle, security scanning tools, and supply-chain tooling.",
+    "version": "1.0.2",
     "testStatus": "passing",
     "category": "enterprise",
     "platforms": ["linux/amd64", "linux/arm64"],
     "features": {
       "primary": [
-        { "id": "openjdk", "name": "OpenJDK", "options": {} }
+        { "id": "openjdk", "name": "OpenJDK", "options": {} },
+        { "id": "maven", "name": "Maven", "options": {} },
+        { "id": "gradle", "name": "Gradle", "options": {} }
       ],
       "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
     },
-    "keywords": ["java", "openjdk", "fedora43", "trusted", "secure"],
+    "keywords": ["java", "openjdk", "maven", "gradle", "fedora43", "trusted", "secure"],
     "useCases": [
       "Enterprise Java application development with Spring Boot",
       "Microservices with Quarkus or Micronaut",
@@ -97,7 +99,7 @@
     "id": "python",
     "name": "Python (Trusted)",
     "description": "A trusted Python development environment based on Fedora 43 with uv, ruff, and security scanning tools.",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "testStatus": "passing",
     "category": "data-science",
     "platforms": ["linux/amd64", "linux/arm64"],
