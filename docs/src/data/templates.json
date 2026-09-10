@@ -74,18 +74,20 @@
   {
     "id": "java",
     "name": "Java (Trusted)",
-    "description": "A trusted Java development environment based on Fedora 43 with OpenJDK, security scanning tools, and supply-chain tooling.",
+    "description": "A trusted Java development environment based on Fedora 43 with OpenJDK, Maven, Gradle, security scanning tools, and supply-chain tooling.",
     "version": "1.0.0",
     "testStatus": "passing",
     "category": "enterprise",
     "platforms": ["linux/amd64", "linux/arm64"],
     "features": {
       "primary": [
-        { "id": "openjdk", "name": "OpenJDK", "options": {} }
+        { "id": "openjdk", "name": "OpenJDK", "options": {} },
+        { "id": "maven", "name": "Maven", "options": {} },
+        { "id": "gradle", "name": "Gradle", "options": {} }
       ],
       "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
     },
-    "keywords": ["java", "openjdk", "fedora43", "trusted", "secure"],
+    "keywords": ["java", "openjdk", "maven", "gradle", "fedora43", "trusted", "secure"],
     "useCases": [
       "Enterprise Java application development with Spring Boot",
       "Microservices with Quarkus or Micronaut",

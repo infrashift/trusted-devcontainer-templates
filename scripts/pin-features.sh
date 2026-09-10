@@ -18,13 +18,20 @@
 # review, which is the point: a feature update should be a visible change to
 # this repository, not something that happens to a build.
 #
-# KNOWN LIMIT: this pins the references the templates declare. It does NOT pin
-# the dependencies those features declare among themselves -- a feature's
-# dependsOn still resolves to :latest of the sibling it names. Closing that gap
-# needs the features repo to embed digests at publish time, which is ordered
-# (bootstrap must exist before anything can reference its digest). Tracked as
-# TODO 20. Until then the chain is pinned one level deep, and saying so is
-# better than implying otherwise.
+# THE CHAIN IS PINNED TWO LEVELS DEEP, AND THE LEVELS CAN DISAGREE
+#
+# The features repo embeds the bootstrap digest into every feature's dependsOn
+# at publish time. That closes the gap this script used to disclaim, and opens
+# a subtler one: every release over there mints a new bootstrap digest and
+# re-pins all dependents to it, so a template that pins features from two
+# different releases names two different bootstraps. The devcontainer CLI
+# treats those as two features and installs both, and the second install fails
+# on the venv the first one created. It first bit the java template when maven
+# and gradle, freshly published, were added next to a month-old openjdk.
+#
+# --check therefore also reads each pinned feature's metadata and asserts that
+# every dependsOn it carries names the bootstrap digest the same template pins.
+# That is the property that actually has to hold for one bootstrap to install.
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
@@ -64,8 +71,10 @@ registry_head() {
 # template against the exact artifact it will install, not against whatever
 # upstream happens to be serving now.
 feature_metadata() {
-    local name="$1" digest
-    digest=$(grep -hoE "${BASE}/${name}@sha256:[0-9a-f]{64}" "${FILES[@]}" | head -1 | sed 's/.*@//')
+    local name="$1" digest="${2:-}"
+    if [ -z "$digest" ]; then
+        digest=$(grep -hoE "${BASE}/${name}@sha256:[0-9a-f]{64}" "${FILES[@]}" | head -1 | sed 's/.*@//')
+    fi
     [ -n "$digest" ] || return 1
     local token
     token=$(registry_get "https://ghcr.io/token?scope=repository:${NAMESPACE}/${name}:pull&service=ghcr.io" | jq -r .token) || return 1
@@ -129,9 +138,39 @@ if [ "$CHECK_ONLY" -eq 1 ]; then
         done < <(template_option_pins "$f")
     done
 
+    # --- every dependsOn must name the bootstrap this template pins ---------
+    # Resolved per template: each one pins its own bootstrap, and the question
+    # is whether the features next to it agree with that pin. A feature whose
+    # dependsOn names a different bootstrap is an error, not a warning: the
+    # build that follows installs two bootstraps and fails on the second.
+    deps=0
+    for f in "${FILES[@]}"; do
+        tname=$(basename "$(dirname "$(dirname "$f")")")
+        boot=$(grep -oE "\"${BASE}/bootstrap@sha256:[0-9a-f]{64}\"" "$f" | tr -d '"' | head -1)
+        while IFS= read -r ref; do
+            [ -n "$ref" ] || continue
+            name="${ref##*/}"; name="${name%%@*}"; digest="${ref##*@}"
+            [ "$name" = "bootstrap" ] && continue
+            if ! meta=$(feature_metadata "$name" "$digest"); then
+                echo "::error::${tname}: could not read metadata for ${name}@${digest}" >&2
+                fail=1; continue
+            fi
+            while IFS= read -r dep; do
+                [ -n "$dep" ] || continue
+                deps=$((deps + 1))
+                if [ "$dep" != "$boot" ]; then
+                    echo "::error::${tname}: ${name} dependsOn ${dep}, but the template pins ${boot:-no bootstrap}. Run: make pin-features" >&2
+                    fail=1
+                fi
+            done < <(jq -r '(.dependsOn // {}) | keys[]' <<<"$meta" 2>/dev/null)
+        done < <(grep -oE "\"${BASE}/[a-z0-9-]+@sha256:[0-9a-f]{64}\"" "$f" | tr -d '"')
+    done
+
     [ "$total" -gt 0 ] || { echo "::error::found 0 feature references; refusing to call that a pass" >&2; exit 1; }
+    [ "$deps" -gt 0 ] || { echo "::error::checked 0 dependsOn references; refusing to call that a pass" >&2; exit 1; }
     [ "$fail" -eq 0 ] || exit 1
     echo "OK: all ${total} feature reference(s) across ${#FILES[@]} template(s) are digest-pinned"
+    echo "OK: all ${deps} dependsOn reference(s) name the bootstrap their template pins"
     exit 0
 fi
 
