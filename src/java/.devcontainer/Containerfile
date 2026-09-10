@@ -17,7 +17,15 @@ USER root
 # by features (bun needs unzip; the .NET SDK and OpenJDK need libicu and
 # openssl-libs). Keeping them here rather than in each feature means those
 # features stay entirely userland and never need the privileged lane.
-RUN dnf5 -y install --allowerasing --setopt=install_weak_deps=False \
+# Upgrade before install. The base image already ships curl, openssl-libs and
+# the rest at whatever Fedora had when it was built, and `dnf5 install` of a
+# package that is already installed is a no-op: it never moves to a newer
+# build. Six curl Highs fixed in Fedora stable on 2026-08-31 stayed in every
+# template image for that reason, with the base image already at its newest
+# published digest. Upgrading first takes Fedora's current stable at build
+# time, which is what the CVE gate measures against.
+RUN dnf5 -y upgrade --setopt=install_weak_deps=False \
+    && dnf5 -y install --allowerasing --setopt=install_weak_deps=False \
         tar \
         gzip \
         curl \
