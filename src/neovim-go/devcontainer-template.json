@@ -1,0 +1,26 @@
+{
+    "id": "neovim-go",
+    "version": "1.0.3",
+    "name": "tmux + Neovim + Go (Trusted)",
+    "description": "A trusted terminal-first Go development environment based on Fedora 43: tmux, Neovim with a pinned LazyVim configuration, pinned Go tools, and an SSH server that drops into an editor | shell layout.",
+    "publisher": "InfraShift",
+    "options": {},
+    "platforms": [
+        "linux/amd64",
+        "linux/arm64"
+    ],
+    "keywords": [
+        "neovim",
+        "nvim",
+        "lazyvim",
+        "tmux",
+        "go",
+        "golang",
+        "ssh",
+        "terminal",
+        "fedora",
+        "fedora43",
+        "trusted",
+        "secure"
+    ]
+}

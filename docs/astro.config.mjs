@@ -25,6 +25,7 @@ export default defineConfig({
 						{ label: 'Ansible + CUE', slug: 'templates/ansible-cue' },
 						{ label: '.NET + Node.js', slug: 'templates/dotnet-node' },
 						{ label: 'Go + CUE', slug: 'templates/go-cue' },
+						{ label: 'tmux + Neovim + Go', slug: 'templates/neovim-go' },
 						{ label: 'Java', slug: 'templates/java' },
 						{ label: 'Python', slug: 'templates/python' },
 					],

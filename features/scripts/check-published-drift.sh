@@ -160,8 +160,11 @@ for feature in "${NAMES[@]}"; do
     candidate="${WORK}/${feature}/candidate"
     mkdir -p "$candidate"
     cp -r "${tree}/." "$candidate/"
+    # Comment lines are left alone, exactly as rewrite-feature-refs.sh leaves
+    # them: neovim's header mentions "./bootstrap" in prose, and rewriting it
+    # here but not at release made identical bytes look like drift.
     if [ "$MODE" = "--check" ]; then
-        sed -i -E "s|\"\./([a-z0-9-]+)\"|\"${PROD}/\1\"|g" "${candidate}/devcontainer-feature.json"
+        sed -i -E "/^[[:space:]]*\/\//!s|\"\./([a-z0-9-]+)\"|\"${PROD}/\1\"|g" "${candidate}/devcontainer-feature.json"
     fi
 
     if diff -r "$candidate" "$published" > "${WORK}/${feature}.diff" 2>&1; then

@@ -1,0 +1,86 @@
+---
+title: tmux + Neovim + Go
+description: Trusted terminal-first Go environment — tmux, Neovim with a pinned LazyVim, pinned Go tools and sshd — based on Fedora 43.
+---
+
+import FeatureList from '../../../components/FeatureList.astro';
+import VerifyCommand from '../../../components/VerifyCommand.astro';
+import TestBadge from '../../../components/TestBadge.astro';
+import templates from '../../../data/templates.json';
+
+export const template = templates.find(t => t.id === 'neovim-go');
+
+**Status:** <TestBadge status={template.testStatus} /> &nbsp; **Version:** `v{template.version}` &nbsp; **Platforms:** `linux/amd64`, `linux/arm64`
+
+## Usage
+
+```bash
+devcontainer templates apply \
+  --template-id ghcr.io/infrashift/trusted-devcontainer-templates/neovim-go
+```
+
+## Installed Features
+
+<FeatureList primary={template.features.primary} common={template.features.common} />
+
+## Use Cases
+
+- Terminal-first Go development over SSH, with a persistent tmux session
+- Remote development on DevPod or Nomad-hosted workspaces
+- A pinned, reproducible LazyVim setup that fetches nothing at runtime
+- CLI and service development with gopls, dlv and golangci-lint
+
+## Connecting
+
+Log in and you land in a tmux session with Neovim on the left and a shell on the right. Logging in again re-attaches to the same session. Non-interactive sessions (`ssh host cmd`, VS Code's server) get a plain shell.
+
+No SSH key is baked into the image. Mount your public key and publish the port in the project's `devcontainer.json`:
+
+```jsonc
+"mounts": [
+    "source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/run/secrets/authorized_keys,type=bind,readonly"
+],
+"appPort": ["2222:2222"]
+```
+
+```bash
+ssh -p 2222 dev@localhost
+```
+
+`devpod ssh` and an interactive `devcontainer exec … bash -l` land in the same layout. To skip it for one login, set `DEV_SESSION=off`; to skip it always, create `~/.config/dev-session/disabled`.
+
+## What is pinned
+
+tmux, neovim, lazyvim and go-tools are this repository's own features (see [ADR-009](/trusted-devcontainer-templates/decisions/adr-009-repo-local-features/)):
+
+| Input | Pinned by |
+|---|---|
+| Neovim | release tarball, SHA256 per architecture |
+| LazyVim and every plugin | commits in a committed `lazy-lock.json`, checked after install |
+| tree-sitter parsers | the grammar revisions of the locked nvim-treesitter, built at image build time |
+| gopls, gofumpt, goimports, gomodifytags, impl, dlv | exact versions, built through the Go checksum database |
+| golangci-lint, tree-sitter CLI, stylua, shfmt | release artifacts, SHA256 per architecture |
+
+After the build the editor downloads nothing: Mason and blink.cmp's native matcher are disabled, and tools come from `PATH`.
+
+## Containerfile
+
+The Containerfile is shared across all templates. It provides:
+
+1. Fedora 43 base image pinned by digest
+2. Non-root `dev` user (UID 1001)
+3. uv pre-installed for feature bootstrap
+
+```dockerfile
+FROM ghcr.io/infrashift/trusted-base-images/trusted/fedora43-minimal@sha256:f938c...
+
+ARG USERNAME=dev
+ARG USER_UID=1001
+ARG USER_GID=1001
+```
+
+See [Containerfile Sync](/trusted-devcontainer-templates/pipeline/containerfile-sync/) for how consistency is enforced.
+
+## Verification
+
+<VerifyCommand templateId="neovim-go" />

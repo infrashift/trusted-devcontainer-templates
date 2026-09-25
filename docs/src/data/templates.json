@@ -3,7 +3,7 @@
     "id": "ansible-cue",
     "name": "Ansible + CUE (Trusted)",
     "description": "A trusted Ansible and CUE development environment based on Fedora 43 optimized for infrastructure-as-code workflows.",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "testStatus": "passing",
     "category": "infrastructure",
     "platforms": ["linux/amd64", "linux/arm64"],
@@ -27,7 +27,7 @@
     "id": "dotnet-node",
     "name": ".NET + Node.js (Trusted)",
     "description": "A trusted .NET and Node.js development environment based on Fedora 43 with security scanning tools and supply-chain tooling.",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "testStatus": "passing",
     "category": "web",
     "platforms": ["linux/amd64", "linux/arm64"],
@@ -52,7 +52,7 @@
     "id": "go-cue",
     "name": "Go + CUE (Trusted)",
     "description": "A trusted Go and CUE development environment based on Fedora 43 for CLI/TUI development with security scanning tools.",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "testStatus": "passing",
     "category": "systems",
     "platforms": ["linux/amd64", "linux/arm64"],
@@ -75,7 +75,7 @@
     "id": "java",
     "name": "Java (Trusted)",
     "description": "A trusted Java development environment based on Fedora 43 with OpenJDK, Maven, Gradle, security scanning tools, and supply-chain tooling.",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "testStatus": "passing",
     "category": "enterprise",
     "platforms": ["linux/amd64", "linux/arm64"],
@@ -96,10 +96,38 @@
     ]
   },
   {
+    "id": "neovim-go",
+    "name": "tmux + Neovim + Go (Trusted)",
+    "description": "A trusted terminal-first Go development environment based on Fedora 43: tmux, Neovim with a pinned LazyVim configuration, pinned Go tools, and an SSH server that drops into an editor | shell layout.",
+    "version": "1.0.3",
+    "testStatus": "passing",
+    "category": "systems",
+    "platforms": ["linux/amd64", "linux/arm64"],
+    "features": {
+      "primary": [
+        { "id": "golang", "name": "Go", "options": {} },
+        { "id": "tmux", "name": "tmux", "options": {} },
+        { "id": "neovim", "name": "Neovim", "options": {} },
+        { "id": "lazyvim", "name": "LazyVim", "options": {} },
+        { "id": "go-tools", "name": "Go tools", "options": {} },
+        { "id": "sshd", "name": "sshd", "options": {} },
+        { "id": "make", "name": "Make", "options": {} }
+      ],
+      "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
+    },
+    "keywords": ["neovim", "lazyvim", "tmux", "go", "golang", "ssh", "terminal", "fedora43", "trusted", "secure"],
+    "useCases": [
+      "Terminal-first Go development over SSH, with a persistent tmux session",
+      "Remote development on DevPod or Nomad-hosted workspaces",
+      "A pinned, reproducible LazyVim setup that fetches nothing at runtime",
+      "CLI and service development with gopls, dlv and golangci-lint"
+    ]
+  },
+  {
     "id": "python",
     "name": "Python (Trusted)",
     "description": "A trusted Python development environment based on Fedora 43 with uv, ruff, and security scanning tools.",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "testStatus": "passing",
     "category": "data-science",
     "platforms": ["linux/amd64", "linux/arm64"],
