@@ -49,6 +49,10 @@ check-features: ## Static checks for features/: role contract, bootstrap pin, pu
 	./features/scripts/check-role-contract.sh
 	./features/scripts/check-bootstrap-pin.sh
 	./features/scripts/check-published-drift.sh --check
+	@# Dry-run the stage-time rewrite on a scratch copy. It first ran for real at
+	@# release time, and failed there on a JSONC comment.
+	@tmp=$$(mktemp -d) && cp -r features/src/. "$$tmp/" \
+		&& BASE_DIR="$$tmp" ./features/scripts/rewrite-feature-refs.sh; rc=$$?; rm -rf "$$tmp"; exit $$rc
 
 .PHONY: tools
 tools: ## Install the pinned CI tools locally (BIN=~/.local/bin make tools)

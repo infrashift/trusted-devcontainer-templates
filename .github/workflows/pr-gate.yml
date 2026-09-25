@@ -84,6 +84,11 @@ jobs:
           # A source change at an already-published version would be skipped
           # by publish as "already exists". Bump the version.
           ./features/scripts/check-published-drift.sh --check
+          # The rewrite release-features.yml applies at stage time, dry-run on
+          # a scratch copy. It first ran for real during a release, and failed
+          # there on a JSONC comment.
+          tmp=$(mktemp -d); cp -r features/src/. "$tmp/"
+          BASE_DIR="$tmp" ./features/scripts/rewrite-feature-refs.sh
 
       - name: Lint shell
         run: |

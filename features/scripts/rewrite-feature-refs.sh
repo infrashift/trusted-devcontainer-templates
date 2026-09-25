@@ -31,19 +31,27 @@ case "$(cd "$BASE_DIR" && pwd)" in
         echo "::error::refusing to rewrite the working tree; point BASE_DIR at a staged copy" >&2; exit 1 ;;
 esac
 
+# devcontainer-feature.json is JSONC. References are read from, and rewritten
+# on, non-comment lines only: a header comment explaining why dependsOn is not
+# "./bootstrap" is prose, not a reference, and the first release failed on
+# exactly that sentence.
+code_only() { sed -E 's://.*$::' "$1"; }
+
 rewritten=0
 for f in "$BASE_DIR"/*/devcontainer-feature.json; do
     [ -f "$f" ] || continue
-    for ref in $(grep -oE '"\./[a-z0-9-]+"' "$f" | tr -d '"' | sed 's|^\./||' | sort -u); do
+    for ref in $(code_only "$f" | grep -oE '"\./[a-z0-9-]+"' | tr -d '"' | sed 's|^\./||' | sort -u); do
         [ -d "${BASE_DIR}/${ref}" ] || {
             echo "::error::$(basename "$(dirname "$f")"): ./${ref} is not a staged feature" >&2; exit 1; }
-        sed -i -E "s|\"\./${ref}\"|\"${PROD}/${ref}\"|g" "$f"
+        sed -i -E "/^[[:space:]]*\/\//!s|\"\./${ref}\"|\"${PROD}/${ref}\"|g" "$f"
         rewritten=$((rewritten + 1))
     done
 done
 
 # Assert the output: no relative reference may survive into staging.
-if grep -lE '"\./[a-z0-9-]+"' "$BASE_DIR"/*/devcontainer-feature.json 2>/dev/null; then
-    echo "::error::relative references remain after rewriting" >&2; exit 1
-fi
+for f in "$BASE_DIR"/*/devcontainer-feature.json; do
+    if code_only "$f" | grep -qE '"\./[a-z0-9-]+"'; then
+        echo "::error::relative references remain after rewriting: ${f}" >&2; exit 1
+    fi
+done
 echo "rewrote ${rewritten} relative reference(s) to ${PROD}"

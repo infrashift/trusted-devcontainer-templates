@@ -25,10 +25,14 @@ set -euo pipefail
 
 : "${FEATURES:?}" "${STAGING_NAMESPACE:?}" "${PROD_NAMESPACE:?}" "${EXPECT_DEPENDS_ON:?}"
 REGISTRY="${REGISTRY:-ghcr.io}"
+# Where consumers resolve production. Normally the same registry staging is
+# read from; separate so the script can review a staged copy in a local
+# registry against the real production references.
+PROD_REGISTRY="${PROD_REGISTRY:-$REGISTRY}"
 OUT="${OUT:-staging-verdict.json}"
 
 staging="${REGISTRY}/${STAGING_NAMESPACE,,}"
-prod="${REGISTRY}/${PROD_NAMESPACE,,}"
+prod="${PROD_REGISTRY}/${PROD_NAMESPACE,,}"
 
 [[ "$EXPECT_DEPENDS_ON" =~ ^ghcr\.io/[a-z0-9./-]+@sha256:[0-9a-f]{64}$ ]] || {
     echo "::error::EXPECT_DEPENDS_ON is not a digest-pinned reference: ${EXPECT_DEPENDS_ON@Q}" >&2; exit 1; }
