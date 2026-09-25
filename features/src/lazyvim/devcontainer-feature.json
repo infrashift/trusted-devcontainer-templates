@@ -1,0 +1,71 @@
+// lazyvim-feature/devcontainer-feature.json
+// Find Development Container Feature Specification at https://containers.dev/implementors/features/
+//
+// THIS FILE IS THE SINGLE SOURCE OF TRUTH FOR EVERY OPTION DEFAULT.
+//
+// Installs a LazyVim configuration (core plus the Go language extra) with every
+// plugin at the commit recorded in its lazy-lock.json, the tree-sitter parsers
+// LazyVim asks for, and the formatter/parser CLIs it would otherwise download
+// through Mason at runtime. After the build the editor fetches nothing: see
+// ansible-role-feature/files/nvim/lua/plugins/offline.lua.
+//
+// Needs Neovim on PATH at install time: list the neovim feature before this
+// one. Language servers and formatters for Go come from the go-tools feature.
+//
+// TWO ROLES, TWO LANES. The C compiler, git, ripgrep and fd that LazyVim and
+// nvim-treesitter need are system packages (ansible-role-system, privileged);
+// the configuration, plugins, parsers and CLIs belong to the developer
+// (ansible-role-feature, userland).
+//
+// dependsOn is absolute and digest-pinned; see neovim/devcontainer-feature.json.
+{
+    "name": "lazyvim-feature",
+    "id": "lazyvim",
+    "version": "1.0.0",
+    "description": "Installs a pinned LazyVim configuration (Go extra) with every plugin, tree-sitter parser and formatter preinstalled, so Neovim fetches nothing at runtime.",
+    "options": {
+        // https://github.com/tree-sitter/tree-sitter/releases
+        "tree_sitter_version": {
+            "type": "string",
+            "proposals": ["0.27.0"],
+            "default": "0.27.0",
+            "description": "tree-sitter CLI version (nvim-treesitter builds parsers with it)"
+        },
+        "tree_sitter_checksum": {
+            "type": "string",
+            "default": "",
+            "description": "SHA256 of the tree-sitter-cli release zip. Required when tree_sitter_version is not pinned in the role."
+        },
+        // https://github.com/JohnnyMorganz/StyLua/releases
+        "stylua_version": {
+            "type": "string",
+            "proposals": ["2.5.2"],
+            "default": "2.5.2",
+            "description": "StyLua version (Lua formatter LazyVim configures)"
+        },
+        "stylua_checksum": {
+            "type": "string",
+            "default": "",
+            "description": "SHA256 of the StyLua release zip. Required when stylua_version is not pinned in the role."
+        },
+        // https://github.com/mvdan/sh/releases
+        "shfmt_version": {
+            "type": "string",
+            "proposals": ["3.14.1"],
+            "default": "3.14.1",
+            "description": "shfmt version (shell formatter LazyVim configures)"
+        },
+        "shfmt_checksum": {
+            "type": "string",
+            "default": "",
+            "description": "SHA256 of the shfmt release binary. Required when shfmt_version is not pinned in the role."
+        }
+    },
+    "installsAfter": [
+        "./neovim",
+        "./go-tools"
+    ],
+    "dependsOn": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {}
+    }
+}

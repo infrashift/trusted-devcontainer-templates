@@ -59,6 +59,7 @@ export default defineConfig({
 						{ label: 'ADR-006: Trusted Features Only', slug: 'decisions/adr-006-trusted-features-only' },
 						{ label: 'ADR-007: Fedora 43 Base Image', slug: 'decisions/adr-007-fedora43-base-image' },
 						{ label: 'ADR-008: Ansible Bootstrap Contract', slug: 'decisions/adr-008-ansible-bootstrap-contract' },
+						{ label: 'ADR-009: Repo-Local Features', slug: 'decisions/adr-009-repo-local-features' },
 					],
 				},
 				{

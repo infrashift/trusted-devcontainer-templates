@@ -1,0 +1,78 @@
+// go-tools-feature/devcontainer-feature.json
+// Find Development Container Feature Specification at https://containers.dev/implementors/features/
+//
+// THIS FILE IS THE SINGLE SOURCE OF TRUTH FOR EVERY OPTION DEFAULT.
+//
+// The Go developer tools an editor expects on PATH: gopls, gofumpt, goimports,
+// gomodifytags, impl, dlv and golangci-lint. Every one is pinned to an exact
+// version -- the hand-built image this replaces ran `go install ...@latest`.
+//
+// Six are built with `go install <pkg>@<version>`. Go verifies every module it
+// downloads against the public checksum database (sum.golang.org), and the role
+// sets the Go environment explicitly so an inherited GOFLAGS, GONOSUMDB or
+// GOINSECURE cannot switch that verification off. golangci-lint is a release
+// tarball, verified against a pinned SHA256 like every other download.
+//
+// Requires Go on PATH at install time: list the golang feature before this one.
+// dependsOn is absolute and digest-pinned; see neovim/devcontainer-feature.json.
+{
+    "name": "go-tools-feature",
+    "id": "go-tools",
+    "version": "1.0.0",
+    "description": "Installs pinned Go developer tools (gopls, gofumpt, goimports, gomodifytags, impl, dlv, golangci-lint) into the target user's home on Fedora DevContainers.",
+    "options": {
+        "gopls_version": {
+            "type": "string",
+            "proposals": ["0.23.0"],
+            "default": "0.23.0",
+            "description": "golang.org/x/tools/gopls version"
+        },
+        "gofumpt_version": {
+            "type": "string",
+            "proposals": ["0.12.0"],
+            "default": "0.12.0",
+            "description": "mvdan.cc/gofumpt version"
+        },
+        "goimports_version": {
+            "type": "string",
+            "proposals": ["0.50.0"],
+            "default": "0.50.0",
+            "description": "golang.org/x/tools module version that goimports is built from"
+        },
+        "gomodifytags_version": {
+            "type": "string",
+            "proposals": ["1.17.0"],
+            "default": "1.17.0",
+            "description": "github.com/fatih/gomodifytags version"
+        },
+        "impl_version": {
+            "type": "string",
+            "proposals": ["1.5.0"],
+            "default": "1.5.0",
+            "description": "github.com/josharian/impl version"
+        },
+        "delve_version": {
+            "type": "string",
+            "proposals": ["1.27.2"],
+            "default": "1.27.2",
+            "description": "github.com/go-delve/delve (dlv) version"
+        },
+        "golangci_lint_version": {
+            "type": "string",
+            "proposals": ["2.14.0"],
+            "default": "2.14.0",
+            "description": "golangci-lint release version"
+        },
+        "golangci_lint_checksum": {
+            "type": "string",
+            "default": "",
+            "description": "SHA256 of the golangci-lint release tarball. Required when golangci_lint_version is not pinned in the role."
+        }
+    },
+    "installsAfter": [
+        "ghcr.io/infrashift/trusted-devcontainer-features/golang"
+    ],
+    "dependsOn": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {}
+    }
+}

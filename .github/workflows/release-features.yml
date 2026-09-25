@@ -1,0 +1,283 @@
+name: Release Features
+
+# Publishes the repo-local features under features/src to
+#   ghcr.io/infrashift/trusted-devcontainer-templates/features/<id>
+#
+# Ported from trusted-devcontainer-features' release.yaml, and held to the same
+# model: STAGE, REVIEW, THEN PROMOTE BY DIGEST.
+#
+#   stage    Build-Actor    publishes into a private STAGING namespace. It holds
+#                           no signing key, so it can fill staging with anything
+#                           and still cannot get it promoted.
+#   review   Review-Actor   reads the staged artifacts back out of the registry,
+#                           checks them, and signs a verdict naming the exact
+#                           digests that passed.
+#   promote  Release-Actor  verifies that verdict against the committed
+#                           review.pub, signs the staged digests (keyed and
+#                           keyless), and copies exactly those digests -- with
+#                           their signatures -- into production.
+#
+# ONE PHASE, NOT TWO. The original publishes bootstrap first because its own
+# features depend on it by digest. These depend on the bootstrap published from
+# trusted-devcontainer-features, pinned in source, so every feature here can be
+# staged and reviewed together. Review requires every dependsOn to equal the
+# bootstrap the templates in this repository pin.
+#
+# WHY ON PUSH TO MAIN, NOT ON A TAG. Templates pin features by digest, and a
+# digest does not exist until the feature is published. So a feature release
+# must land BEFORE the template change that pins it: merge the feature, let
+# this publish it, then `make pin-features` in a follow-up PR. Template
+# releases stay on v* tags (release.yml).
+#
+# Publishing is driven by each feature's "version". A feature whose version is
+# already in production is seeded into staging from production's own bytes
+# (check-published-drift.sh --seed), so its digest cannot change; source that
+# differs at an already-published version fails the release.
+#
+# PREREQUISITE: the Release-Actor environment must allow deployments from
+# `main` as well as from `v*` tags. See SETUP-ENVIRONMENTS.md.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'features/src/**'
+      - 'features/scripts/**'
+      - '.github/workflows/release-features.yml'
+
+permissions: {}
+
+env:
+  PROD_NAMESPACE: infrashift/trusted-devcontainer-templates/features
+  # A separate GHCR namespace, not a tag prefix. Anything a consumer could
+  # resolve by accident is not staging.
+  STAGING_NAMESPACE: infrashift/trusted-devcontainer-templates-staging/features
+
+concurrency:
+  # Never cancel a release in flight. A half-published feature set is worse than
+  # a queued one.
+  group: release-features
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    name: contract
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      features: ${{ steps.matrix.outputs.features }}
+      depends_on: ${{ steps.matrix.outputs.depends_on }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Verify the role contract
+        run: ./features/scripts/check-role-contract.sh
+
+      - name: Verify every feature depends on the templates' bootstrap
+        run: ./features/scripts/check-bootstrap-pin.sh
+
+      - name: Assert the review key is committed
+        # Without it, promotion fails at `cosign verify-blob` after staging has
+        # already been published. Failing here says what is actually wrong.
+        run: |
+          set -euo pipefail
+          key=.github/pdp/public-keys/review.pub
+          [ -s "$key" ] || { echo "::error::${key} is missing or empty. See SETUP-ENVIRONMENTS.md."; exit 1; }
+
+      - name: Compute the feature list and the expected bootstrap
+        id: matrix
+        run: |
+          set -euo pipefail
+          find features/src -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort \
+            | jq -R -s -c 'split("\n") | map(select(length > 0))' > features.json
+          # Injection guard: these names reach `run:` blocks and OCI references.
+          if ! jq -e '
+            type == "array" and length > 0 and length <= 64 and
+            all(.[]; type == "string" and test("^[a-z0-9][a-z0-9-]{0,63}$"))
+          ' features.json > /dev/null; then
+            echo "::error::feature list failed schema validation"; cat features.json; exit 1
+          fi
+          jq -r '.[] | "  \(.)"' features.json
+          echo "features=$(jq -c '.' features.json)" >> "$GITHUB_OUTPUT"
+
+          # The one bootstrap every template pins; check-bootstrap-pin.sh has
+          # already asserted there is exactly one.
+          dep=$(grep -hoE 'ghcr\.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:[0-9a-f]{64}' \
+                  src/*/.devcontainer/devcontainer.json | sort -u)
+          [[ "$dep" =~ ^ghcr\.io/[a-z0-9./-]+@sha256:[0-9a-f]{64}$ ]] \
+            || { echo "::error::could not resolve a single bootstrap pin: ${dep}"; exit 1; }
+          echo "depends_on=${dep}" >> "$GITHUB_OUTPUT"
+
+  stage:
+    name: Stage features
+    needs: contract
+    runs-on: ubuntu-latest
+    environment: Build-Actor
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: imjasonh/setup-crane@31b88efe9de28ae0ffa220711af4b60be9435f6e # v0.4
+
+      - name: Stage a copy of features/src with production references
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/stage && mkdir -p /tmp/stage
+          cp -r features/src/. /tmp/stage/
+          BASE_DIR=/tmp/stage ./features/scripts/rewrite-feature-refs.sh
+
+      - name: Seed staging from production where the source is unchanged
+        env:
+          FEATURES: ${{ needs.contract.outputs.features }}
+          BASE_DIR: /tmp/stage
+        run: ./features/scripts/check-published-drift.sh --seed
+
+      - name: Publish to staging
+        uses: devcontainers/action@1082abd5d2bf3a11abccba70eef98df068277772 # v1
+        with:
+          publish-features: "true"
+          base-path-to-features: "/tmp/stage"
+          features-namespace: ${{ env.STAGING_NAMESPACE }}
+          # Git tags are cut by nothing here: a tag would claim a release that
+          # review can still reject.
+          disable-repo-tagging: "true"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  review:
+    name: Review staged features
+    needs: [contract, stage]
+    runs-on: ubuntu-latest
+    # Holds the review key and nothing else. It cannot publish or promote.
+    environment: Review-Actor
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+        with:
+          cosign-release: v2.6.1   # keep in lockstep with tools.lock
+
+      - uses: imjasonh/setup-crane@31b88efe9de28ae0ffa220711af4b60be9435f6e # v0.4
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Review the staged features
+        env:
+          FEATURES: ${{ needs.contract.outputs.features }}
+          EXPECT_DEPENDS_ON: ${{ needs.contract.outputs.depends_on }}
+          OUT: staging-verdict.json
+        run: ./features/scripts/review-staged-features.sh
+
+      - name: Sign the verdict
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          cosign sign-blob --yes --key env://COSIGN_PRIVATE_KEY \
+            --output-signature staging-verdict.json.sig staging-verdict.json
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: features-verdict
+          path: |
+            staging-verdict.json
+            staging-verdict.json.sig
+          if-no-files-found: error
+
+  promote:
+    name: Promote features
+    needs: [contract, review]
+    runs-on: ubuntu-latest
+    environment: Release-Actor
+    permissions:
+      contents: read
+      packages: write
+      id-token: write   # required for the keyless Rekor pass
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+        with:
+          cosign-release: v2.6.1
+
+      - uses: imjasonh/setup-crane@31b88efe9de28ae0ffa220711af4b60be9435f6e # v0.4
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: features-verdict
+
+      # SIGN STAGING, THEN PROMOTE. The other order can leave production holding
+      # an unsigned artifact under every consumer tag when signing fails after
+      # the copy -- which happened in trusted-devcontainer-features. The
+      # signature tags travel with the bytes, and promote-features.sh refuses a
+      # digest it finds no signature for.
+      - name: Sign the staged features
+        env:
+          FEATURES: ${{ needs.contract.outputs.features }}
+          SIGN_NAMESPACE: ghcr.io/${{ env.STAGING_NAMESPACE }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: ./features/scripts/sign-features.sh
+
+      - name: Promote the reviewed digests
+        run: ./features/scripts/promote-features.sh
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: features-release-manifest
+          path: release-manifest.json
+          if-no-files-found: warn
+
+  summary:
+    name: Release Summary
+    needs: [contract, stage, review, promote]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report
+        env:
+          CONTRACT: ${{ needs.contract.result }}
+          STAGE: ${{ needs.stage.result }}
+          REVIEW: ${{ needs.review.result }}
+          PROMOTE: ${{ needs.promote.result }}
+        run: |
+          set -euo pipefail
+          {
+            echo "## Feature release"
+            echo
+            echo "| Stage | Actor | Result |"
+            echo "|---|---|---|"
+            echo "| Contract | — | ${CONTRACT} |"
+            echo "| Stage | Build | ${STAGE} |"
+            echo "| Review | Review | ${REVIEW} |"
+            echo "| Promote | Release | ${PROMOTE} |"
+            echo
+            echo "Production namespace: \`ghcr.io/${PROD_NAMESPACE}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for r in "$CONTRACT" "$STAGE" "$REVIEW" "$PROMOTE"; do
+            case "$r" in success) : ;; *) echo "::error::release stage did not succeed (${r})"; exit 1 ;; esac
+          done

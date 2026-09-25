@@ -1,0 +1,129 @@
+name: Test Features
+
+# Builds the feature test template (features/test/neovim-go) from the WORKING
+# TREE of features/src, runs its smoke tests, then the contract tests:
+# idempotency of every role and each parameter failing by name.
+#
+# Runs natively on both architectures. The templates advertise linux/arm64,
+# and every feature pins a per-arch checksum; an arm64 pin that is wrong or
+# missing only shows up by building on arm64.
+#
+# NOT path-filtered, on purpose. A path-filtered workflow does not run at all,
+# so `test-features/gate` would never report on an unrelated PR and could not be
+# made a required check. Instead matrix-setup decides at runtime, and the gate
+# reports success when nothing under features/ (or the base it builds on)
+# changed.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: test-features-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  matrix-setup:
+    name: Compute Matrix
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.compute.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0   # need history to diff against the PR base
+
+      - name: Decide whether the features need testing
+        id: compute
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          # The features are built on shared/Containerfile, so a base change
+          # re-tests them too.
+          if git diff --name-only "$BASE_SHA" HEAD \
+               | grep -qE '^(features/|shared/Containerfile$|tools\.lock$|\.github/workflows/test-features\.yml$)'; then
+            echo "features or their base changed -> test both architectures"
+            MATRIX='[{"arch":"amd64","runner":"ubuntu-latest"},{"arch":"arm64","runner":"ubuntu-24.04-arm"}]'
+          else
+            echo "nothing under features/ changed -> nothing to test"
+            MATRIX='[]'
+          fi
+          echo "matrix=${MATRIX}" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Test features (${{ matrix.arch }})
+    needs: matrix-setup
+    if: needs.matrix-setup.outputs.matrix != '[]'
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.matrix-setup.outputs.matrix) }}
+    env:
+      TEMPLATE: neovim-go
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Install pinned tools
+        run: sudo BIN=/usr/local/bin ./scripts/install-tools.sh devcontainer-cli
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Stage features/src into the test template
+        run: |
+          set -euo pipefail
+          cp -r features/src/* "features/test/${TEMPLATE}/.devcontainer/"
+          cp features/test/shared/test-lib.sh "features/test/${TEMPLATE}/"
+
+      - name: Build and start the test container
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          devcontainer up --workspace-folder "$(pwd)/features/test/${TEMPLATE}" \
+            --id-label "test=${TEMPLATE}-${ARCH}"
+
+      - name: Run the smoke tests
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          devcontainer exec --workspace-folder "$(pwd)/features/test/${TEMPLATE}" \
+            --id-label "test=${TEMPLATE}-${ARCH}" bash tests.sh
+
+      - name: Run the contract tests (idempotency + failure modes)
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: bash features/test/shared/contract-tests.sh "${TEMPLATE}" "${TEMPLATE}-${ARCH}"
+
+  # A single aggregate context. Never make the matrix legs required checks: their
+  # names change with the matrix, and a required context that stops reporting
+  # blocks every PR forever.
+  gate:
+    name: test-features/gate
+    needs: [matrix-setup, test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate
+        env:
+          SETUP: ${{ needs.matrix-setup.result }}
+          TEST: ${{ needs.test.result }}
+        run: |
+          set -euo pipefail
+          echo "matrix-setup=$SETUP test=$TEST"
+          [ "$SETUP" = success ] || { echo "::error::matrix-setup did not succeed (${SETUP})"; exit 1; }
+          case "$TEST" in
+            success|skipped) echo "all legs succeeded or were skipped" ;;
+            *) echo "::error::a test leg did not succeed (${TEST})"; exit 1 ;;
+          esac

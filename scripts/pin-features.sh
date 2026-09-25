@@ -37,8 +37,16 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
 REGISTRY="${REGISTRY:-ghcr.io}"
-NAMESPACE="${NAMESPACE:-infrashift/trusted-devcontainer-features}"
-BASE="${REGISTRY}/${NAMESPACE}"
+
+# TWO COLLECTIONS ARE PINNED: trusted-devcontainer-features, and the repo-local
+# features under features/ that release-features.yml publishes from this
+# repository. A reference is tracked by its repository path within the
+# registry ("infrashift/trusted-devcontainer-templates/features/tmux"), since
+# the short name alone no longer says which collection it came from.
+NAMESPACES_RE='infrashift/(trusted-devcontainer-features|trusted-devcontainer-templates/features)'
+REF_RE="${REGISTRY}/${NAMESPACES_RE}/[a-z0-9-]+"
+# bootstrap is only ever the features repository's.
+BOOT_BASE="${REGISTRY}/infrashift/trusted-devcontainer-features/bootstrap"
 
 
 # Every ghcr.io call goes through one of these two. Both --check and pin mode
@@ -71,36 +79,43 @@ registry_head() {
 # template against the exact artifact it will install, not against whatever
 # upstream happens to be serving now.
 feature_metadata() {
-    local name="$1" digest="${2:-}"
+    local repo="$1" digest="${2:-}"
     if [ -z "$digest" ]; then
-        digest=$(grep -hoE "${BASE}/${name}@sha256:[0-9a-f]{64}" "${FILES[@]}" | head -1 | sed 's/.*@//')
+        digest=$(grep -hoE "${REGISTRY}/${repo}@sha256:[0-9a-f]{64}" "${FILES[@]}" | head -1 | sed 's/.*@//')
     fi
     [ -n "$digest" ] || return 1
     local token
-    token=$(registry_get "https://ghcr.io/token?scope=repository:${NAMESPACE}/${name}:pull&service=ghcr.io" | jq -r .token) || return 1
+    token=$(registry_get "https://ghcr.io/token?scope=repository:${repo}:pull&service=ghcr.io" | jq -r .token) || return 1
     registry_get -H "Authorization: Bearer ${token}" \
         -H "Accept: application/vnd.oci.image.manifest.v1+json" \
-        "https://ghcr.io/v2/${NAMESPACE}/${name}/manifests/${digest}" \
+        "https://ghcr.io/v2/${repo}/manifests/${digest}" \
       | jq -r '.annotations["dev.containers.metadata"] // empty' || return 1
 }
 
-# feature|option|value for every explicitly passed version option in a template.
+# repo|option|value for every explicitly passed version option in a template.
+# repo is the registry-relative repository path; local "./x" features have no
+# published default to compare against and are skipped. // comments (JSONC) are
+# stripped first.
 template_option_pins() {
-    python3 - "$1" <<'PYEOF' 2>/dev/null || true
-import json, sys
-doc = json.load(open(sys.argv[1]))
+    python3 - "$1" "$REGISTRY" <<'PYEOF' 2>/dev/null || true
+import json, re, sys
+doc = json.loads(re.sub(r"(?m)^\s*//.*$", "", open(sys.argv[1]).read()))
 for ref, opts in (doc.get("features") or {}).items():
-    name = ref.split("@")[0].rsplit("/", 1)[-1]
+    if not ref.startswith(sys.argv[2] + "/"):
+        continue
+    repo = ref.split("@")[0].split("/", 1)[1]
     for k, v in (opts or {}).items():
         if "version" in k and isinstance(v, str) and v:
-            print(f"{name}|{k}|{v}")
+            print(f"{repo}|{k}|{v}")
 PYEOF
 }
 
 CHECK_ONLY=0
 [ "${1:-}" = "--check" ] && CHECK_ONLY=1
 
-mapfile -t FILES < <(find src -mindepth 3 -maxdepth 3 -name devcontainer.json -path '*/.devcontainer/*' | sort)
+# The published templates, plus the feature test template under features/test,
+# which must build against the same pins its features will meet in a template.
+mapfile -t FILES < <(find src features/test -mindepth 3 -maxdepth 3 -name devcontainer.json -path '*/.devcontainer/*' | sort)
 [ "${#FILES[@]}" -gt 0 ] || { echo "::error::no template devcontainer.json found under src/" >&2; exit 1; }
 
 # --- check mode -------------------------------------------------------------
@@ -116,7 +131,7 @@ if [ "$CHECK_ONLY" -eq 1 ]; then
                 echo "::error::${f}: ${ref} is not digest-pinned" >&2
                 fail=1
             fi
-        done < <(grep -oE "\"${BASE}/[a-z0-9-]+(@sha256:[0-9a-f]+)?\"" "$f" | tr -d '"')
+        done < <(grep -oE "\"${REF_RE}(@sha256:[0-9a-f]+)?\"" "$f" | tr -d '"')
     done
     # --- explicit option values vs the pinned feature's own defaults ---------
     # A template may pass an option explicitly, which makes it a SECOND copy of
@@ -128,9 +143,9 @@ if [ "$CHECK_ONLY" -eq 1 ]; then
     for f in "${FILES[@]}"; do
         while IFS= read -r line; do
             [ -n "$line" ] || continue
-            name="${line%%|*}"; rest="${line#*|}"
+            repo="${line%%|*}"; rest="${line#*|}"; name="${repo##*/}"
             opt="${rest%%|*}"; val="${rest##*|}"
-            meta=$(feature_metadata "$name") || continue
+            meta=$(feature_metadata "$repo") || continue
             want=$(jq -r --arg o "$opt" '.options[$o].default // empty' <<<"$meta" 2>/dev/null || true)
             if [ -n "$want" ] && [ "$want" != "$val" ]; then
                 echo "::warning::$(basename "$(dirname "$(dirname "$f")")"): ${name}.${opt}=${val}, but the pinned feature declares ${want}"
@@ -146,12 +161,12 @@ if [ "$CHECK_ONLY" -eq 1 ]; then
     deps=0
     for f in "${FILES[@]}"; do
         tname=$(basename "$(dirname "$(dirname "$f")")")
-        boot=$(grep -oE "\"${BASE}/bootstrap@sha256:[0-9a-f]{64}\"" "$f" | tr -d '"' | head -1)
+        boot=$(grep -oE "\"${BOOT_BASE}@sha256:[0-9a-f]{64}\"" "$f" | tr -d '"' | head -1)
         while IFS= read -r ref; do
             [ -n "$ref" ] || continue
-            name="${ref##*/}"; name="${name%%@*}"; digest="${ref##*@}"
-            [ "$name" = "bootstrap" ] && continue
-            if ! meta=$(feature_metadata "$name" "$digest"); then
+            repo="${ref#*/}"; repo="${repo%%@*}"; name="${repo##*/}"; digest="${ref##*@}"
+            [ "${REGISTRY}/${repo}" = "$BOOT_BASE" ] && continue
+            if ! meta=$(feature_metadata "$repo" "$digest"); then
                 echo "::error::${tname}: could not read metadata for ${name}@${digest}" >&2
                 fail=1; continue
             fi
@@ -163,7 +178,7 @@ if [ "$CHECK_ONLY" -eq 1 ]; then
                     fail=1
                 fi
             done < <(jq -r '(.dependsOn // {}) | keys[]' <<<"$meta" 2>/dev/null)
-        done < <(grep -oE "\"${BASE}/[a-z0-9-]+@sha256:[0-9a-f]{64}\"" "$f" | tr -d '"')
+        done < <(grep -oE "\"${REF_RE}@sha256:[0-9a-f]{64}\"" "$f" | tr -d '"')
     done
 
     [ "$total" -gt 0 ] || { echo "::error::found 0 feature references; refusing to call that a pass" >&2; exit 1; }
@@ -177,36 +192,36 @@ fi
 # --- pin mode ---------------------------------------------------------------
 # Resolve each distinct feature once, so five templates sharing a feature cannot
 # end up pinned to five different digests resolved seconds apart.
-mapfile -t NAMES < <(grep -hoE "${BASE}/[a-z0-9-]+" "${FILES[@]}" | sed "s|${BASE}/||" | sort -u)
+mapfile -t REPOS < <(grep -hoE "${REF_RE}" "${FILES[@]}" | sed "s|^${REGISTRY}/||" | sort -u)
 
 declare -A DIGEST=()
-for name in "${NAMES[@]}"; do
-    token=$(registry_get "https://ghcr.io/token?scope=repository:${NAMESPACE}/${name}:pull&service=ghcr.io" | jq -r .token)
+for repo in "${REPOS[@]}"; do
+    token=$(registry_get "https://ghcr.io/token?scope=repository:${repo}:pull&service=ghcr.io" | jq -r .token)
     # `|| true` so that a failed fetch, or a response without the header, falls
     # through to the explicit error below. Without it `set -e` kills the script
     # on the assignment and the operator gets no message at all -- which is how
     # a registry blip used to read as a silent exit.
     d=$(registry_head -H "Authorization: Bearer ${token}" \
           -H "Accept: application/vnd.oci.image.manifest.v1+json" \
-          "https://ghcr.io/v2/${NAMESPACE}/${name}/manifests/latest" \
+          "https://ghcr.io/v2/${repo}/manifests/latest" \
         | grep -i '^docker-content-digest' | tr -d '\r' | awk '{print $2}' || true)
     if ! [[ "$d" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-        echo "::error::could not resolve a digest for ${name}: got ${d@Q}" >&2
+        echo "::error::could not resolve a digest for ${repo}: got ${d@Q}" >&2
         exit 1
     fi
-    DIGEST["$name"]="$d"
-    printf '  %-14s %s\n' "$name" "$d"
+    DIGEST["$repo"]="$d"
+    printf '  %-56s %s\n' "$repo" "$d"
 done
 
 for f in "${FILES[@]}"; do
-    for name in "${NAMES[@]}"; do
+    for repo in "${REPOS[@]}"; do
         # Match the bare ref OR an existing pin, so re-running re-pins rather
         # than appending a second digest.
-        sed -i -E "s|\"${BASE}/${name}(@sha256:[0-9a-f]+)?\"|\"${BASE}/${name}@${DIGEST[$name]}\"|g" "$f"
+        sed -i -E "s|\"${REGISTRY}/${repo}(@sha256:[0-9a-f]+)?\"|\"${REGISTRY}/${repo}@${DIGEST[$repo]}\"|g" "$f"
     done
 done
 
-echo "pinned ${#NAMES[@]} distinct feature(s) across ${#FILES[@]} template(s)"
+echo "pinned ${#REPOS[@]} distinct feature(s) across ${#FILES[@]} template(s)"
 
 # Assert the OUTPUT, not that the loop ran.
 "$0" --check

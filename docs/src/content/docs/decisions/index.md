@@ -14,9 +14,10 @@ This project documents significant architectural decisions as Architecture Decis
 | [ADR-003](/trusted-devcontainer-templates/decisions/adr-003-non-root-dev-user/) | Non-Root dev User | Accepted (amended) |
 | [ADR-004](/trusted-devcontainer-templates/decisions/adr-004-opa-policy-gate/) | OPA Policy Gate | Accepted (amended) |
 | [ADR-005](/trusted-devcontainer-templates/decisions/adr-005-dual-signing/) | Dual Signing | Accepted |
-| [ADR-006](/trusted-devcontainer-templates/decisions/adr-006-trusted-features-only/) | Trusted Features Only | Accepted (amended) |
+| [ADR-006](/trusted-devcontainer-templates/decisions/adr-006-trusted-features-only/) | Trusted Features Only | Accepted (amended by ADR-009) |
 | [ADR-007](/trusted-devcontainer-templates/decisions/adr-007-fedora43-base-image/) | Fedora 43 Minimal Base Image | Accepted |
 | [ADR-008](/trusted-devcontainer-templates/decisions/adr-008-ansible-bootstrap-contract/) | Ansible Bootstrap Contract | Accepted |
+| [ADR-009](/trusted-devcontainer-templates/decisions/adr-009-repo-local-features/) | Repo-Local Features | Accepted |
 
 ## ADR Format
 

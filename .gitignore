@@ -16,3 +16,10 @@ evidence/
 docs/dist/
 docs/node_modules/
 docs/.astro/
+
+# Repo-local features staged into the feature test template by
+# `make test-feature-template` (see features/README.md).
+features/test/*/.devcontainer/*/
+features/test/*/test-lib.sh
+!features/test/shared/test-lib.sh
+features/test/*/.devcontainer/devcontainer-lock.json

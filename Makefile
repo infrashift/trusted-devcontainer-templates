@@ -23,6 +23,33 @@ test-template: ## Test one template (TEMPLATE=python)
 	bunx @devcontainers/cli exec --workspace-folder "src/$(TEMPLATE)" \
 		bash $(TEST_MOUNT)/$(TEMPLATE)/test.sh
 
+## ── Repo-local features (features/) ──────────────────────────
+
+# The one test template that exercises every feature under features/src.
+FEATURE_TEST := neovim-go
+FEATURE_TEST_DIR := features/test/$(FEATURE_TEST)
+
+.PHONY: test-feature-template
+test-feature-template: ## Build the feature test template from the working tree, then run its tests and contract tests
+	rm -rf $(addprefix $(FEATURE_TEST_DIR)/.devcontainer/,$(notdir $(wildcard features/src/*)))
+	cp -r features/src/* $(FEATURE_TEST_DIR)/.devcontainer/
+	cp features/test/shared/test-lib.sh $(FEATURE_TEST_DIR)/
+	bunx @devcontainers/cli up --workspace-folder "$(CURDIR)/$(FEATURE_TEST_DIR)" \
+		--id-label "test=$(FEATURE_TEST)" --remove-existing-container
+	bunx @devcontainers/cli exec --workspace-folder "$(CURDIR)/$(FEATURE_TEST_DIR)" \
+		--id-label "test=$(FEATURE_TEST)" bash tests.sh
+	bash features/test/shared/contract-tests.sh $(FEATURE_TEST)
+
+.PHONY: lazy-lock
+lazy-lock: ## Re-resolve the LazyVim plugin lockfile (the one deliberately unpinned step)
+	./features/scripts/update-lazy-lock.sh
+
+.PHONY: check-features
+check-features: ## Static checks for features/: role contract, bootstrap pin, published drift
+	./features/scripts/check-role-contract.sh
+	./features/scripts/check-bootstrap-pin.sh
+	./features/scripts/check-published-drift.sh --check
+
 .PHONY: tools
 tools: ## Install the pinned CI tools locally (BIN=~/.local/bin make tools)
 	BIN=$${BIN:-$$HOME/.local/bin} ./scripts/install-tools.sh opa gitleaks syft grype
@@ -69,7 +96,7 @@ repo-gate: ## Run the repository-scoped PDP against the working tree
 # Everything CI's repo-gate job runs, minus the container builds. Fast enough to
 # run before every push.
 .PHONY: check
-check: check-sync check-pins check-assertions check-workflows check-policy repo-gate ## Run every static check
+check: check-sync check-pins check-assertions check-workflows check-features check-policy repo-gate ## Run every static check
 	@echo "── all static checks passed ──"
 
 .PHONY: test

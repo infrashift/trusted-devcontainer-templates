@@ -1,0 +1,113 @@
+# go-tools-feature/ansible-role-feature/vars/main.yml
+---
+# Variants this role has actually been tested against. The variant is detected
+# once at bootstrap install time from /etc/os-release and published as a group
+# var in /opt/bootstrap/inventory.yml.
+_securedevcontainer_compatibility_list:
+  - fedora43
+
+# ---------------------------------------------------------------------------
+# DERIVED VALUES AND ROLE CONSTANTS
+# ---------------------------------------------------------------------------
+# Where a Go toolchain may be. This role does not install Go itself; it uses
+# the first of these that exists, and names the feature to add when none does.
+#
+# The runner starts roles with a fixed PATH, so Go cannot simply be looked up:
+# the golang feature puts it under ~/.local/share/go/bin and adds that to PATH
+# through containerEnv, which only reaches the running container.
+_gotools_go_candidates:
+  - "{{ _target_user_home }}/.local/share/go/bin/go"
+  - "{{ _target_user_home }}/.local/bin/go"
+  - /usr/local/go/bin/go
+
+_gotools_bin_dir: "{{ _target_user_home }}/.local/share/go-tools/bin"
+_gotools_link_dir: "{{ _target_user_home }}/.local/bin"
+
+# Everything `go install` downloads or compiles goes under one scratch
+# directory that is deleted in the same run. The binaries are all that is kept;
+# the module cache and build cache are several GB that serve no purpose at
+# runtime (the hand-built image this replaces ran out of disk on exactly that).
+_gotools_scratch: /tmp/go-tools-build
+
+# Each tool built from source. `module` is the module that go version -m
+# reports for the binary, which is what the role verifies against: goimports
+# and dlv are packages inside a larger module, so the package path alone
+# cannot be matched.
+_gotools_go_installs:
+  - bin: gopls
+    pkg: golang.org/x/tools/gopls
+    module: golang.org/x/tools/gopls
+    version: "v{{ _gopls_version }}"
+  - bin: gofumpt
+    pkg: mvdan.cc/gofumpt
+    module: mvdan.cc/gofumpt
+    version: "v{{ _gofumpt_version }}"
+  - bin: goimports
+    pkg: golang.org/x/tools/cmd/goimports
+    module: golang.org/x/tools
+    version: "v{{ _goimports_version }}"
+  - bin: gomodifytags
+    pkg: github.com/fatih/gomodifytags
+    module: github.com/fatih/gomodifytags
+    version: "v{{ _gomodifytags_version }}"
+  - bin: impl
+    pkg: github.com/josharian/impl
+    module: github.com/josharian/impl
+    version: "v{{ _impl_version }}"
+  - bin: dlv
+    pkg: github.com/go-delve/delve/cmd/dlv
+    module: github.com/go-delve/delve
+    version: "v{{ _delve_version }}"
+
+# The environment for `go install`, stated in full rather than inherited.
+#
+#   GOPROXY / GOSUMDB   the public proxy and checksum database, with no
+#                       "direct" fallback: every module is fetched through the
+#                       proxy and verified against sum.golang.org.
+#   GONOSUMDB, GONOSUMCHECK, GOPRIVATE, GONOPROXY, GOINSECURE
+#                       set EMPTY. Any of these inherited from the build
+#                       environment would exempt modules from verification.
+#   GOENV=off           ignore a go.env file for the same reason.
+#   GOTOOLCHAIN=local   never download a different Go toolchain. A tool that
+#                       needs a newer Go than the golang feature provides fails
+#                       here, by name, instead of quietly fetching one.
+#   GOFLAGS             -trimpath for reproducible binaries; -modcacherw so the
+#                       scratch module cache can be deleted afterwards.
+#   CGO_ENABLED=0       pure-Go builds; no dependency on a C toolchain.
+_gotools_go_env:
+  GOBIN: "{{ _gotools_bin_dir }}"
+  GOPATH: "{{ _gotools_scratch }}/gopath"
+  GOMODCACHE: "{{ _gotools_scratch }}/gopath/pkg/mod"
+  GOCACHE: "{{ _gotools_scratch }}/cache"
+  GOPROXY: "https://proxy.golang.org"
+  GOSUMDB: "sum.golang.org"
+  GONOSUMDB: ""
+  GONOSUMCHECK: ""
+  GOPRIVATE: ""
+  GONOPROXY: ""
+  GOINSECURE: ""
+  GOENV: "off"
+  GOTOOLCHAIN: "local"
+  GOFLAGS: "-trimpath -modcacherw"
+  CGO_ENABLED: "0"
+
+# golangci-lint ships prebuilt binaries named with Go's own arch names, so
+# _target_arch is used as-is.
+_golangci_lint_dirname: "golangci-lint-{{ _golangci_lint_version }}-linux-{{ _target_arch }}"
+_golangci_lint_tarball: "{{ _golangci_lint_dirname }}.tar.gz"
+_golangci_lint_download_url: "https://github.com/golangci/golangci-lint/releases/download/v{{ _golangci_lint_version }}/{{ _golangci_lint_tarball }}"
+_golangci_lint_install_dir: "{{ _target_user_home }}/.local/share/golangci-lint/{{ _golangci_lint_version }}"
+_golangci_lint_bin: "{{ _gotools_link_dir }}/golangci-lint"
+
+# SHA256 digests pinned per version, per architecture, from the digests GitHub
+# records for each release asset. A version/arch pair that is absent resolves
+# to '' and is caught by the checksum assert in tasks/main.yml.
+_golangci_lint_pinned_checksums:
+  "2.14.0":
+    amd64: "ab90aeb7b066f92a33415b638a50fe5344bbb75a0d32ad30cc248d88f81032ab"
+    arm64: "ee7ec5f3453d15ddf106fae5a4d6c71737712348a979d1fe9cd52ec7ea299bae"
+
+_golangci_lint_effective_checksum: >-
+  {{ _golangci_lint_checksum if _golangci_lint_checksum | length > 0
+     else _golangci_lint_pinned_checksums.get(_golangci_lint_version, {}).get(_target_arch, '') }}
+...
