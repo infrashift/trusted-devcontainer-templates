@@ -16,7 +16,7 @@ anything without a review verdict signed by `review.pub`.
 | 3. Environments + secrets | done — all three hold their own key and password |
 | 4. Environment reviewers | done — `ryancraig` on Review-Actor and Release-Actor, `prevent_self_review: false` |
 | 4b. Release-Actor ref restriction | done — `custom_branch_policies`, one `tag v*` policy |
-| 4c. Release-Actor: allow `main` for `release-features.yml` | **not done** — see that step |
+| 4c. Release-Actor: allow `main` for `release-features.yml` | done 2026-09-25 — policies `branch main` + `tag v*`, reviewer intact |
 | 4d. Feature packages public | **not done** — after the first feature release |
 | 5. Teams | none, deliberately — see that step |
 | 6. Branch protection | done — ruleset `main`, requires a PR and all three checks; 0 approvals, no bypass |
