@@ -12,6 +12,7 @@ Every template ships with SBOM, CVE scan results, SLSA v1.0 provenance, and dual
 | `dotnet-node` | .NET + Node.js full-stack development | .NET SDK, Node.js, npm, pnpm |
 | `go-cue` | Go + CUE for CLI/TUI development | Go, CUE |
 | `java` | Java development | OpenJDK, Maven, Gradle |
+| `neovim-go` | Terminal-first Go: tmux + Neovim (LazyVim) over SSH | Go, gopls, dlv, golangci-lint, Neovim, tmux, sshd |
 | `python` | Python development | Python 3.14, uv, ruff |
 
 All templates include: git, git-lfs, grype, syft, jq, yq.
