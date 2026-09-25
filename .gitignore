@@ -21,4 +21,5 @@ docs/.astro/
 # `make test-feature-template` (see features/README.md).
 features/test/*/.devcontainer/*/
 features/test/*/test-lib.sh
+!features/test/shared/test-lib.sh
 features/test/*/.devcontainer/devcontainer-lock.json
