@@ -9,8 +9,8 @@
     "platforms": ["linux/amd64", "linux/arm64"],
     "features": {
       "primary": [
-        { "id": "ansible-core", "name": "Ansible Core", "options": { "target_version": "2.18.2", "target_python_version": "3.12" } },
-        { "id": "python", "name": "Python", "options": { "target_version": "3.12" } },
+        { "id": "ansible-core", "name": "Ansible Core", "options": { "target_version": "2.21.3", "target_python_version": "3.14" } },
+        { "id": "python", "name": "Python", "options": { "target_version": "3.14" } },
         { "id": "cuelang", "name": "CUElang", "options": {} }
       ],
       "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
@@ -105,7 +105,7 @@
     "platforms": ["linux/amd64", "linux/arm64"],
     "features": {
       "primary": [
-        { "id": "python", "name": "Python", "options": { "target_version": "3.12" } },
+        { "id": "python", "name": "Python", "options": { "target_version": "3.14" } },
         { "id": "uv-ruff", "name": "UV & Ruff", "options": {} }
       ],
       "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]

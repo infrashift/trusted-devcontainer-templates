@@ -1,0 +1,379 @@
+# lazyvim-feature/ansible-role-feature/tasks/main.yml
+---
+# The variant is detected once, at bootstrap install time, from /etc/os-release
+# and published as a group var in /opt/bootstrap/inventory.yml.
+- name: Assert that _securedevcontainer_variant is in the _securedevcontainer_compatibility_list
+  ansible.builtin.assert:
+    that: _securedevcontainer_variant in _securedevcontainer_compatibility_list
+    fail_msg: "_securedevcontainer_variant = '{{ _securedevcontainer_variant }}' is NOT in the _securedevcontainer_compatibility_list = '{{ _securedevcontainer_compatibility_list }}'."
+
+# ---------------------------------------------------------------------------
+# PARAMETER BRACKET — this role has NO defaults. Every value below must arrive
+# as an extra-var from install.sh, so a missing one fails here, by name, before
+# any work happens.
+# ---------------------------------------------------------------------------
+- name: Assert that the runner contract was satisfied
+  ansible.builtin.assert:
+    that:
+      - _target_username is defined and _target_username | length > 0
+      - _target_user_home is defined and _target_user_home | length > 0
+      - _target_arch in ['amd64', 'arm64']
+    fail_msg: >-
+      This role must be invoked through /opt/bootstrap/run-feature.sh, which
+      injects _target_username, _target_user_home and _target_arch.
+
+- name: Assert that every required role parameter was supplied
+  ansible.builtin.assert:
+    that:
+      - _tree_sitter_version is defined and _tree_sitter_version | length > 0
+      - _tree_sitter_checksum is defined
+      - _stylua_version is defined and _stylua_version | length > 0
+      - _stylua_checksum is defined
+      - _shfmt_version is defined and _shfmt_version | length > 0
+      - _shfmt_checksum is defined
+      - _tree_sitter_version is match('^\d+\.\d+\.\d+$')
+      - _stylua_version is match('^\d+\.\d+\.\d+$')
+      - _shfmt_version is match('^\d+\.\d+\.\d+$')
+      - _tree_sitter_checksum | length == 0 or _tree_sitter_checksum is match('^[0-9a-fA-F]{64}$')
+      - _stylua_checksum | length == 0 or _stylua_checksum is match('^[0-9a-fA-F]{64}$')
+      - _shfmt_checksum | length == 0 or _shfmt_checksum is match('^[0-9a-fA-F]{64}$')
+    fail_msg: >-
+      A required role parameter was not supplied. This role has NO defaults by
+      design — install.sh must pass each one via -e, sourced from the matching
+      option default in devcontainer-feature.json:
+        _tree_sitter_version  <- tree_sitter_version   (mandatory, non-empty)
+        _tree_sitter_checksum <- tree_sitter_checksum  (may be empty; uses the pinned map)
+        _stylua_version       <- stylua_version        (mandatory, non-empty)
+        _stylua_checksum      <- stylua_checksum       (may be empty; uses the pinned map)
+        _shfmt_version        <- shfmt_version         (mandatory, non-empty)
+        _shfmt_checksum       <- shfmt_checksum        (may be empty; uses the pinned map)
+
+        every version must look like X.Y.Z
+        every checksum, when not empty, must be a 64-character SHA256 hex digest
+    success_msg: >-
+      tree-sitter {{ _tree_sitter_version }}, stylua {{ _stylua_version }},
+      shfmt {{ _shfmt_version }} ({{ _target_arch }});
+      {{ _lazyvim_lock | length }} locked plugins
+
+# ---------------------------------------------------------------------------
+# FEATURE TASKS — userland.
+# ---------------------------------------------------------------------------
+- name: Check that Neovim is installed
+  ansible.builtin.command: "{{ _lazyvim_nvim }} --version"
+  register: _lazyvim_nvim_probe
+  failed_when: false
+  changed_when: false
+
+- name: Assert that Neovim is available
+  ansible.builtin.assert:
+    that: _lazyvim_nvim_probe.rc == 0
+    fail_msg: >-
+      lazyvim configures Neovim, and found none at {{ _lazyvim_nvim }}. Add
+      ghcr.io/infrashift/trusted-devcontainer-templates/features/neovim to the
+      devcontainer.json and order it before this feature.
+    success_msg: "{{ _lazyvim_nvim_probe.stdout_lines | first }}"
+
+# --- Formatter and parser CLIs -----------------------------------------------
+# Installed FIRST: nvim-treesitter needs the tree-sitter CLI on PATH when
+# Neovim starts, and LazyVim reaches for Mason to download one when it is not.
+- name: Check the installed CLI versions
+  ansible.builtin.command: "{{ _lazyvim_bin_dir }}/{{ item.name }} --version"
+  loop: "{{ _lazyvim_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: _lazyvim_tools_probe
+  failed_when: false
+  changed_when: false
+
+- name: Start with no CLIs pending
+  ansible.builtin.set_fact:
+    _lazyvim_tools_pending: []
+
+- name: Collect the CLIs that need installing
+  ansible.builtin.set_fact:
+    _lazyvim_tools_pending: "{{ _lazyvim_tools_pending + [item.item] }}"
+  loop: "{{ _lazyvim_tools_probe.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: item.rc != 0 or (item.stdout | trim) is not search(item.item.pattern)
+
+- name: Assert that a checksum is available for every pending CLI
+  ansible.builtin.assert:
+    that: item.checksum | trim | length > 0
+    fail_msg: >-
+      No SHA256 is pinned for {{ item.name }} {{ item.version }} on {{ _target_arch }}.
+      Pass the matching *_checksum option to install a version other than the default.
+  loop: "{{ _lazyvim_tools_pending }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Ensure each CLI's install directory exists
+  ansible.builtin.file:
+    path: "{{ _target_user_home }}/.local/share/{{ item.name }}/{{ item.version }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ _lazyvim_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Ensure ~/.local/bin exists
+  ansible.builtin.file:
+    path: "{{ _lazyvim_bin_dir }}"
+    state: directory
+    mode: '0755'
+
+# Zipped releases are downloaded to /tmp and extracted; a bare binary is
+# downloaded straight to its final place. Either way get_url verifies it.
+- name: Download the pending CLI releases
+  ansible.builtin.get_url:
+    url: "{{ item.url_base }}/{{ item.asset }}"
+    dest: >-
+      {{ '/tmp/' ~ item.asset if item.format == 'zip'
+         else _target_user_home ~ '/.local/share/' ~ item.name ~ '/' ~ item.version ~ '/' ~ item.name }}
+    mode: "{{ '0644' if item.format == 'zip' else '0755' }}"
+    checksum: "sha256:{{ item.checksum | trim }}"
+    timeout: 120
+  loop: "{{ _lazyvim_tools_pending }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Extract the zipped CLIs
+  ansible.builtin.unarchive:
+    src: "/tmp/{{ item.asset }}"
+    dest: "{{ _target_user_home }}/.local/share/{{ item.name }}/{{ item.version }}"
+    remote_src: true
+  loop: "{{ _lazyvim_tools_pending | selectattr('format', 'equalto', 'zip') | list }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Remove the downloaded archives
+  ansible.builtin.file:
+    path: "/tmp/{{ item.asset }}"
+    state: absent
+  loop: "{{ _lazyvim_tools | selectattr('format', 'equalto', 'zip') | list }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Symlink the CLIs into ~/.local/bin
+  ansible.builtin.file:
+    src: "{{ _target_user_home }}/.local/share/{{ item.name }}/{{ item.version }}/{{ item.name }}"
+    dest: "{{ _lazyvim_bin_dir }}/{{ item.name }}"
+    state: link
+    force: true
+  loop: "{{ _lazyvim_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Verify the installed CLI versions
+  ansible.builtin.command: "{{ _lazyvim_bin_dir }}/{{ item.name }} --version"
+  loop: "{{ _lazyvim_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: _lazyvim_tools_verify
+  changed_when: false
+
+- name: Assert that every CLI is installed at its requested version
+  ansible.builtin.assert:
+    that: (item.stdout | trim) is search(item.item.pattern)
+    fail_msg: "Expected {{ item.item.name }} {{ item.item.version }}; it reported: {{ item.stdout }}"
+    success_msg: "{{ item.stdout | trim }}"
+  loop: "{{ _lazyvim_tools_verify.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+
+# --- Configuration -------------------------------------------------------------
+- name: Ensure the Neovim config directory exists
+  ansible.builtin.file:
+    path: "{{ _lazyvim_config_dir }}"
+    state: directory
+    mode: '0755'
+
+# Copies only the files this feature owns. Anything else a developer adds under
+# ~/.config/nvim (their own lua/plugins/*.lua, lazyvim.json) is left alone.
+- name: Install the LazyVim configuration and lockfile
+  ansible.builtin.copy:
+    src: nvim/
+    dest: "{{ _lazyvim_config_dir }}/"
+    mode: '0644'
+    directory_mode: '0755'
+
+# --- Plugins, at their locked commits ------------------------------------------
+- name: Check each plugin's checked-out commit
+  ansible.builtin.command:
+    argv:
+      - git
+      - -C
+      - "{{ _lazyvim_plugin_dir }}/{{ item.key }}"
+      - rev-parse
+      - HEAD
+  loop: "{{ _lazyvim_lock | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  register: _lazyvim_plugin_probe
+  failed_when: false
+  changed_when: false
+
+- name: Start with no plugins pending
+  ansible.builtin.set_fact:
+    _lazyvim_plugins_pending: []
+
+- name: Collect the plugins that are missing or not at their locked commit
+  ansible.builtin.set_fact:
+    _lazyvim_plugins_pending: "{{ _lazyvim_plugins_pending + [item.item.key] }}"
+  loop: "{{ _lazyvim_plugin_probe.results }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+  when: item.rc != 0 or (item.stdout | trim) != item.item.value.commit
+
+# lazy.nvim is the plugin manager, so it cannot install itself. Clone it at the
+# locked commit; lazy.lua refuses to fetch an unpinned copy if it is missing.
+- name: Install lazy.nvim at its locked commit
+  ansible.builtin.git:
+    repo: "{{ _lazyvim_lazy_nvim_repo }}"
+    dest: "{{ _lazyvim_plugin_dir }}/lazy.nvim"
+    version: "{{ _lazyvim_lock['lazy.nvim'].commit }}"
+    force: true
+  when: "'lazy.nvim' in _lazyvim_plugins_pending"
+
+# `Lazy! restore` installs any missing plugin and moves every plugin to the
+# commit in lazy-lock.json. Its exit status says little -- headless Neovim exits
+# 0 after most plugin errors -- so success is decided by the re-check below,
+# not by this command. That replaces the `|| true` the hand-built image used.
+- name: Restore every plugin to its locked commit
+  ansible.builtin.command:
+    argv:
+      - "{{ _lazyvim_nvim }}"
+      - --headless
+      - "+Lazy! restore"
+      - +qa
+  register: _lazyvim_restore
+  when: _lazyvim_plugins_pending | length > 0
+  changed_when: true
+
+- name: Re-check each plugin's checked-out commit
+  ansible.builtin.command:
+    argv:
+      - git
+      - -C
+      - "{{ _lazyvim_plugin_dir }}/{{ item.key }}"
+      - rev-parse
+      - HEAD
+  loop: "{{ _lazyvim_lock | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  register: _lazyvim_plugin_verify
+  failed_when: false
+  changed_when: false
+
+- name: Assert that every plugin is at its locked commit
+  ansible.builtin.assert:
+    that: item.rc == 0 and (item.stdout | trim) == item.item.value.commit
+    fail_msg: >-
+      {{ item.item.key }} is at '{{ item.stdout | default('') | trim }}' (rc={{ item.rc }}),
+      but lazy-lock.json pins {{ item.item.value.commit }}.
+      {{ (_lazyvim_restore.stderr | default('') | trim)[-800:] }}
+    quiet: true
+  loop: "{{ _lazyvim_plugin_verify.results }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+
+- name: Ask lazy.nvim which plugins it considers missing
+  ansible.builtin.command:
+    argv:
+      - "{{ _lazyvim_nvim }}"
+      - --headless
+      - "+lua {{ _lazyvim_lua_missing_plugins }}"
+      - +qa
+  register: _lazyvim_lazy_state
+  changed_when: false
+
+# A Lua error in a headless `+lua` command is printed and then ignored: Neovim
+# still exits 0, just without the marker line. Say so, with what Neovim said,
+# instead of failing later on a regex that matched nothing.
+- name: Assert that the plugin probe ran
+  ansible.builtin.assert:
+    that: _lazyvim_lazy_state.stdout is search('MISSING_PLUGINS=')
+    fail_msg: "The lazy.nvim probe did not report. stdout: {{ _lazyvim_lazy_state.stdout }} stderr: {{ _lazyvim_lazy_state.stderr }}"
+    quiet: true
+
+- name: Assert that lazy.nvim has every plugin in its spec installed
+  ansible.builtin.assert:
+    that: >-
+      (_lazyvim_lazy_state.stdout | regex_findall('MISSING_PLUGINS=(.*)') | last | from_json | list) == []
+    fail_msg: >-
+      lazy.nvim reports plugins in the spec that are not installed -- the spec
+      names a plugin lazy-lock.json does not cover. Run `make lazy-lock`.
+      {{ _lazyvim_lazy_state.stdout }}
+    success_msg: "all {{ _lazyvim_lock | length }} plugins installed at their locked commits"
+
+# --- Tree-sitter parsers -------------------------------------------------------
+# nvim-treesitter builds each parser from the grammar revision its own (locked)
+# commit pins, with the tree-sitter CLI and gcc installed above.
+- name: Find the tree-sitter parsers LazyVim wants that are not installed
+  ansible.builtin.command:
+    argv:
+      - "{{ _lazyvim_nvim }}"
+      - --headless
+      - "+lua {{ _lazyvim_lua_missing_parsers }}"
+      - +qa
+  register: _lazyvim_parsers_probe
+  changed_when: false
+
+- name: Assert that the parser probe ran
+  ansible.builtin.assert:
+    that: _lazyvim_parsers_probe.stdout is search('MISSING_PARSERS=')
+    fail_msg: "The tree-sitter probe did not report. stdout: {{ _lazyvim_parsers_probe.stdout }} stderr: {{ _lazyvim_parsers_probe.stderr }}"
+    quiet: true
+
+- name: Collect the missing parsers
+  ansible.builtin.set_fact:
+    _lazyvim_parsers_pending: >-
+      {{ _lazyvim_parsers_probe.stdout | regex_findall('MISSING_PARSERS=(.*)') | last | from_json | list }}
+
+# install() is asynchronous; :wait() blocks until every parser is built, so
+# Neovim cannot exit halfway through (which is what `+qa` alone would do).
+#
+# The list is rendered as a Lua table -- {"go","bash"} -- not with to_json,
+# whose ["go","bash"] is a Lua syntax error that headless Neovim prints and
+# ignores. The marker line proves the call actually ran to completion.
+#
+# force: only the parsers the probe found missing are passed, and a parser whose
+# .so is gone but whose install record survived would otherwise be skipped as
+# already installed.
+- name: Build the missing tree-sitter parsers
+  ansible.builtin.command:
+    argv:
+      - "{{ _lazyvim_nvim }}"
+      - --headless
+      - >-
+        +lua require('nvim-treesitter').install({ {{ _lazyvim_parsers_pending | map('to_json') | join(', ') }} }, { force = true }):wait(1800000)
+        io.stdout:write("\nPARSERS_INSTALLED\n")
+      - +qa
+  register: _lazyvim_parsers_install
+  when: _lazyvim_parsers_pending | length > 0
+  changed_when: true
+  failed_when: _lazyvim_parsers_install.stdout is not search('PARSERS_INSTALLED')
+
+- name: Re-check the tree-sitter parsers
+  ansible.builtin.command:
+    argv:
+      - "{{ _lazyvim_nvim }}"
+      - --headless
+      - "+lua {{ _lazyvim_lua_missing_parsers }}"
+      - +qa
+  register: _lazyvim_parsers_verify
+  changed_when: false
+
+- name: Assert that the parser re-check ran
+  ansible.builtin.assert:
+    that: _lazyvim_parsers_verify.stdout is search('MISSING_PARSERS=')
+    fail_msg: "The tree-sitter re-check did not report. stdout: {{ _lazyvim_parsers_verify.stdout }} stderr: {{ _lazyvim_parsers_verify.stderr }}"
+    quiet: true
+
+- name: Assert that every parser LazyVim wants is installed
+  ansible.builtin.assert:
+    that: >-
+      (_lazyvim_parsers_verify.stdout | regex_findall('MISSING_PARSERS=(.*)') | last | from_json | list) == []
+    fail_msg: "tree-sitter parsers still missing after install: {{ _lazyvim_parsers_verify.stdout }}"
+    success_msg: "every tree-sitter parser LazyVim asks for is installed"
+...

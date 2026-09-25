@@ -1,0 +1,99 @@
+# lazyvim-feature/ansible-role-feature/vars/main.yml
+---
+# Variants this role has actually been tested against. The variant is detected
+# once at bootstrap install time from /etc/os-release and published as a group
+# var in /opt/bootstrap/inventory.yml.
+_securedevcontainer_compatibility_list:
+  - fedora43
+
+# ---------------------------------------------------------------------------
+# DERIVED VALUES AND ROLE CONSTANTS
+# ---------------------------------------------------------------------------
+# The neovim feature links nvim into ~/.local/bin. This role asserts it is
+# there and names the feature to add when it is not.
+_lazyvim_nvim: "{{ _target_user_home }}/.local/bin/nvim"
+_lazyvim_bin_dir: "{{ _target_user_home }}/.local/bin"
+_lazyvim_config_dir: "{{ _target_user_home }}/.config/nvim"
+# lazy.nvim's root: stdpath('data')/lazy
+_lazyvim_plugin_dir: "{{ _target_user_home }}/.local/share/nvim/lazy"
+
+# The lockfile this role installs from, read once so each plugin's commit can
+# be checked against what is on disk. Regenerate it with `make lazy-lock`.
+_lazyvim_lock: "{{ lookup('ansible.builtin.file', role_path ~ '/files/nvim/lazy-lock.json') | from_json }}"
+_lazyvim_lazy_nvim_repo: https://github.com/folke/lazy.nvim.git
+
+# The CLIs LazyVim would otherwise install through Mason. Each upstream names
+# its assets differently, so _target_arch is translated per tool here and
+# nowhere else. `pattern` is matched against the tool's own version output,
+# anchored so one version cannot pass for another that it prefixes.
+_lazyvim_tools:
+  - name: tree-sitter
+    version: "{{ _tree_sitter_version }}"
+    asset: "tree-sitter-cli-linux-{{ {'amd64': 'x64', 'arm64': 'arm64'}[_target_arch] }}.zip"
+    url_base: "https://github.com/tree-sitter/tree-sitter/releases/download/v{{ _tree_sitter_version }}"
+    format: zip
+    checksum: >-
+      {{ _tree_sitter_checksum if _tree_sitter_checksum | length > 0
+         else _tree_sitter_pinned_checksums.get(_tree_sitter_version, {}).get(_target_arch, '') }}
+    pattern: "^tree-sitter {{ _tree_sitter_version | regex_escape }}(\\s|$)"
+  - name: stylua
+    version: "{{ _stylua_version }}"
+    asset: "stylua-linux-{{ {'amd64': 'x86_64', 'arm64': 'aarch64'}[_target_arch] }}.zip"
+    url_base: "https://github.com/JohnnyMorganz/StyLua/releases/download/v{{ _stylua_version }}"
+    format: zip
+    checksum: >-
+      {{ _stylua_checksum if _stylua_checksum | length > 0
+         else _stylua_pinned_checksums.get(_stylua_version, {}).get(_target_arch, '') }}
+    pattern: "^stylua {{ _stylua_version | regex_escape }}$"
+  - name: shfmt
+    version: "{{ _shfmt_version }}"
+    asset: "shfmt_v{{ _shfmt_version }}_linux_{{ _target_arch }}"
+    url_base: "https://github.com/mvdan/sh/releases/download/v{{ _shfmt_version }}"
+    format: binary
+    checksum: >-
+      {{ _shfmt_checksum if _shfmt_checksum | length > 0
+         else _shfmt_pinned_checksums.get(_shfmt_version, {}).get(_target_arch, '') }}
+    pattern: "^v{{ _shfmt_version | regex_escape }}$"
+
+# SHA256 digests pinned per version, per architecture, from the digests GitHub
+# records for each release asset. A version/arch pair that is absent resolves
+# to '' and is caught by the checksum assert in tasks/main.yml.
+_tree_sitter_pinned_checksums:
+  "0.27.0":
+    amd64: "e4a3826bcd0fe099ee3a5617767374939cbc23c4a35b5b53f5fc04142525a2c1"
+    arm64: "6260b621bf5ab87027dfb463bf955504ef32cdcda62b81f28447753e48c83a62"
+_stylua_pinned_checksums:
+  "2.5.2":
+    amd64: "bcb0d855e91f102f28a370e850f8566b3b44b79e6274d806ea5246837c0fd5ab"
+    arm64: "0ef2ebf0b7e5a652b65c4cb96c6d9ffb3981a98547de3c764465bbf54a8d761a"
+_shfmt_pinned_checksums:
+  "3.14.1":
+    amd64: "76e77641faa025814b77f153b29796b8e6fa2fca03e0c76a691608b86c7ea7bf"
+    arm64: "5f2db09dae91fca848f7adbdd014632e921a383863a2ad7e0450ad3aba0c6489"
+
+# Lua run by headless Neovim. Each prints one marker line so the result can be
+# picked out of whatever else plugins write to stdout while starting.
+#
+# The parsers LazyVim wants (core plus the Go extra) that it would install at
+# startup. This asks LazyVim.treesitter.have() -- the exact test LazyVim runs
+# before it downloads a parser -- rather than looking for a parser .so on the
+# runtimepath: Neovim bundles a few parsers (vim, lua, c, ...) that nvim-
+# treesitter does not count as installed, and LazyVim would fetch those on the
+# first start. Only "LazyVim would install nothing" means nothing is fetched.
+_lazyvim_lua_missing_parsers: >-
+  LazyVim.treesitter.get_installed(true)
+  local want = LazyVim.opts("nvim-treesitter").ensure_installed or {}
+  local missing = vim.tbl_filter(function(lang)
+    return not LazyVim.treesitter.have(lang)
+  end, want)
+  table.sort(missing)
+  io.stdout:write("\nMISSING_PARSERS=" .. vim.json.encode(missing) .. "\n")
+# Plugins lazy.nvim knows about that are not on disk.
+_lazyvim_lua_missing_plugins: >-
+  local missing = {}
+  for _, p in ipairs(require("lazy").plugins()) do
+    if not p._.installed then table.insert(missing, p.name) end
+  end
+  table.sort(missing)
+  io.stdout:write("\nMISSING_PLUGINS=" .. vim.json.encode(missing) .. "\n")
+...

@@ -5,20 +5,20 @@
     "containerUser": "dev",
     "updateRemoteUserUID": false,
     "features": {
-        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:a89deccc3b7e0787a0f2db3dbdc25d75584e1d5d0bf5704f1cd3f647a37fd022": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/ansible-core@sha256:2ddfe11bce9b4f82e176c3c37c064752d1ec66e44d602ce459cf4965655a294f": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/ansible-core@sha256:52b5bd3177124e0e44eedd026b5a9fd8812b1ac8e9d6b3004e024ab238a4ebf3": {
             "target_version": "2.21.3",
-            "target_python_version": "3.13"
+            "target_python_version": "3.14"
         },
-        "ghcr.io/infrashift/trusted-devcontainer-features/python@sha256:099b493b3aed60b8a4425add42f1092d41006ba4fe6d25b2acad6e47e577494e": {
-            "target_version": "3.13"
+        "ghcr.io/infrashift/trusted-devcontainer-features/python@sha256:49f88bfe87b4553456be9969da18c3596fc40f9717642ec5e2691179fdd41553": {
+            "target_version": "3.14"
         },
-        "ghcr.io/infrashift/trusted-devcontainer-features/cuelang@sha256:2200149bf55cb97f28266fd8b3b5aff190cd4e279476df9e46231b56fc6fff2a": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/git@sha256:1ecf5a448dc1f9b4432d0e7f5868e6868b2518b74b9d3ca6d1f77fd8954b3d4a": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/git-lfs@sha256:963c0b3342617484f68e90996bed610fc90276187f9036b04a65eca4227c619c": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/grype@sha256:b57a19d9757d050ba5b595bea2e5df1482431328dee563bde3c84aae2b4c0872": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/syft@sha256:5f6057ff2554c5d63f93dea3a60c20f69b64b9b9d89f51ca625641bb4996932c": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/jq@sha256:afe503c9f259bfb9a9da2ac2d2471311a76d2a51eb16e5f5c9c29e7fcf78d389": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/yq@sha256:33d3d7cd7904e3de52feff5c03c2f395e4dd2b67e1960c94cd2cd197367faf8e": {}
+        "ghcr.io/infrashift/trusted-devcontainer-features/cuelang@sha256:417051cbac4b4eb7dde6fa9e29c79d250fde98e4faab8fd8279ff3ce14f040e4": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/git@sha256:07a52095bed925bffa3ac3d35e657ec0a3bf66b8d9ce34fa546095f0a9c5794d": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/git-lfs@sha256:adebb6fe392f33cd50cc49cd07f43c396301610338d9a1b3195241a901353561": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/grype@sha256:c0d7cd4bc9410286f4cae1280229ffd82f4b9c5b959895e732146929afef55d8": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/syft@sha256:3337c924df16599999703a7aeb547974953548579319ccf0ac4af7fd3b38f94e": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/jq@sha256:3c69ad14e10268f5053cf4fcf1b4443015ed5632fe4fa84f9f1c424b701a8b03": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/yq@sha256:ed2da9c3811de12596d012778beb7d82192511d35e7c67da729f76514b7f13cb": {}
     }
 }

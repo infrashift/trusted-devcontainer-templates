@@ -1,0 +1,133 @@
+# neovim-feature/ansible-role-feature/tasks/main.yml
+---
+# The variant is detected once, at bootstrap install time, from /etc/os-release
+# and published as a group var in /opt/bootstrap/inventory.yml.
+- name: Assert that _securedevcontainer_variant is in the _securedevcontainer_compatibility_list
+  ansible.builtin.assert:
+    that: _securedevcontainer_variant in _securedevcontainer_compatibility_list
+    fail_msg: "_securedevcontainer_variant = '{{ _securedevcontainer_variant }}' is NOT in the _securedevcontainer_compatibility_list = '{{ _securedevcontainer_compatibility_list }}'."
+
+# ---------------------------------------------------------------------------
+# PARAMETER BRACKET — this role has NO defaults. Every value below must arrive
+# as an extra-var from install.sh, so a missing one fails here, by name, before
+# any work happens.
+# ---------------------------------------------------------------------------
+- name: Assert that the runner contract was satisfied
+  ansible.builtin.assert:
+    that:
+      - _target_username is defined and _target_username | length > 0
+      - _target_user_home is defined and _target_user_home | length > 0
+      - _target_arch in ['amd64', 'arm64']
+    fail_msg: >-
+      This role must be invoked through /opt/bootstrap/run-feature.sh, which
+      injects _target_username, _target_user_home and _target_arch.
+
+- name: Assert that every required role parameter was supplied
+  ansible.builtin.assert:
+    that:
+      - _nvim_version is defined and _nvim_version | length > 0
+      - _nvim_checksum is defined
+      - _nvim_version is match('^\d+\.\d+\.\d+$')
+      - _nvim_checksum | length == 0 or _nvim_checksum is match('^[0-9a-fA-F]{64}$')
+    fail_msg: >-
+      A required role parameter was not supplied. This role has NO defaults by
+      design — install.sh must pass each one via -e, sourced from the matching
+      option default in devcontainer-feature.json:
+        _nvim_version  <- target_version   (mandatory, non-empty)
+        _nvim_checksum <- target_checksum  (may be empty; uses the pinned map)
+
+        target_version must look like X.Y.Z
+        target_checksum, when not empty, must be a 64-character SHA256 hex digest
+    success_msg: "neovim {{ _nvim_version }} ({{ _nvim_arch }})"
+
+# ---------------------------------------------------------------------------
+# FEATURE TASKS — userland. Everything lands under the target user's home.
+# ---------------------------------------------------------------------------
+- name: Check the currently installed Neovim version
+  ansible.builtin.command: "{{ _nvim_bin }} --version"
+  register: _nvim_installed
+  failed_when: false
+  changed_when: false
+
+# Compare the whole first line, not a substring: "NVIM v0.12.5" contains
+# "0.12.5" but so would a hypothetical "NVIM v0.12.50".
+- name: Determine whether Neovim {{ _nvim_version }} needs installing
+  ansible.builtin.set_fact:
+    _nvim_install_required: >-
+      {{ _nvim_installed.rc != 0
+         or (_nvim_installed.stdout_lines | default([''], true)) | first != 'NVIM v' ~ _nvim_version }}
+
+- name: Assert that a checksum is available for Neovim {{ _nvim_version }} ({{ _target_arch }})
+  ansible.builtin.assert:
+    that: _nvim_effective_checksum | length > 0
+    fail_msg: >-
+      No SHA256 is pinned for Neovim {{ _nvim_version }} on {{ _target_arch }}.
+      Pass target_checksum to install a version other than the default.
+  when: _nvim_install_required | bool
+
+# A version change replaces the whole distribution tree. Extracting a new
+# release over an old one would leave the old runtime files behind.
+- name: Remove any previously installed Neovim distribution
+  ansible.builtin.file:
+    path: "{{ _nvim_install_root }}"
+    state: absent
+  when: _nvim_install_required | bool
+
+- name: Ensure the Neovim install directory exists
+  ansible.builtin.file:
+    path: "{{ _nvim_install_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Ensure ~/.local/bin exists
+  ansible.builtin.file:
+    path: "{{ _target_user_home }}/.local/bin"
+    state: directory
+    mode: '0755'
+
+# get_url is idempotent and verifies the download in the same step.
+- name: Download the Neovim release tarball
+  ansible.builtin.get_url:
+    url: "{{ _nvim_download_url }}"
+    dest: "/tmp/{{ _nvim_tarball }}"
+    mode: '0644'
+    checksum: "sha256:{{ _nvim_effective_checksum }}"
+    timeout: 120
+  when: _nvim_install_required | bool
+
+# The tarball's single top-level directory is named after the asset
+# (nvim-linux-x86_64/), so strip it: the layout then does not depend on the arch.
+- name: Extract the Neovim distribution
+  ansible.builtin.unarchive:
+    src: "/tmp/{{ _nvim_tarball }}"
+    dest: "{{ _nvim_install_dir }}"
+    remote_src: true
+    extra_opts:
+      - --strip-components=1
+  when: _nvim_install_required | bool
+
+- name: Remove the downloaded tarball
+  ansible.builtin.file:
+    path: "/tmp/{{ _nvim_tarball }}"
+    state: absent
+
+- name: Symlink nvim into ~/.local/bin
+  ansible.builtin.file:
+    src: "{{ _nvim_install_dir }}/bin/nvim"
+    dest: "{{ _nvim_bin }}"
+    state: link
+    force: true
+
+- name: Verify the installed Neovim version
+  ansible.builtin.command: "{{ _nvim_bin }} --version"
+  register: _nvim_verify
+  changed_when: false
+
+# `nvim --version` opens with exactly "NVIM v<version>". Anchor on the whole
+# line so a prefix of another version cannot pass.
+- name: Assert that Neovim {{ _nvim_version }} is installed and accessible
+  ansible.builtin.assert:
+    that: _nvim_verify.stdout_lines | first == 'NVIM v' ~ _nvim_version
+    fail_msg: "Expected 'NVIM v{{ _nvim_version }}'; installed nvim reported: {{ _nvim_verify.stdout_lines | first }}"
+    success_msg: "Neovim {{ _nvim_version }} installed and verified."
+...
