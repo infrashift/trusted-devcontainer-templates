@@ -16,6 +16,8 @@ anything without a review verdict signed by `review.pub`.
 | 3. Environments + secrets | done — all three hold their own key and password |
 | 4. Environment reviewers | done — `ryancraig` on Review-Actor and Release-Actor, `prevent_self_review: false` |
 | 4b. Release-Actor ref restriction | done — `custom_branch_policies`, one `tag v*` policy |
+| 4c. Release-Actor: allow `main` for `release-features.yml` | **not done** — see that step |
+| 4d. Feature packages public | **not done** — after the first feature release |
 | 5. Teams | none, deliberately — see that step |
 | 6. Branch protection | done — ruleset `main`, requires a PR and all three checks; 0 approvals, no bypass |
 
@@ -239,6 +241,46 @@ run. They are also the two actors that cannot publish anything: build signs
 evidence, review signs a verdict, and neither key can push to a registry. The
 ref restriction belongs on the actor that can.
 
+
+### 4c. Let Release-Actor deploy from `main` for the feature release
+
+`release-features.yml` publishes the repo-local features under `features/` (see
+ADR-009) on **push to `main`**, not on a tag. Templates pin features by digest,
+and a digest exists only after publishing, so a feature has to be released
+before the template change that pins it. Its promote job uses Release-Actor,
+which step 4b restricted to `v*` tags, so that job fails until `main` is
+allowed as well:
+
+```bash
+gh api -X POST "repos/${SLUG}/environments/Release-Actor/deployment-branch-policies" \
+  -f name='main' -f type=branch
+```
+
+This adds a policy alongside the existing one. It does not use the
+create-or-replace endpoint, so the reviewer set in step 4 is left alone. Verify:
+
+```bash
+gh api "repos/${SLUG}/environments/Release-Actor/deployment-branch-policies" \
+  --jq '.branch_policies[] | "\(.type)  \(.name)"'
+# expect:  tag  v*   and   branch  main
+```
+
+`main` is protected by the ruleset in step 6, so only merged pull requests can
+request the key this way. The environment reviewer still gates every run.
+
+### 4d. Make the feature packages public after the first feature release
+
+GHCR creates a package as **private** the first time it is pushed. Both
+`…/trusted-devcontainer-templates-staging/features/<id>` and
+`…/trusted-devcontainer-templates/features/<id>` start out that way.
+
+- **Leave staging private.** Consumers must never resolve anything there.
+- **Make each production package public:** Package settings → Change
+  visibility → Public. Until you do, a template that pins the feature fails to
+  build for anyone without read access to the org's packages, and
+  `pin-features.sh` cannot resolve it anonymously.
+
+Do this once per feature, after its first promotion.
 ---
 
 ## 5. Teams — not yet, and not silently

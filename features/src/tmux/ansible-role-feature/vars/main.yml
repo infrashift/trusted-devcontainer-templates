@@ -1,0 +1,23 @@
+# tmux-feature/ansible-role-feature/vars/main.yml
+---
+# Variants this role has actually been tested against. The variant is detected
+# once at bootstrap install time from /etc/os-release and published as a group
+# var in /opt/bootstrap/inventory.yml.
+_securedevcontainer_compatibility_list:
+  - fedora43
+
+# ---------------------------------------------------------------------------
+# ROLE CONSTANTS
+# ---------------------------------------------------------------------------
+# ncurses ships infocmp and tput, which dev-session uses to decide whether the
+# client's TERM is usable here and how large to draw the first window.
+# ncurses-base carries the tmux-256color entry tmux.conf asks for.
+_tmux_packages:
+  - tmux
+  - ncurses
+  - ncurses-base
+
+_tmux_conf_path: /etc/tmux.conf
+_tmux_session_bin: /usr/local/bin/dev-session
+_tmux_profile_hook: /etc/profile.d/dev-session.sh
+...

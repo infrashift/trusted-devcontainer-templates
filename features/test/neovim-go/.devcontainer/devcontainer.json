@@ -1,0 +1,26 @@
+{
+    // Test harness for the repo-local features. `make test-feature-template`
+    // stages features/src/* next to this file, so "./tmux" etc. resolve to the
+    // working tree rather than to anything published. The trusted-devcontainer-
+    // features references are digest-pinned like the templates' own, and
+    // `make pin-features` keeps them in step.
+    //
+    // No overrideFeatureInstallOrder: the features' own installsAfter orders
+    // them (lazyvim after neovim and go-tools, go-tools after golang), which is
+    // exactly the ordering a consumer of the published features gets.
+    "build": {
+        "dockerfile": "../../../../shared/Containerfile"
+    },
+    "containerUser": "dev",
+    "updateRemoteUserUID": false,
+    "features": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:a89deccc3b7e0787a0f2db3dbdc25d75584e1d5d0bf5704f1cd3f647a37fd022": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/git@sha256:1ecf5a448dc1f9b4432d0e7f5868e6868b2518b74b9d3ca6d1f77fd8954b3d4a": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/golang@sha256:644b2b9a29591da3044ad3065c7de90fa95dd029ca329a0ade2c0994acbd47db": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/sshd@sha256:077191c9fabc5e74f99958c23563dfad5013ffcd003fcb9be1983bb576084a64": {},
+        "./tmux": {},
+        "./neovim": {},
+        "./go-tools": {},
+        "./lazyvim": {}
+    }
+}

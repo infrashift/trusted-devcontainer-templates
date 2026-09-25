@@ -1,0 +1,141 @@
+# tmux-feature/ansible-role-feature/tasks/main.yml
+---
+# The variant is detected once, at bootstrap install time, from /etc/os-release
+# and published as a group var in /opt/bootstrap/inventory.yml.
+- name: Assert that _securedevcontainer_variant is in the _securedevcontainer_compatibility_list
+  ansible.builtin.assert:
+    that: _securedevcontainer_variant in _securedevcontainer_compatibility_list
+    fail_msg: "_securedevcontainer_variant = '{{ _securedevcontainer_variant }}' is NOT in the _securedevcontainer_compatibility_list = '{{ _securedevcontainer_compatibility_list }}'."
+
+# ---------------------------------------------------------------------------
+# PARAMETER BRACKET — this role has NO defaults. Every value below must arrive
+# as an extra-var from install.sh, so a missing one fails here, by name, before
+# any work happens.
+# ---------------------------------------------------------------------------
+- name: Assert that the runner contract was satisfied
+  ansible.builtin.assert:
+    that:
+      - _target_username is defined and _target_username | length > 0
+      - _target_user_home is defined and _target_user_home | length > 0
+      - _target_arch in ['amd64', 'arm64']
+    fail_msg: >-
+      This role must be invoked through /opt/bootstrap/run-feature.sh, which
+      injects _target_username, _target_user_home and _target_arch.
+
+- name: Assert that every required role parameter was supplied
+  ansible.builtin.assert:
+    that:
+      - _tmux_session_name is defined and _tmux_session_name | length > 0
+      - _tmux_editor_pane_command is defined and _tmux_editor_pane_command | length > 0
+      - _tmux_shell_pane_percent is defined and _tmux_shell_pane_percent | length > 0
+      - _tmux_autostart is defined and _tmux_autostart in ['interactive', 'ssh', 'never']
+      # SHAPE VALIDATION. These values are rendered into a shell script that
+      # runs on every interactive login, so their character set is restricted
+      # rather than trusted to quoting alone. tmux also rejects '.' and ':' in
+      # a session name, because both are target separators.
+      - _tmux_session_name is match('^[A-Za-z0-9_-]+$')
+      - _tmux_editor_pane_command is match('^[A-Za-z0-9_./ =+,@-]+$')
+      - _tmux_shell_pane_percent is match('^\d+$')
+      - _tmux_shell_pane_percent | int >= 10 and _tmux_shell_pane_percent | int <= 90
+    fail_msg: >-
+      A required role parameter was not supplied. This role has NO defaults by
+      design — install.sh must pass each one via -e, sourced from the matching
+      option default in devcontainer-feature.json:
+        _tmux_session_name        <- session_name         (mandatory, non-empty)
+        _tmux_editor_pane_command <- editor_pane_command  (mandatory, non-empty)
+        _tmux_shell_pane_percent  <- shell_pane_percent   (mandatory, non-empty)
+        _tmux_autostart           <- autostart            (interactive | ssh | never)
+
+        session_name may contain only letters, digits, '_' and '-'
+        editor_pane_command may contain only letters, digits, spaces and _ . / = + , @ -
+        shell_pane_percent must be digits only, between 10 and 90
+    success_msg: >-
+      session '{{ _tmux_session_name }}': {{ _tmux_editor_pane_command }} |
+      shell {{ _tmux_shell_pane_percent }}%, autostart={{ _tmux_autostart }}
+
+# ---------------------------------------------------------------------------
+# FEATURE TASKS — the privileged lane. Everything written here is root-owned.
+# ---------------------------------------------------------------------------
+- name: Install system packages ({{ _tmux_packages | join(', ') }})
+  ansible.builtin.include_tasks: /opt/bootstrap/tasks/install-packages.yml
+  vars:
+    _packages: "{{ _tmux_packages }}"
+
+# /etc/tmux.conf is tmux's system-wide file: it is read before ~/.tmux.conf,
+# so a developer's own configuration still wins.
+- name: Write the system-wide tmux configuration
+  ansible.builtin.template:
+    src: tmux.conf.j2
+    dest: "{{ _tmux_conf_path }}"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install the dev-session command
+  ansible.builtin.template:
+    src: dev-session.sh.j2
+    dest: "{{ _tmux_session_bin }}"
+    owner: root
+    group: root
+    mode: '0755'
+    validate: bash -n %s
+
+- name: Install the dev-session login hook
+  ansible.builtin.template:
+    src: dev-session.profile.sh.j2
+    dest: "{{ _tmux_profile_hook }}"
+    owner: root
+    group: root
+    mode: '0644'
+    validate: bash -n %s
+
+# ---------------------------------------------------------------------------
+# Verification. tmux cannot attach at build time, but it can parse the
+# configuration and run the layout detached on a private socket.
+# ---------------------------------------------------------------------------
+- name: Get the installed tmux version
+  ansible.builtin.command: tmux -V
+  register: _tmux_version_result
+  changed_when: false
+
+# `source-file -n` parses without applying. -L gives this check its own server
+# socket, so it can never touch a session someone is actually using, and
+# kill-server removes it again whatever the parse said.
+- name: Validate the system-wide tmux configuration
+  ansible.builtin.command:
+    argv:
+      - tmux
+      - -L
+      - feature-validate
+      - -f
+      - /dev/null
+      - start-server
+      - ;
+      - source-file
+      - -n
+      - "{{ _tmux_conf_path }}"
+      - ;
+      - kill-server
+  register: _tmux_conf_validate
+  changed_when: false
+  failed_when: false
+
+- name: Check that the tmux-256color terminal description is installed
+  ansible.builtin.command: infocmp tmux-256color
+  register: _tmux_terminfo
+  changed_when: false
+  failed_when: false
+
+- name: Assert that tmux is installed and its configuration loads
+  ansible.builtin.assert:
+    that:
+      - _tmux_version_result.stdout is match('^tmux \d')
+      - _tmux_conf_validate.rc == 0
+      - _tmux_terminfo.rc == 0
+    fail_msg: >-
+      tmux is not usable. `tmux -V` said '{{ _tmux_version_result.stdout }}';
+      {{ _tmux_conf_path }} parse rc={{ _tmux_conf_validate.rc }}
+      ({{ _tmux_conf_validate.stderr | default('') }});
+      infocmp tmux-256color rc={{ _tmux_terminfo.rc }}.
+    success_msg: "{{ _tmux_version_result.stdout }} installed; {{ _tmux_conf_path }} and tmux-256color validated."
+...

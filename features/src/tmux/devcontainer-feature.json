@@ -1,0 +1,50 @@
+// tmux-feature/devcontainer-feature.json
+// Find Development Container Feature Specification at https://containers.dev/implementors/features/
+//
+// THIS FILE IS THE SINGLE SOURCE OF TRUTH FOR EVERY OPTION DEFAULT.
+//
+// Installs tmux and a `dev-session` command that opens (or re-attaches to) a
+// two-pane layout: an editor on the left, a shell on the right. A login hook in
+// /etc/profile.d can start that layout automatically on interactive terminal
+// logins -- over ssh, `devpod ssh` or `devcontainer exec` -- which is what
+// replaces the ForceCommand the hand-built devpod-neovim image used. Non-TTY
+// sessions (`ssh host cmd`, VS Code's server, scripted probes) are never
+// touched.
+//
+// dependsOn is absolute and digest-pinned; see neovim/devcontainer-feature.json.
+{
+    "name": "tmux-feature",
+    "id": "tmux",
+    "version": "1.0.0",
+    "description": "Installs tmux with a system-wide configuration and a dev-session layout (editor | shell) that can start automatically on interactive logins.",
+    "options": {
+        "session_name": {
+            "type": "string",
+            "proposals": ["dev"],
+            "default": "dev",
+            "description": "Name of the tmux session dev-session creates or attaches to"
+        },
+        "editor_pane_command": {
+            "type": "string",
+            "proposals": ["nvim", "vim", "bash"],
+            "default": "nvim",
+            "description": "Command run in the left pane. When it exits the pane drops to a login shell rather than closing."
+        },
+        "shell_pane_percent": {
+            "type": "string",
+            "proposals": ["35", "50"],
+            "default": "35",
+            "description": "Width of the right-hand shell pane, as a percentage of the window (10-90)"
+        },
+        "autostart": {
+            "type": "string",
+            "enum": ["interactive", "ssh", "never"],
+            "default": "interactive",
+            "description": "When to start dev-session automatically: on any interactive terminal login, only on ssh logins, or never"
+        }
+    },
+    "installsAfter": [],
+    "dependsOn": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:a89deccc3b7e0787a0f2db3dbdc25d75584e1d5d0bf5704f1cd3f647a37fd022": {}
+    }
+}

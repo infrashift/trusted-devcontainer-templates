@@ -1,0 +1,45 @@
+# lazyvim-feature/ansible-role-system/tasks/main.yml
+---
+# The variant is detected once, at bootstrap install time, from /etc/os-release
+# and published as a group var in /opt/bootstrap/inventory.yml.
+- name: Assert that _securedevcontainer_variant is in the _securedevcontainer_compatibility_list
+  ansible.builtin.assert:
+    that: _securedevcontainer_variant in _securedevcontainer_compatibility_list
+    fail_msg: "_securedevcontainer_variant = '{{ _securedevcontainer_variant }}' is NOT in the _securedevcontainer_compatibility_list = '{{ _securedevcontainer_compatibility_list }}'."
+
+# This role takes no parameters, so it has the runner-contract assert and
+# deliberately NO parameter bracket.
+- name: Assert that the runner contract was satisfied
+  ansible.builtin.assert:
+    that:
+      - _target_username is defined and _target_username | length > 0
+      - _target_user_home is defined and _target_user_home | length > 0
+      - _target_arch in ['amd64', 'arm64']
+    fail_msg: >-
+      This role must be invoked through /opt/bootstrap/run-feature.sh, which
+      injects _target_username, _target_user_home and _target_arch.
+
+# ---------------------------------------------------------------------------
+# FEATURE TASKS — the privileged lane.
+# ---------------------------------------------------------------------------
+- name: Install system packages ({{ _lazyvim_system_packages | join(', ') }})
+  ansible.builtin.include_tasks: /opt/bootstrap/tasks/install-packages.yml
+  vars:
+    _packages: "{{ _lazyvim_system_packages }}"
+
+- name: Probe the installed prerequisites
+  ansible.builtin.command: "{{ item }} --version"
+  loop:
+    - cc
+    - git
+    - rg
+    - fd
+  register: _lazyvim_system_probe
+  changed_when: false
+
+- name: Assert that every prerequisite runs
+  ansible.builtin.assert:
+    that: _lazyvim_system_probe.results | map(attribute='rc') | select('ne', 0) | list | length == 0
+    fail_msg: "A LazyVim prerequisite did not run: {{ _lazyvim_system_probe.results | map(attribute='stdout_lines') | map('first') | list }}"
+    success_msg: "{{ _lazyvim_system_probe.results | map(attribute='stdout_lines') | map('first') | list | join('; ') }}"
+...

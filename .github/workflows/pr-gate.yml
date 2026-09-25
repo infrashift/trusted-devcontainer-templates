@@ -72,11 +72,25 @@ jobs:
         # Containerfiles byte-identical to shared/Containerfile.
         run: make check-sync
 
+      - name: Verify the repo-local feature contract
+        # features/ is published by release-features.yml, which runs on merge.
+        # These are its static gates, run here so a violation fails the pull
+        # request rather than the release.
+        run: |
+          set -euo pipefail
+          ./features/scripts/check-role-contract.sh
+          # Every feature must depend on exactly the bootstrap the templates pin.
+          ./features/scripts/check-bootstrap-pin.sh
+          # A source change at an already-published version would be skipped
+          # by publish as "already exists". Bump the version.
+          ./features/scripts/check-published-drift.sh --check
+
       - name: Lint shell
         run: |
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
-          shellcheck -S warning scripts/*.sh
+          shellcheck -S warning scripts/*.sh features/scripts/*.sh \
+            features/src/*/install.sh features/test/shared/*.sh features/test/*/tests.sh
 
       - name: Policy self-test
         run: |

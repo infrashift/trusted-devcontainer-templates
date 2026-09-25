@@ -70,3 +70,15 @@ Two practices keep the audit surface honest:
   `devcontainer.json` still shows what will be installed.
 - Reviewing a feature means reviewing its `dependsOn` block, since that is now part of what a template
   transitively pulls in.
+
+## Amendment: a second trusted collection
+
+[ADR-009](/trusted-devcontainer-templates/decisions/adr-009-repo-local-features/) adds a second source of
+trusted features: the collection under `features/` in this repository, published to
+`ghcr.io/infrashift/trusted-devcontainer-templates/features/`. It is held to the same role contract and
+the same stage → review → promote release, signed by this repository's actors, and its features depend
+on the same `bootstrap` digest the templates pin.
+
+The rule this ADR states is unchanged in substance: a template references only features this organisation
+builds, tests, signs and publishes. The permitted prefixes are now exactly two, and `pin-features.sh`
+tracks both.

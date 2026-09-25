@@ -1,0 +1,12 @@
+# go-tools-feature/ansible-role-feature/defaults/main.yml
+---
+# Intentionally empty. This role has NO defaults.
+#
+# Every input is supplied as an extra-var by install.sh, sourced from the
+# option default in devcontainer-feature.json. A default here would be dead
+# code -- extra-vars outrank role defaults -- and a second source of truth
+# that silently wins whenever the wiring is broken.
+#
+# Derived values and role constants belong in vars/main.yml.
+# Required inputs are asserted in the PARAMETER BRACKET in tasks/main.yml.
+...
