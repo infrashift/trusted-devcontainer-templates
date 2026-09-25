@@ -31,6 +31,6 @@
     },
     "installsAfter": [],
     "dependsOn": {
-        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:a89deccc3b7e0787a0f2db3dbdc25d75584e1d5d0bf5704f1cd3f647a37fd022": {}
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {}
     }
 }
