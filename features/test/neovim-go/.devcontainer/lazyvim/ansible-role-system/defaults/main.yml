@@ -1,0 +1,6 @@
+# lazyvim-feature/ansible-role-system/defaults/main.yml
+---
+# Intentionally empty. This role has NO defaults, and no inputs at all: it
+# installs a fixed set of system packages, so there is nothing for a caller to
+# choose. The package list is a role constant and lives in vars/main.yml.
+...

@@ -1,0 +1,268 @@
+# go-tools-feature/ansible-role-feature/tasks/main.yml
+---
+# The variant is detected once, at bootstrap install time, from /etc/os-release
+# and published as a group var in /opt/bootstrap/inventory.yml.
+- name: Assert that _securedevcontainer_variant is in the _securedevcontainer_compatibility_list
+  ansible.builtin.assert:
+    that: _securedevcontainer_variant in _securedevcontainer_compatibility_list
+    fail_msg: "_securedevcontainer_variant = '{{ _securedevcontainer_variant }}' is NOT in the _securedevcontainer_compatibility_list = '{{ _securedevcontainer_compatibility_list }}'."
+
+# ---------------------------------------------------------------------------
+# PARAMETER BRACKET — this role has NO defaults. Every value below must arrive
+# as an extra-var from install.sh, so a missing one fails here, by name, before
+# any work happens.
+# ---------------------------------------------------------------------------
+- name: Assert that the runner contract was satisfied
+  ansible.builtin.assert:
+    that:
+      - _target_username is defined and _target_username | length > 0
+      - _target_user_home is defined and _target_user_home | length > 0
+      - _target_arch in ['amd64', 'arm64']
+    fail_msg: >-
+      This role must be invoked through /opt/bootstrap/run-feature.sh, which
+      injects _target_username, _target_user_home and _target_arch.
+
+- name: Assert that every required role parameter was supplied
+  ansible.builtin.assert:
+    that:
+      - _gopls_version is defined and _gopls_version | length > 0
+      - _gofumpt_version is defined and _gofumpt_version | length > 0
+      - _goimports_version is defined and _goimports_version | length > 0
+      - _gomodifytags_version is defined and _gomodifytags_version | length > 0
+      - _impl_version is defined and _impl_version | length > 0
+      - _delve_version is defined and _delve_version | length > 0
+      - _golangci_lint_version is defined and _golangci_lint_version | length > 0
+      - _golangci_lint_checksum is defined
+      # SHAPE VALIDATION. These become `pkg@vX.Y.Z` arguments and a download
+      # URL, so a malformed value must fail here rather than as a resolution
+      # error inside go.
+      - _gopls_version is match('^\d+\.\d+\.\d+$')
+      - _gofumpt_version is match('^\d+\.\d+\.\d+$')
+      - _goimports_version is match('^\d+\.\d+\.\d+$')
+      - _gomodifytags_version is match('^\d+\.\d+\.\d+$')
+      - _impl_version is match('^\d+\.\d+\.\d+$')
+      - _delve_version is match('^\d+\.\d+\.\d+$')
+      - _golangci_lint_version is match('^\d+\.\d+\.\d+$')
+      - _golangci_lint_checksum | length == 0 or _golangci_lint_checksum is match('^[0-9a-fA-F]{64}$')
+    fail_msg: >-
+      A required role parameter was not supplied. This role has NO defaults by
+      design — install.sh must pass each one via -e, sourced from the matching
+      option default in devcontainer-feature.json:
+        _gopls_version          <- gopls_version           (mandatory, non-empty)
+        _gofumpt_version        <- gofumpt_version         (mandatory, non-empty)
+        _goimports_version      <- goimports_version       (mandatory, non-empty)
+        _gomodifytags_version   <- gomodifytags_version    (mandatory, non-empty)
+        _impl_version           <- impl_version            (mandatory, non-empty)
+        _delve_version          <- delve_version           (mandatory, non-empty)
+        _golangci_lint_version  <- golangci_lint_version   (mandatory, non-empty)
+        _golangci_lint_checksum <- golangci_lint_checksum  (may be empty; uses the pinned map)
+
+        every version must look like X.Y.Z (no leading v)
+        golangci_lint_checksum, when not empty, must be a 64-character SHA256 hex digest
+    success_msg: >-
+      gopls {{ _gopls_version }}, gofumpt {{ _gofumpt_version }},
+      goimports (x/tools) {{ _goimports_version }}, gomodifytags {{ _gomodifytags_version }},
+      impl {{ _impl_version }}, dlv {{ _delve_version }},
+      golangci-lint {{ _golangci_lint_version }} ({{ _target_arch }})
+
+# ---------------------------------------------------------------------------
+# FEATURE TASKS — userland.
+# ---------------------------------------------------------------------------
+- name: Look for a Go toolchain
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop: "{{ _gotools_go_candidates }}"
+  register: _gotools_go_stat
+
+- name: Select the first Go toolchain found
+  ansible.builtin.set_fact:
+    _gotools_go: >-
+      {{ (_gotools_go_stat.results | selectattr('stat.exists') | map(attribute='item') | list + ['']) | first }}
+
+- name: Check that Go runs
+  ansible.builtin.command: "{{ _gotools_go }} version"
+  register: _gotools_go_version
+  when: _gotools_go | length > 0
+  failed_when: false
+  changed_when: false
+
+- name: Assert that Go is available to build the tools
+  ansible.builtin.assert:
+    that:
+      - _gotools_go | length > 0
+      - _gotools_go_version.rc == 0
+    fail_msg: >-
+      go-tools builds its tools with Go, and found none at
+      {{ _gotools_go_candidates | join(', ') }}. Add
+      ghcr.io/infrashift/trusted-devcontainer-features/golang to the
+      devcontainer.json; this feature installs after it.
+    success_msg: "{{ _gotools_go }}: {{ _gotools_go_version.stdout | default('') }}"
+
+- name: Ensure the tool directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ _gotools_bin_dir }}"
+    - "{{ _gotools_link_dir }}"
+
+# --- Tools built with go install --------------------------------------------
+
+# `go version -m` reads the module path and version compiled into a binary.
+# It is the same check for every tool, and it reports the version actually
+# built rather than whatever a --version flag chooses to print (goimports has
+# no version flag at all).
+- name: Check which Go tools are installed at the requested versions
+  ansible.builtin.command:
+    argv:
+      - "{{ _gotools_go }}"
+      - version
+      - -m
+      - "{{ _gotools_bin_dir }}/{{ item.bin }}"
+  loop: "{{ _gotools_go_installs }}"
+  loop_control:
+    label: "{{ item.bin }}"
+  register: _gotools_probe
+  failed_when: false
+  changed_when: false
+
+
+# A tool needs installing when its binary is missing or reports a different
+# module version. The match is on the "mod <module> <version>" line, anchored on
+# whitespace so v0.23.0 cannot match v0.23.01.
+- name: Start with no Go tools pending
+  ansible.builtin.set_fact:
+    _gotools_pending: []
+
+- name: Collect the Go tools that need installing
+  ansible.builtin.set_fact:
+    _gotools_pending: "{{ _gotools_pending + [item.item] }}"
+  loop: "{{ _gotools_probe.results }}"
+  loop_control:
+    label: "{{ item.item.bin }}"
+  when: >-
+    item.rc != 0 or
+    item.stdout is not search('\smod\s+' ~ (item.item.module | regex_escape) ~ '\s+' ~ (item.item.version | regex_escape) ~ '\s')
+
+- name: Build the pending Go tools with go install
+  ansible.builtin.command:
+    argv:
+      - "{{ _gotools_go }}"
+      - install
+      - "{{ item.pkg }}@{{ item.version }}"
+  environment: "{{ _gotools_go_env }}"
+  loop: "{{ _gotools_pending }}"
+  loop_control:
+    label: "{{ item.pkg }}@{{ item.version }}"
+  changed_when: true
+
+# Removed on every run, whether or not anything was built. Absent is the steady
+# state, so this reports changed only when a build actually left scratch behind.
+- name: Remove the Go module and build caches
+  ansible.builtin.file:
+    path: "{{ _gotools_scratch }}"
+    state: absent
+
+- name: Symlink the Go tools into ~/.local/bin
+  ansible.builtin.file:
+    src: "{{ _gotools_bin_dir }}/{{ item.bin }}"
+    dest: "{{ _gotools_link_dir }}/{{ item.bin }}"
+    state: link
+    force: true
+  loop: "{{ _gotools_go_installs }}"
+  loop_control:
+    label: "{{ item.bin }}"
+
+- name: Verify the installed Go tools
+  ansible.builtin.command:
+    argv:
+      - "{{ _gotools_go }}"
+      - version
+      - -m
+      - "{{ _gotools_link_dir }}/{{ item.bin }}"
+  loop: "{{ _gotools_go_installs }}"
+  loop_control:
+    label: "{{ item.bin }}"
+  register: _gotools_verify
+  changed_when: false
+
+- name: Assert that every Go tool is installed at its requested version
+  ansible.builtin.assert:
+    that: >-
+      item.stdout is search('\smod\s+' ~ (item.item.module | regex_escape) ~ '\s+' ~ (item.item.version | regex_escape) ~ '\s')
+    fail_msg: "Expected {{ item.item.bin }} built from {{ item.item.module }} {{ item.item.version }}; go version -m reported: {{ item.stdout }}"
+    success_msg: "{{ item.item.bin }}: {{ item.item.module }} {{ item.item.version }}"
+  loop: "{{ _gotools_verify.results }}"
+  loop_control:
+    label: "{{ item.item.bin }}"
+
+# --- golangci-lint, a prebuilt release ---------------------------------------
+- name: Check the currently installed golangci-lint version
+  ansible.builtin.command: "{{ _golangci_lint_bin }} version"
+  register: _golangci_lint_installed
+  failed_when: false
+  changed_when: false
+
+# golangci-lint prints "golangci-lint has version 2.14.0 built with ...".
+- name: Determine whether golangci-lint {{ _golangci_lint_version }} needs installing
+  ansible.builtin.set_fact:
+    _golangci_lint_install_required: >-
+      {{ _golangci_lint_installed.rc != 0
+         or _golangci_lint_installed.stdout is not search('has version ' ~ (_golangci_lint_version | regex_escape) ~ ' ') }}
+
+- name: Assert that a checksum is available for golangci-lint {{ _golangci_lint_version }} ({{ _target_arch }})
+  ansible.builtin.assert:
+    that: _golangci_lint_effective_checksum | length > 0
+    fail_msg: >-
+      No SHA256 is pinned for golangci-lint {{ _golangci_lint_version }} on {{ _target_arch }}.
+      Pass golangci_lint_checksum to install a version other than the default.
+  when: _golangci_lint_install_required | bool
+
+- name: Ensure the golangci-lint install directory exists
+  ansible.builtin.file:
+    path: "{{ _golangci_lint_install_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Download the golangci-lint release tarball
+  ansible.builtin.get_url:
+    url: "{{ _golangci_lint_download_url }}"
+    dest: "/tmp/{{ _golangci_lint_tarball }}"
+    mode: '0644'
+    checksum: "sha256:{{ _golangci_lint_effective_checksum }}"
+    timeout: 120
+  when: _golangci_lint_install_required | bool
+
+- name: Extract golangci-lint
+  ansible.builtin.unarchive:
+    src: "/tmp/{{ _golangci_lint_tarball }}"
+    dest: "{{ _golangci_lint_install_dir }}"
+    remote_src: true
+    extra_opts:
+      - --strip-components=1
+  when: _golangci_lint_install_required | bool
+
+- name: Remove the downloaded golangci-lint tarball
+  ansible.builtin.file:
+    path: "/tmp/{{ _golangci_lint_tarball }}"
+    state: absent
+
+- name: Symlink golangci-lint into ~/.local/bin
+  ansible.builtin.file:
+    src: "{{ _golangci_lint_install_dir }}/golangci-lint"
+    dest: "{{ _golangci_lint_bin }}"
+    state: link
+    force: true
+
+- name: Verify the installed golangci-lint version
+  ansible.builtin.command: "{{ _golangci_lint_bin }} version"
+  register: _golangci_lint_verify
+  changed_when: false
+
+- name: Assert that golangci-lint {{ _golangci_lint_version }} is installed and accessible
+  ansible.builtin.assert:
+    that: _golangci_lint_verify.stdout is search('has version ' ~ (_golangci_lint_version | regex_escape) ~ ' ')
+    fail_msg: "Expected golangci-lint {{ _golangci_lint_version }}; installed golangci-lint reported: {{ _golangci_lint_verify.stdout }}"
+    success_msg: "golangci-lint {{ _golangci_lint_version }} installed and verified."
+...

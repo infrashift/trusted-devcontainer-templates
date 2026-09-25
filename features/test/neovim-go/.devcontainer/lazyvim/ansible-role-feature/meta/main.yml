@@ -1,0 +1,21 @@
+# lazyvim-feature/ansible-role-feature/meta/main.yml
+---
+galaxy_info:
+  author: ryancraig
+  description: LazyVim configuration, plugins and parsers for Fedora containers
+  company: infrashift.sh
+  license: MIT
+  min_ansible_version: "2.18"
+  platforms:
+  - name: Fedora
+    versions:
+    - 43
+  galaxy_tags:
+    - lazyvim
+    - neovim
+    - nvim
+    - editor
+    - fedora
+
+dependencies: []
+...

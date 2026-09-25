@@ -1,0 +1,23 @@
+# lazyvim-feature/ansible-role-system/vars/main.yml
+---
+# Variants this role has actually been tested against. The variant is detected
+# once at bootstrap install time from /etc/os-release and published as a group
+# var in /opt/bootstrap/inventory.yml.
+_securedevcontainer_compatibility_list:
+  - fedora43
+
+# ---------------------------------------------------------------------------
+# ROLE CONSTANTS
+#
+#   gcc       nvim-treesitter compiles every parser from source with the
+#             tree-sitter CLI, which needs a C compiler.
+#   git       lazy.nvim installs and restores plugins with git.
+#   ripgrep   LazyVim's grep pickers.
+#   fd-find   LazyVim's file pickers.
+# ---------------------------------------------------------------------------
+_lazyvim_system_packages:
+  - gcc
+  - git
+  - ripgrep
+  - fd-find
+...

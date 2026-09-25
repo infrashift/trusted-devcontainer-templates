@@ -1,0 +1,36 @@
+// neovim-feature/devcontainer-feature.json
+// Find Development Container Feature Specification at https://containers.dev/implementors/features/
+//
+// THIS FILE IS THE SINGLE SOURCE OF TRUTH FOR EVERY OPTION DEFAULT.
+//
+// dependsOn names the bootstrap feature by an absolute, digest-pinned reference
+// rather than "./bootstrap": this collection lives in the templates repository,
+// and bootstrap is published from trusted-devcontainer-features. The digest must
+// equal the one every template in this repository pins -- two different
+// bootstraps in one build install twice and the second install fails.
+// features/scripts/check-bootstrap-pin.sh enforces that.
+{
+    "name": "neovim-feature",
+    "id": "neovim",
+    "version": "1.0.0",
+    "description": "Installs the upstream Neovim release build, checksum-verified, into the target user's home on Fedora and Red Hat UBI DevContainers.",
+    "options": {
+        // See available versions at https://github.com/neovim/neovim/releases
+        // Targeting nvim-linux-{x86_64,arm64}.tar.gz
+        "target_version": {
+            "type": "string",
+            "proposals": ["0.12.5"],
+            "default": "0.12.5",
+            "description": "Select a supported Neovim release version"
+        },
+        "target_checksum": {
+            "type": "string",
+            "default": "",
+            "description": "SHA256 of the release tarball. Required when target_version is not pinned in the role's _nvim_pinned_checksums map."
+        }
+    },
+    "installsAfter": [],
+    "dependsOn": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:a89deccc3b7e0787a0f2db3dbdc25d75584e1d5d0bf5704f1cd3f647a37fd022": {}
+    }
+}

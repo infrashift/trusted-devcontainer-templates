@@ -1,0 +1,48 @@
+# neovim-feature/ansible-role-feature/vars/main.yml
+---
+# Variants this role has actually been tested against. The variant is detected
+# once at bootstrap install time from /etc/os-release and published as a group
+# var in /opt/bootstrap/inventory.yml.
+_securedevcontainer_compatibility_list:
+  - fedora43
+
+# ---------------------------------------------------------------------------
+# DERIVED VALUES AND ROLE CONSTANTS
+#
+# Derive architecture from _target_arch (amd64 | arm64), which
+# /opt/bootstrap/run-feature.sh injects unconditionally. Never mask it with
+# `| default(...)`. Neovim names its assets x86_64 / arm64, so amd64 is
+# translated here and nowhere else.
+# ---------------------------------------------------------------------------
+_nvim_arch_map:
+  amd64: x86_64
+  arm64: arm64
+_nvim_arch: "{{ _nvim_arch_map[_target_arch] }}"
+
+# Example: nvim-linux-x86_64.tar.gz
+_nvim_tarball: "nvim-linux-{{ _nvim_arch }}.tar.gz"
+_nvim_download_url: "https://github.com/neovim/neovim/releases/download/v{{ _nvim_version }}/{{ _nvim_tarball }}"
+
+# Not ~/.local/share/nvim: that is Neovim's own stdpath('data'), where plugins
+# and parsers live. The distribution gets a directory of its own, versioned so
+# an upgrade replaces it wholesale rather than extracting over the old tree.
+_nvim_install_root: "{{ _target_user_home }}/.local/share/nvim-dist"
+_nvim_install_dir: "{{ _nvim_install_root }}/{{ _nvim_version }}"
+_nvim_bin: "{{ _target_user_home }}/.local/bin/nvim"
+
+# SHA256 digests pinned per version, per architecture. Taken from the digests
+# GitHub records for each release asset, and matched against the release's own
+# shasum.txt. A version/arch pair that is absent here resolves to '' and is
+# caught by the checksum assert in tasks/main.yml.
+_nvim_pinned_checksums:
+  "0.12.5":
+    amd64: "bce0f56eda1f1b1db6eee8f4133d7a38813ea07933837dd1777411ca384c6875"
+    arm64: "1aa5ca085249580ae0f91eb14f27ec0919773ff2d99a163d03f3d6c21ac29725"
+
+# Resolved checksum: an explicit _nvim_checksum wins, otherwise the pinned value
+# for this version and arch. The input and the resolved value must be separate
+# names — set_fact cannot override an extra-var.
+_nvim_effective_checksum: >-
+  {{ _nvim_checksum if _nvim_checksum | length > 0
+     else _nvim_pinned_checksums.get(_nvim_version, {}).get(_target_arch, '') }}
+...

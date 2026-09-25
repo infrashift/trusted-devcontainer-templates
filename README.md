@@ -8,11 +8,11 @@ Every template ships with SBOM, CVE scan results, SLSA v1.0 provenance, and dual
 
 | Template | Description | Key Tooling |
 |---|---|---|
-| `ansible-cue` | Ansible + CUE for IaC workflows | ansible-core 2.18, Python 3.12, CUE |
+| `ansible-cue` | Ansible + CUE for IaC workflows | ansible-core 2.21, Python 3.14, CUE |
 | `dotnet-node` | .NET + Node.js full-stack development | .NET SDK, Node.js, npm, pnpm |
 | `go-cue` | Go + CUE for CLI/TUI development | Go, CUE |
 | `java` | Java development | OpenJDK, Maven, Gradle |
-| `python` | Python development | Python 3.12, uv, ruff |
+| `python` | Python development | Python 3.14, uv, ruff |
 
 All templates include: git, git-lfs, grype, syft, jq, yq.
 
