@@ -22,6 +22,13 @@ _lazyvim_plugin_dir: "{{ _target_user_home }}/.local/share/nvim/lazy"
 _lazyvim_lock: "{{ lookup('ansible.builtin.file', role_path ~ '/files/nvim/lazy-lock.json') | from_json }}"
 _lazyvim_lazy_nvim_repo: https://github.com/folke/lazy.nvim.git
 
+# The language extras this feature supports: option value -> the Lua modules it
+# imports. files/extras.json is shared with features/scripts/update-lazy-lock.sh,
+# which resolves the lockfile over ALL of them -- so the lockfile covers every
+# extra, and a build installs only the plugins its own `extras` name.
+_lazyvim_extras_supported: "{{ lookup('ansible.builtin.file', role_path ~ '/files/extras.json') | from_json }}"
+_lazyvim_extras_list: "{{ _lazyvim_extras.split(',') | map('trim') | select | list }}"
+
 # The CLIs LazyVim would otherwise install through Mason. Each upstream names
 # its assets differently, so _target_arch is translated per tool here and
 # nowhere else. `pattern` is matched against the tool's own version output,
@@ -96,4 +103,14 @@ _lazyvim_lua_missing_plugins: >-
   end
   table.sort(missing)
   io.stdout:write("\nMISSING_PLUGINS=" .. vim.json.encode(missing) .. "\n")
+
+# The plugins the rendered spec names -- core, the chosen extras, the
+# developer's own lua/plugins/ -- which is exactly what lazy.nvim installs. The
+# pin checks walk THIS list, not the whole lockfile: the lockfile also covers
+# extras this image did not ask for, whose plugins are absent by design.
+_lazyvim_lua_spec_plugins: >-
+  local names = {}
+  for _, p in ipairs(require("lazy").plugins()) do table.insert(names, p.name) end
+  table.sort(names)
+  io.stdout:write("\nSPEC_PLUGINS=" .. vim.json.encode(names) .. "\n")
 ...

@@ -1,0 +1,40 @@
+# java-tools-feature/ansible-role-feature/vars/main.yml
+---
+# Variants this role has actually been tested against. The variant is detected
+# once at bootstrap install time from /etc/os-release and published as a group
+# var in /opt/bootstrap/inventory.yml.
+_securedevcontainer_compatibility_list:
+  - fedora43
+
+# ---------------------------------------------------------------------------
+# DERIVED VALUES AND ROLE CONSTANTS
+# ---------------------------------------------------------------------------
+_javatools_root: "{{ _target_user_home }}/.local/share/jdtls"
+_javatools_jdtls_dir: "{{ _javatools_root }}/{{ _jdtls_version }}"
+_javatools_jdtls_tarball: "jdt-language-server-{{ _jdtls_version }}-{{ _jdtls_build }}.tar.gz"
+_javatools_jdtls_url: "https://download.eclipse.org/jdtls/milestones/{{ _jdtls_version }}/{{ _javatools_jdtls_tarball }}"
+_javatools_lombok_jar: "{{ _javatools_root }}/lombok-{{ _lombok_version }}.jar"
+_javatools_lombok_url: "https://repo1.maven.org/maven2/org/projectlombok/lombok/{{ _lombok_version }}/lombok-{{ _lombok_version }}.jar"
+_javatools_launcher: "{{ _target_user_home }}/.local/bin/jdtls"
+_javatools_bin_dir: "{{ _target_user_home }}/.local/bin"
+
+# jdtls ships one configuration directory per OS/architecture.
+_javatools_config_dir: "{{ {'amd64': 'config_linux', 'arm64': 'config_linux_arm'}[_target_arch] }}"
+
+# SHA256 pinned per version. jdtls: the digest download.eclipse.org publishes
+# beside the tarball (it is architecture-independent, so one per build).
+# lombok: the digest of the jar Maven Central serves, whose SHA-1 matched the
+# one Maven Central publishes. An absent version resolves to '' and is caught
+# by the checksum assert in tasks/main.yml.
+_jdtls_pinned_checksums:
+  "1.61.0-202609031315": "338e7e73d61836651ba2453919a0d34fa763eb4e7c03342092309bffb8934c64"
+_lombok_pinned_checksums:
+  "1.18.48": "85477a4655ebb2c074a9099cfb749be454449fee564d4282610df1b85f7c508b"
+
+_javatools_jdtls_effective_checksum: >-
+  {{ _jdtls_checksum if _jdtls_checksum | length > 0
+     else _jdtls_pinned_checksums.get(_jdtls_version ~ '-' ~ _jdtls_build, '') }}
+_javatools_lombok_effective_checksum: >-
+  {{ _lombok_checksum if _lombok_checksum | length > 0
+     else _lombok_pinned_checksums.get(_lombok_version, '') }}
+...

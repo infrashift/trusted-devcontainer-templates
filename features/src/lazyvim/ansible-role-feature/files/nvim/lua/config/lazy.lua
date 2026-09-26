@@ -17,12 +17,17 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+-- The language extras come from lua/config/extras.lua, which the feature
+-- renders from its `extras` option (lang.go unless told otherwise). The core
+-- spec is first and the developer's own lua/plugins/ last, so their specs
+-- override both.
+local spec = { { "LazyVim/LazyVim", import = "lazyvim.plugins" } }
+local ok, extras = pcall(require, "config.extras")
+vim.list_extend(spec, ok and extras or { { import = "lazyvim.plugins.extras.lang.go" } })
+table.insert(spec, { import = "plugins" })
+
 require("lazy").setup({
-  spec = {
-    { "LazyVim/LazyVim", import = "lazyvim.plugins" },
-    { import = "lazyvim.plugins.extras.lang.go" },
-    { import = "plugins" },
-  },
+  spec = spec,
   defaults = {
     lazy = false,
     -- Resolve to commits, never to semver tags: the lockfile is the only

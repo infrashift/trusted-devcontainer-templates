@@ -1,0 +1,13 @@
+-- ~/.config/nvim/lua/config/extras.lua
+-- Rendered by the infrashift 'lazyvim' devcontainer feature from its `extras`
+-- option ({{ _lazyvim_extras }}). Edits are overwritten on rebuild.
+--
+-- One import per language extra. `lang.*` are LazyVim's own; `infrashift.*`
+-- are shipped by this feature under lua/infrashift/extras/.
+return {
+{% for x in _lazyvim_extras_list %}
+{% for m in _lazyvim_extras_supported[x] %}
+  { import = "{{ m }}" },
+{% endfor %}
+{% endfor %}
+}

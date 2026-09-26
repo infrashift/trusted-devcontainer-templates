@@ -11,7 +11,10 @@ and how they move there later, is recorded in
 | [`tmux`](src/tmux/NOTES.md) | privileged | tmux, `/etc/tmux.conf`, the `dev-session` layout (editor \| shell) and its login hook |
 | [`neovim`](src/neovim/NOTES.md) | userland | the upstream Neovim release build |
 | [`go-tools`](src/go-tools/NOTES.md) | userland | gopls, gofumpt, goimports, gomodifytags, impl, dlv, golangci-lint |
-| [`lazyvim`](src/lazyvim/NOTES.md) | both | LazyVim (Go extra) with every plugin at a locked commit, its tree-sitter parsers, and stylua/shfmt/tree-sitter |
+| [`python-tools`](src/python-tools/NOTES.md) | userland | basedpyright (`uv tool install`) |
+| [`java-tools`](src/java-tools/NOTES.md) | userland | Eclipse JDT Language Server + lombok, and a `jdtls` launcher that needs no Python |
+| [`ansible-tools`](src/ansible-tools/NOTES.md) | userland | ansible-lint (`uv tool install`) |
+| [`lazyvim`](src/lazyvim/NOTES.md) | both | LazyVim with the language extras you name (`extras`: Go by default; python, java, cue, ansible-lint), every plugin at a locked commit, its tree-sitter parsers, and stylua/shfmt/tree-sitter |
 
 Published as `ghcr.io/infrashift/trusted-devcontainer-templates/features/<id>`, signed
 with this repository's release key and keylessly through Sigstore.
@@ -49,6 +52,9 @@ Two differences, both forced by living outside that repository:
 make check-features          # contract, bootstrap pin, published-version drift
 make test-feature-template   # build features/test/neovim-go from the working tree,
                              # run tests.sh, then the contract tests
+make test-feature-template FEATURE_TEST=neovim-langs
+                             # the same for the language tools features and the
+                             # python/java/cue/ansible-lint extras, in one image
 make lazy-lock               # re-resolve LazyVim's plugin lockfile (see below)
 ```
 
@@ -69,6 +75,11 @@ running `Lazy! sync` in a throwaway container built from the templates' base
 image and the pinned Neovim. It is the one deliberately unpinned operation in
 the pipeline, and its output is a diff of commit hashes to review. Bump the
 `lazyvim` version in the same change.
+
+It resolves over **every** extra in `lazyvim/ansible-role-feature/files/extras.json`,
+so the one lockfile covers them all. Adding an extra wants
+`LAZY_LOCK_EXTEND=1 make lazy-lock`, which keeps every existing pin (and fails if
+one moved) and resolves only the new plugins. `DOCKER=podman` runs it with podman.
 
 ## Release
 

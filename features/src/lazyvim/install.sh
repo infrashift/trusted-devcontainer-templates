@@ -23,6 +23,7 @@ set -euo pipefail
 # `:-fallback` here — that would reintroduce the second source of truth this
 # design removes. The *_checksum options are legitimately empty (empty means
 # "use the pinned map"), so they keep :- rather than :?.
+: "${EXTRAS:?feature option 'extras' resolved empty — devcontainer-feature.json must declare a default}"
 : "${TREE_SITTER_VERSION:?feature option 'tree_sitter_version' resolved empty — devcontainer-feature.json must declare a default}"
 : "${STYLUA_VERSION:?feature option 'stylua_version' resolved empty — devcontainer-feature.json must declare a default}"
 : "${SHFMT_VERSION:?feature option 'shfmt_version' resolved empty — devcontainer-feature.json must declare a default}"
@@ -33,6 +34,7 @@ set -euo pipefail
 
 exec /opt/bootstrap/run-feature.sh \
     --role ansible-role-feature \
+    -e "_lazyvim_extras=${EXTRAS}" \
     -e "_tree_sitter_version=${TREE_SITTER_VERSION}" \
     -e "_tree_sitter_checksum=${TREE_SITTER_CHECKSUM:-}" \
     -e "_stylua_version=${STYLUA_VERSION}" \

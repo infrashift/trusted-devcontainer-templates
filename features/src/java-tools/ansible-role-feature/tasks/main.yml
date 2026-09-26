@@ -1,0 +1,144 @@
+# java-tools-feature/ansible-role-feature/tasks/main.yml
+---
+# ---------------------------------------------------------------------------
+# PARAMETER BRACKET
+# ---------------------------------------------------------------------------
+- name: Assert that _securedevcontainer_variant is in the _securedevcontainer_compatibility_list
+  ansible.builtin.assert:
+    that: _securedevcontainer_variant in _securedevcontainer_compatibility_list
+    fail_msg: "_securedevcontainer_variant = '{{ _securedevcontainer_variant }}' is NOT in the _securedevcontainer_compatibility_list = '{{ _securedevcontainer_compatibility_list }}'."
+
+- name: Assert that the runner contract was satisfied
+  ansible.builtin.assert:
+    that:
+      - _target_username is defined and _target_username | length > 0
+      - _target_user_home is defined and _target_user_home | length > 0
+      - _target_arch in ['amd64', 'arm64']
+    fail_msg: >-
+      This role must be invoked through /opt/bootstrap/run-feature.sh, which
+      injects _target_username, _target_user_home and _target_arch.
+
+- name: Assert that every required role parameter was supplied
+  ansible.builtin.assert:
+    that:
+      - _jdtls_version is defined and _jdtls_version | length > 0
+      - _jdtls_build is defined and _jdtls_build | length > 0
+      - _jdtls_checksum is defined
+      - _lombok_version is defined and _lombok_version | length > 0
+      - _lombok_checksum is defined
+      - _jdtls_version is match('^\d+\.\d+\.\d+$')
+      - _jdtls_build is match('^\d{12}$')
+      - _lombok_version is match('^\d+\.\d+\.\d+$')
+      - _jdtls_checksum | length == 0 or _jdtls_checksum is match('^[0-9a-fA-F]{64}$')
+      - _lombok_checksum | length == 0 or _lombok_checksum is match('^[0-9a-fA-F]{64}$')
+    fail_msg: >-
+      A required role parameter was not supplied. This role has NO defaults by
+      design — install.sh must pass each one via -e, sourced from the matching
+      option default in devcontainer-feature.json:
+        _jdtls_version   <- jdtls_version    (mandatory, X.Y.Z)
+        _jdtls_build     <- jdtls_build      (mandatory, the 12-digit build timestamp)
+        _jdtls_checksum  <- jdtls_checksum   (may be empty; uses the pinned map)
+        _lombok_version  <- lombok_version   (mandatory, X.Y.Z)
+        _lombok_checksum <- lombok_checksum  (may be empty; uses the pinned map)
+        every checksum, when not empty, must be a 64-character SHA256 hex digest
+    success_msg: >-
+      jdtls {{ _jdtls_version }} ({{ _jdtls_build }}), lombok {{ _lombok_version }} ({{ _target_arch }})
+
+# A resolved-empty checksum means get_url would SKIP verification rather than
+# fail, so the absence is an error here.
+- name: Assert that a checksum is available for jdtls and lombok
+  ansible.builtin.assert:
+    that:
+      - _javatools_jdtls_effective_checksum | trim | length == 64
+      - _javatools_lombok_effective_checksum | trim | length == 64
+    fail_msg: >-
+      No SHA256 is pinned for jdtls {{ _jdtls_version }}-{{ _jdtls_build }}
+      ('{{ _javatools_jdtls_effective_checksum | trim }}') or lombok {{ _lombok_version }}
+      ('{{ _javatools_lombok_effective_checksum | trim }}'). Pass jdtls_checksum /
+      lombok_checksum, or add the version to vars/main.yml.
+
+# ---------------------------------------------------------------------------
+# FEATURE TASKS — userland only. Everything lands under ~/.local.
+# ---------------------------------------------------------------------------
+- name: Ensure the install directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ _javatools_jdtls_dir }}"
+    - "{{ _javatools_bin_dir }}"
+
+- name: Check whether jdtls {{ _jdtls_version }} is already unpacked
+  ansible.builtin.find:
+    paths: "{{ _javatools_jdtls_dir }}/plugins"
+    patterns: "org.eclipse.equinox.launcher_*.jar"
+  register: _javatools_launcher_jar
+
+- name: Download jdtls {{ _jdtls_version }} ({{ _jdtls_build }})
+  ansible.builtin.get_url:
+    url: "{{ _javatools_jdtls_url }}"
+    dest: "/tmp/{{ _javatools_jdtls_tarball }}"
+    checksum: "sha256:{{ _javatools_jdtls_effective_checksum | trim }}"
+    mode: '0644'
+  when: _javatools_launcher_jar.matched == 0
+
+- name: Unpack jdtls into {{ _javatools_jdtls_dir }}
+  ansible.builtin.unarchive:
+    src: "/tmp/{{ _javatools_jdtls_tarball }}"
+    dest: "{{ _javatools_jdtls_dir }}"
+    remote_src: true
+  when: _javatools_launcher_jar.matched == 0
+
+- name: Remove the downloaded jdtls tarball
+  ansible.builtin.file:
+    path: "/tmp/{{ _javatools_jdtls_tarball }}"
+    state: absent
+
+- name: Download lombok {{ _lombok_version }}
+  ansible.builtin.get_url:
+    url: "{{ _javatools_lombok_url }}"
+    dest: "{{ _javatools_lombok_jar }}"
+    checksum: "sha256:{{ _javatools_lombok_effective_checksum | trim }}"
+    mode: '0644'
+
+- name: Point lombok.jar at lombok {{ _lombok_version }}
+  ansible.builtin.file:
+    src: "{{ _javatools_lombok_jar }}"
+    dest: "{{ _javatools_root }}/lombok.jar"
+    state: link
+
+- name: Install the jdtls launcher
+  ansible.builtin.template:
+    src: jdtls.sh.j2
+    dest: "{{ _javatools_launcher }}"
+    mode: '0755'
+
+# ---------------------------------------------------------------------------
+# VERIFY — the files the launcher resolves, not a JVM start: nothing at build
+# time needs Java, and the openjdk feature may install after this one.
+# ---------------------------------------------------------------------------
+- name: Find the equinox launcher jar
+  ansible.builtin.find:
+    paths: "{{ _javatools_jdtls_dir }}/plugins"
+    patterns: "org.eclipse.equinox.launcher_*.jar"
+  register: _javatools_launcher_verify
+
+- name: Check the {{ _javatools_config_dir }} configuration directory
+  ansible.builtin.stat:
+    path: "{{ _javatools_jdtls_dir }}/{{ _javatools_config_dir }}/config.ini"
+  register: _javatools_config_verify
+
+- name: Assert that jdtls and lombok are in place
+  ansible.builtin.assert:
+    that:
+      - _javatools_launcher_verify.matched == 1
+      - _javatools_config_verify.stat.exists
+    fail_msg: >-
+      jdtls {{ _jdtls_version }} is incomplete under {{ _javatools_jdtls_dir }}:
+      {{ _javatools_launcher_verify.matched }} equinox launcher jar(s),
+      {{ _javatools_config_dir }}/config.ini present={{ _javatools_config_verify.stat.exists }}
+    success_msg: >-
+      jdtls {{ _jdtls_version }} ({{ _javatools_launcher_verify.files[0].path | basename }},
+      {{ _javatools_config_dir }}), lombok {{ _lombok_version }}, launcher {{ _javatools_launcher }}
+...

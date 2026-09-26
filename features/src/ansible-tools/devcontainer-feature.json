@@ -1,0 +1,47 @@
+// ansible-tools-feature/devcontainer-feature.json
+// Find Development Container Feature Specification at https://containers.dev/implementors/features/
+//
+// THIS FILE IS THE SINGLE SOURCE OF TRUTH FOR EVERY OPTION DEFAULT.
+//
+// ansible-lint, pinned to an exact version and installed USERLAND with
+// `uv tool install` -- its own virtualenv under ~/.local/share/uv/tools, its
+// entry point linked into ~/.local/bin. The same mechanism the trusted
+// ansible-core feature uses. The lazyvim feature's `infrashift.ansible_lint`
+// extra runs it through nvim-lint on playbooks, roles and task files.
+//
+// ansible-lint brings its own ansible-core inside its virtualenv (a dependency),
+// so it does not disturb the `ansible` the ansible-core feature puts on PATH.
+//
+// Requires uv (the bootstrap feature's, or ~/.local/bin/uv) and the Python the
+// trusted python feature installs: list python before this one. uv is told
+// never to download an interpreter.
+//
+// dependsOn is absolute and digest-pinned; see neovim/devcontainer-feature.json.
+{
+    "name": "ansible-tools-feature",
+    "id": "ansible-tools",
+    "version": "1.0.0",
+    "description": "Installs ansible-lint, pinned and userland (uv tool), for editor diagnostics without a language server.",
+    "options": {
+        // https://pypi.org/project/ansible-lint/
+        "ansible_lint_version": {
+            "type": "string",
+            "proposals": ["26.9.0"],
+            "default": "26.9.0",
+            "description": "ansible-lint version (PyPI)"
+        },
+        "python_version": {
+            "type": "string",
+            "proposals": ["3.14", "3.13"],
+            "default": "3.14",
+            "description": "Python the tool's virtualenv runs on; must already be installed (the python feature)"
+        }
+    },
+    "installsAfter": [
+        "ghcr.io/infrashift/trusted-devcontainer-features/python",
+        "ghcr.io/infrashift/trusted-devcontainer-features/ansible-core"
+    ],
+    "dependsOn": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {}
+    }
+}

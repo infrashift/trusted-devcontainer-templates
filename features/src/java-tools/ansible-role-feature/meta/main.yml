@@ -1,0 +1,21 @@
+# java-tools-feature/ansible-role-feature/meta/main.yml
+---
+galaxy_info:
+  author: ryancraig
+  description: Pinned Eclipse JDT Language Server (jdtls) with lombok for Fedora containers, installed userland
+  company: infrashift.sh
+  license: MIT
+  min_ansible_version: "2.18"
+  platforms:
+  - name: Fedora
+    versions:
+    - 43
+  galaxy_tags:
+    - java
+    - jdtls
+    - lombok
+    - lsp
+    - fedora
+
+dependencies: []
+...

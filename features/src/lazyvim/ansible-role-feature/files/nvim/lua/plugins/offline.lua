@@ -6,9 +6,10 @@
 -- Mason, and a native fuzzy matcher for blink.cmp, the first time they are
 -- needed -- none of it versioned by this image, checksummed, or in its SBOM.
 --
--- The tools themselves are on PATH instead: gopls, gofumpt, goimports, dlv and
--- golangci-lint from the 'go-tools' feature; stylua, shfmt and tree-sitter from
--- this one.
+-- The tools themselves are on PATH instead, from the language's tools feature
+-- (go-tools: gopls, gofumpt, goimports, dlv, golangci-lint; python-tools:
+-- basedpyright; java-tools: jdtls; ansible-tools: ansible-lint; cuelang:
+-- `cue lsp`), and stylua, shfmt and tree-sitter from this one.
 return {
   {
     "mason-org/mason.nvim",

@@ -1,0 +1,112 @@
+# ansible-tools-feature/ansible-role-feature/tasks/main.yml
+---
+# ---------------------------------------------------------------------------
+# PARAMETER BRACKET
+# ---------------------------------------------------------------------------
+- name: Assert that _securedevcontainer_variant is in the _securedevcontainer_compatibility_list
+  ansible.builtin.assert:
+    that: _securedevcontainer_variant in _securedevcontainer_compatibility_list
+    fail_msg: "_securedevcontainer_variant = '{{ _securedevcontainer_variant }}' is NOT in the _securedevcontainer_compatibility_list = '{{ _securedevcontainer_compatibility_list }}'."
+
+- name: Assert that the runner contract was satisfied
+  ansible.builtin.assert:
+    that:
+      - _target_username is defined and _target_username | length > 0
+      - _target_user_home is defined and _target_user_home | length > 0
+      - _target_arch in ['amd64', 'arm64']
+    fail_msg: >-
+      This role must be invoked through /opt/bootstrap/run-feature.sh, which
+      injects _target_username, _target_user_home and _target_arch.
+
+- name: Assert that every required role parameter was supplied
+  ansible.builtin.assert:
+    that:
+      - _ansible_lint_version is defined and _ansible_lint_version | length > 0
+      - _anstools_python_version is defined and _anstools_python_version | length > 0
+      - _ansible_lint_version is match('^\d+\.\d+\.\d+$')
+      - _anstools_python_version is match('^\d+\.\d+$')
+    fail_msg: >-
+      A required role parameter was not supplied. This role has NO defaults by
+      design — install.sh must pass each one via -e, sourced from the matching
+      option default in devcontainer-feature.json:
+        _ansible_lint_version   <- ansible_lint_version  (mandatory, X.Y.Z)
+        _anstools_python_version <- python_version        (mandatory, X.Y)
+    success_msg: "ansible-lint {{ _ansible_lint_version }} on python {{ _anstools_python_version }}"
+
+# ---------------------------------------------------------------------------
+# FEATURE TASKS — userland only. Everything lands under ~/.local.
+# ---------------------------------------------------------------------------
+- name: Look for uv
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop: "{{ _anstools_uv_candidates }}"
+  register: _anstools_uv_stat
+
+- name: Select the first uv found
+  ansible.builtin.set_fact:
+    _anstools_uv: "{{ (_anstools_uv_stat.results | selectattr('stat.exists') | map(attribute='item') | list + ['']) | first }}"
+
+- name: Assert that uv is available
+  ansible.builtin.assert:
+    that: _anstools_uv | length > 0
+    fail_msg: >-
+      ansible-tools installs with `uv tool install`, and found no uv at
+      {{ _anstools_uv_candidates | join(', ') }}. The bootstrap feature provides
+      one; this feature depends on it.
+
+- name: Check that Python {{ _anstools_python_version }} is installed
+  ansible.builtin.command:
+    argv: ["{{ _anstools_uv }}", python, find, "{{ _anstools_python_version }}"]
+  environment: "{{ _anstools_env }}"
+  register: _anstools_python
+  changed_when: false
+  failed_when: false
+
+- name: Assert that the interpreter exists (uv will not download one)
+  ansible.builtin.assert:
+    that: _anstools_python.rc == 0
+    fail_msg: >-
+      No Python {{ _anstools_python_version }} is installed, and uv is told never
+      to download one. Add ghcr.io/infrashift/trusted-devcontainer-features/python
+      (this feature installs after it), or set python_version to the one it installs.
+      uv said: {{ _anstools_python.stderr | default('') | trim }}
+    success_msg: "python {{ _anstools_python_version }}: {{ _anstools_python.stdout | trim }}"
+
+# Gate on the version the installed tool reports, not on uv's output: uv
+# prints "... is already installed" on a no-op, which reads like a change.
+- name: Check the installed ansible-lint version
+  ansible.builtin.command:
+    argv: ["{{ _anstools_bin }}", --version]
+  environment: "{{ _anstools_env }}"
+  register: _anstools_installed
+  changed_when: false
+  failed_when: false
+
+- name: Install ansible-lint {{ _ansible_lint_version }} via uv tool install
+  ansible.builtin.command:
+    argv:
+      - "{{ _anstools_uv }}"
+      - tool
+      - install
+      - --force
+      - --python
+      - "{{ _anstools_python_version }}"
+      - "ansible-lint=={{ _ansible_lint_version }}"
+  environment: "{{ _anstools_env }}"
+  when: _anstools_installed.rc != 0
+        or ('ansible-lint ' ~ _ansible_lint_version) not in (_anstools_installed.stdout | default(''))
+  changed_when: true
+
+- name: Verify ansible-lint
+  ansible.builtin.command:
+    argv: ["{{ _anstools_bin }}", --version]
+  environment: "{{ _anstools_env }}"
+  register: _anstools_verify
+  changed_when: false
+
+- name: Assert that ansible-lint {{ _ansible_lint_version }} is installed
+  ansible.builtin.assert:
+    that: ('ansible-lint ' ~ _ansible_lint_version) in _anstools_verify.stdout
+    fail_msg: "Expected ansible-lint {{ _ansible_lint_version }}; it reported: {{ _anstools_verify.stdout }}"
+    success_msg: "{{ _anstools_verify.stdout_lines | join('; ') }}"
+...

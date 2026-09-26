@@ -49,16 +49,21 @@ echo "lazyvim"
 check "tree-sitter is 0.27.0" bash -c 'tree-sitter --version | grep -qE "^tree-sitter 0\.27\.0( |$)"'
 check "stylua is 2.5.2" bash -c '[ "$(stylua --version)" = "stylua 2.5.2" ]'
 check "shfmt is 3.14.1" bash -c '[ "$(shfmt --version)" = "v3.14.1" ]'
-# No jq in this image, so the lockfile is read with sed: lazy.nvim writes one
-# plugin per line. The count guard matters -- a parse that found nothing would
-# otherwise compare nothing and pass.
-check "every plugin is at its locked commit" bash -c '
+# The lockfile covers every extra the feature supports (lazyvim 1.1.0); this
+# image installs only the plugins its own spec names, so walk THAT list, asked
+# of lazy.nvim, and look each one up in the lockfile. No jq in this image: the
+# lockfile is read with sed (one plugin per line). The count guard matters -- a
+# probe that found nothing would otherwise compare nothing and pass.
+check "every plugin the spec names is at its locked commit" bash -c '
     lock="$HOME/.config/nvim/lazy-lock.json"
+    spec=$(nvim --headless "+lua local n={} for _,p in ipairs(require(\"lazy\").plugins()) do n[#n+1]=p.name end io.stdout:write(\"\nSPEC=\"..table.concat(n,\" \")..\"\n\")" +qa 2>&1 | sed -n "s/^SPEC=//p")
     n=0
-    while read -r name commit; do
+    for name in $spec; do
+        commit=$(sed -nE "s/^ *\"${name//./\\.}\": \{.*\"commit\": \"([0-9a-f]{40})\".*/\1/p" "$lock")
+        [ -n "$commit" ] || { echo "$name is not in the lockfile"; exit 1; }
         [ "$(git -C "$HOME/.local/share/nvim/lazy/$name" rev-parse HEAD)" = "$commit" ] || { echo "$name"; exit 1; }
         n=$((n + 1))
-    done < <(sed -nE "s/^ *\"([^\"]+)\": \{.*\"commit\": \"([0-9a-f]{40})\".*/\1 \2/p" "$lock")
+    done
     echo "checked $n"; [ "$n" -ge 30 ]'
 check "lazy.nvim reports nothing to install" bash -c '
     out=$(nvim --headless "+lua local m={} for _,p in ipairs(require(\"lazy\").plugins()) do if not p._.installed then m[#m+1]=p.name end end io.stdout:write(\"\nMISSING=\"..#m..\"\n\")" +qa 2>&1)
