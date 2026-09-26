@@ -21,7 +21,7 @@
 {
     "name": "lazyvim-feature",
     "id": "lazyvim",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Installs a pinned LazyVim configuration (Go extra) with every plugin, tree-sitter parser and formatter preinstalled, so Neovim fetches nothing at runtime.",
     "options": {
         // https://github.com/tree-sitter/tree-sitter/releases

@@ -239,6 +239,19 @@
 # commit in lazy-lock.json. Its exit status says little -- headless Neovim exits
 # 0 after most plugin errors -- so success is decided by the re-check below,
 # not by this command. That replaces the `|| true` the hand-built image used.
+#
+# ONE PASS IS NOT ENOUGH, and the reason is lazy.nvim's own bookkeeping. The
+# headless Neovim that runs the restore first starts up, and at startup lazy
+# installs every missing plugin -- cloning each at its default branch -- and
+# then REWRITES lazy-lock.json from the commits it finds on disk. A plugin
+# whose install-time checkout to the locked commit did not happen is recorded
+# at its branch tip, and the restore that follows reads the rewritten lockfile
+# and has nothing to do. It passed for as long as no pinned plugin's upstream
+# had moved; the first time one did (nvim-treesitter `main`, 2026-09-26: three
+# commits past its pin) every build failed the re-check below, on every
+# machine. So: put the shipped lockfile back, restore again for whatever is
+# still off its pin, and put the shipped lockfile back once more so the image
+# carries exactly the file this feature ships, not lazy's rewrite of it.
 - name: Restore every plugin to its locked commit
   ansible.builtin.command:
     argv:
@@ -249,6 +262,61 @@
   register: _lazyvim_restore
   when: _lazyvim_plugins_pending | length > 0
   changed_when: true
+
+- name: Put the shipped lockfile back after lazy.nvim rewrote it
+  ansible.builtin.copy:
+    src: nvim/lazy-lock.json
+    dest: "{{ _lazyvim_config_dir }}/lazy-lock.json"
+    mode: '0644'
+  when: _lazyvim_plugins_pending | length > 0
+
+- name: Check which plugins the first pass left off their locked commit
+  ansible.builtin.command:
+    argv:
+      - git
+      - -C
+      - "{{ _lazyvim_plugin_dir }}/{{ item.key }}"
+      - rev-parse
+      - HEAD
+  loop: "{{ _lazyvim_lock | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  register: _lazyvim_plugin_second
+  failed_when: false
+  changed_when: false
+  when: _lazyvim_plugins_pending | length > 0
+
+- name: Start with no plugins left off their locked commit
+  ansible.builtin.set_fact:
+    _lazyvim_plugins_off: []
+
+- name: Collect the plugins the first pass left off their locked commit
+  ansible.builtin.set_fact:
+    _lazyvim_plugins_off: "{{ _lazyvim_plugins_off + [item.item.key] }}"
+  loop: "{{ _lazyvim_plugin_second.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+  when:
+    - item is not skipped
+    - item.rc != 0 or (item.stdout | trim) != item.item.value.commit
+
+- name: Restore again, from the shipped lockfile, what the first pass missed ({{ _lazyvim_plugins_off | join(', ') }})
+  ansible.builtin.command:
+    argv:
+      - "{{ _lazyvim_nvim }}"
+      - --headless
+      - "+Lazy! restore"
+      - +qa
+  register: _lazyvim_restore_second
+  when: _lazyvim_plugins_off | length > 0
+  changed_when: true
+
+- name: Put the shipped lockfile back after the second pass
+  ansible.builtin.copy:
+    src: nvim/lazy-lock.json
+    dest: "{{ _lazyvim_config_dir }}/lazy-lock.json"
+    mode: '0644'
+  when: _lazyvim_restore_second is changed
 
 - name: Re-check each plugin's checked-out commit
   ansible.builtin.command:
@@ -271,7 +339,7 @@
     fail_msg: >-
       {{ item.item.key }} is at '{{ item.stdout | default('') | trim }}' (rc={{ item.rc }}),
       but lazy-lock.json pins {{ item.item.value.commit }}.
-      {{ (_lazyvim_restore.stderr | default('') | trim)[-800:] }}
+      {{ (((_lazyvim_restore_second.stderr | default('')) or (_lazyvim_restore.stderr | default(''))) | trim)[-800:] }}
     quiet: true
   loop: "{{ _lazyvim_plugin_verify.results }}"
   loop_control:
