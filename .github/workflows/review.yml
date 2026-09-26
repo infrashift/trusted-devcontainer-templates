@@ -180,7 +180,15 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          FILES=(verdicts/*/review-verdict.json)
+          # BOTH SHAPES. download-artifact v5 extracts each matching artifact
+          # into its own verdicts/<name>/ -- unless exactly ONE matches, when it
+          # extracts straight into verdicts/. A PR that touches one template
+          # produces one verdict, so the old single glob found none and reported
+          # a PASS as "No verdicts were produced" (#17: verdict PASS, status
+          # failure). A multi-template PR never showed it. The [r] is load-
+          # bearing: a word with no glob character is exempt from nullglob and
+          # would be kept literally, adding a file that does not exist.
+          FILES=(verdicts/*/review-verdict.json verdicts/[r]eview-verdict.json)
 
           {
             echo "## Trusted DevContainer Templates — review"
