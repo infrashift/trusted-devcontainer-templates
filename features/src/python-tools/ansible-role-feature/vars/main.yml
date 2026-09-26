@@ -1,0 +1,28 @@
+# python-tools-feature/ansible-role-feature/vars/main.yml
+---
+# Variants this role has actually been tested against. The variant is detected
+# once at bootstrap install time from /etc/os-release and published as a group
+# var in /opt/bootstrap/inventory.yml.
+_securedevcontainer_compatibility_list:
+  - fedora43
+
+# ---------------------------------------------------------------------------
+# DERIVED VALUES AND ROLE CONSTANTS
+# ---------------------------------------------------------------------------
+# uv: the user's (uv-ruff, python) first, the bootstrap feature's otherwise --
+# the same order the trusted ansible-core feature uses.
+_pytools_uv_candidates:
+  - "{{ _target_user_home }}/.local/bin/uv"
+  - /usr/local/bin/uv
+_pytools_bin: "{{ _target_user_home }}/.local/bin/basedpyright"
+
+# uv's own defaults, stated: tools under ~/.local/share/uv/tools, entry points
+# in ~/.local/bin. UV_PYTHON_DOWNLOADS=never makes a missing interpreter an
+# error instead of an unpinned download.
+_pytools_env:
+  HOME: "{{ _target_user_home }}"
+  PATH: "{{ _target_user_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+  UV_TOOL_DIR: "{{ _target_user_home }}/.local/share/uv/tools"
+  UV_TOOL_BIN_DIR: "{{ _target_user_home }}/.local/bin"
+  UV_PYTHON_DOWNLOADS: never
+...

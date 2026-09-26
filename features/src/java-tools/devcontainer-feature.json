@@ -1,0 +1,65 @@
+// java-tools-feature/devcontainer-feature.json
+// Find Development Container Feature Specification at https://containers.dev/implementors/features/
+//
+// THIS FILE IS THE SINGLE SOURCE OF TRUTH FOR EVERY OPTION DEFAULT.
+//
+// The Java language server an editor expects on PATH: the Eclipse JDT Language
+// Server (jdtls), with the lombok agent, both pinned and verified by SHA256 and
+// installed USERLAND under ~/.local/share/jdtls. `jdtls` in ~/.local/bin is a
+// shell launcher: the upstream one is a Python script, and the base image has
+// no Python. It takes the arguments nvim-jdtls passes (-configuration, -data,
+// --jvm-arg=...) and always adds -javaagent for lombok.
+//
+// jdtls ships as one architecture-independent tarball per build, so its
+// checksum is per version, not per architecture; the SHA256 is the one
+// download.eclipse.org publishes beside it. lombok's comes from the jar Maven
+// Central serves, cross-checked against the SHA-1 Maven Central publishes.
+//
+// Requires a JDK 21 on PATH at run time (jdtls itself needs 21): the trusted
+// openjdk feature. Listed after it, but nothing at install time runs Java.
+//
+// dependsOn is absolute and digest-pinned; see neovim/devcontainer-feature.json.
+{
+    "name": "java-tools-feature",
+    "id": "java-tools",
+    "version": "1.0.0",
+    "description": "Installs the Eclipse JDT Language Server (jdtls) with lombok, pinned and userland, and a jdtls launcher that needs no Python.",
+    "options": {
+        // https://download.eclipse.org/jdtls/milestones/
+        "jdtls_version": {
+            "type": "string",
+            "proposals": ["1.61.0"],
+            "default": "1.61.0",
+            "description": "jdtls milestone version"
+        },
+        "jdtls_build": {
+            "type": "string",
+            "proposals": ["202609031315"],
+            "default": "202609031315",
+            "description": "jdtls build timestamp: the tarball is jdt-language-server-<version>-<build>.tar.gz"
+        },
+        "jdtls_checksum": {
+            "type": "string",
+            "default": "",
+            "description": "SHA256 of the jdtls tarball. Required when jdtls_version/jdtls_build is not pinned in the role."
+        },
+        // https://repo1.maven.org/maven2/org/projectlombok/lombok/
+        "lombok_version": {
+            "type": "string",
+            "proposals": ["1.18.48"],
+            "default": "1.18.48",
+            "description": "lombok version (the javaagent jdtls loads)"
+        },
+        "lombok_checksum": {
+            "type": "string",
+            "default": "",
+            "description": "SHA256 of the lombok jar. Required when lombok_version is not pinned in the role."
+        }
+    },
+    "installsAfter": [
+        "ghcr.io/infrashift/trusted-devcontainer-features/openjdk"
+    ],
+    "dependsOn": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {}
+    }
+}

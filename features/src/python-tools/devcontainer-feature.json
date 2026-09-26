@@ -1,0 +1,48 @@
+// python-tools-feature/devcontainer-feature.json
+// Find Development Container Feature Specification at https://containers.dev/implementors/features/
+//
+// THIS FILE IS THE SINGLE SOURCE OF TRUTH FOR EVERY OPTION DEFAULT.
+//
+// The Python language server an editor expects on PATH: basedpyright, pinned to
+// an exact version and installed USERLAND with `uv tool install` -- its own
+// virtualenv under ~/.local/share/uv/tools, its entry point linked into
+// ~/.local/bin. The same mechanism the trusted ansible-core feature uses.
+//
+// basedpyright is a Node program shipped as a Python wheel; its dependency
+// nodejs-wheel-binaries carries the Node runtime, so the image needs no Node
+// feature for it. ruff (lint + format) is the trusted uv-ruff feature's.
+//
+// Requires uv (the bootstrap feature's, or uv-ruff's in ~/.local/bin) and the
+// Python the trusted python feature installs: list python before this one.
+// uv is told never to download an interpreter, so a missing Python fails the
+// build instead of fetching an unpinned one.
+//
+// dependsOn is absolute and digest-pinned; see neovim/devcontainer-feature.json.
+{
+    "name": "python-tools-feature",
+    "id": "python-tools",
+    "version": "1.0.0",
+    "description": "Installs basedpyright, the Python language server LazyVim's python extra uses, pinned and userland (uv tool).",
+    "options": {
+        // https://pypi.org/project/basedpyright/
+        "basedpyright_version": {
+            "type": "string",
+            "proposals": ["1.40.1"],
+            "default": "1.40.1",
+            "description": "basedpyright version (PyPI)"
+        },
+        "python_version": {
+            "type": "string",
+            "proposals": ["3.14", "3.13"],
+            "default": "3.14",
+            "description": "Python the tool's virtualenv runs on; must already be installed (the python feature)"
+        }
+    },
+    "installsAfter": [
+        "ghcr.io/infrashift/trusted-devcontainer-features/python",
+        "ghcr.io/infrashift/trusted-devcontainer-features/uv-ruff"
+    ],
+    "dependsOn": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {}
+    }
+}

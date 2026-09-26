@@ -1,0 +1,112 @@
+# python-tools-feature/ansible-role-feature/tasks/main.yml
+---
+# ---------------------------------------------------------------------------
+# PARAMETER BRACKET
+# ---------------------------------------------------------------------------
+- name: Assert that _securedevcontainer_variant is in the _securedevcontainer_compatibility_list
+  ansible.builtin.assert:
+    that: _securedevcontainer_variant in _securedevcontainer_compatibility_list
+    fail_msg: "_securedevcontainer_variant = '{{ _securedevcontainer_variant }}' is NOT in the _securedevcontainer_compatibility_list = '{{ _securedevcontainer_compatibility_list }}'."
+
+- name: Assert that the runner contract was satisfied
+  ansible.builtin.assert:
+    that:
+      - _target_username is defined and _target_username | length > 0
+      - _target_user_home is defined and _target_user_home | length > 0
+      - _target_arch in ['amd64', 'arm64']
+    fail_msg: >-
+      This role must be invoked through /opt/bootstrap/run-feature.sh, which
+      injects _target_username, _target_user_home and _target_arch.
+
+- name: Assert that every required role parameter was supplied
+  ansible.builtin.assert:
+    that:
+      - _basedpyright_version is defined and _basedpyright_version | length > 0
+      - _pytools_python_version is defined and _pytools_python_version | length > 0
+      - _basedpyright_version is match('^\d+\.\d+\.\d+$')
+      - _pytools_python_version is match('^\d+\.\d+$')
+    fail_msg: >-
+      A required role parameter was not supplied. This role has NO defaults by
+      design — install.sh must pass each one via -e, sourced from the matching
+      option default in devcontainer-feature.json:
+        _basedpyright_version   <- basedpyright_version  (mandatory, X.Y.Z)
+        _pytools_python_version <- python_version        (mandatory, X.Y)
+    success_msg: "basedpyright {{ _basedpyright_version }} on python {{ _pytools_python_version }}"
+
+# ---------------------------------------------------------------------------
+# FEATURE TASKS — userland only. Everything lands under ~/.local.
+# ---------------------------------------------------------------------------
+- name: Look for uv
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop: "{{ _pytools_uv_candidates }}"
+  register: _pytools_uv_stat
+
+- name: Select the first uv found
+  ansible.builtin.set_fact:
+    _pytools_uv: "{{ (_pytools_uv_stat.results | selectattr('stat.exists') | map(attribute='item') | list + ['']) | first }}"
+
+- name: Assert that uv is available
+  ansible.builtin.assert:
+    that: _pytools_uv | length > 0
+    fail_msg: >-
+      python-tools installs with `uv tool install`, and found no uv at
+      {{ _pytools_uv_candidates | join(', ') }}. The bootstrap feature provides
+      one; this feature depends on it.
+
+- name: Check that Python {{ _pytools_python_version }} is installed
+  ansible.builtin.command:
+    argv: ["{{ _pytools_uv }}", python, find, "{{ _pytools_python_version }}"]
+  environment: "{{ _pytools_env }}"
+  register: _pytools_python
+  changed_when: false
+  failed_when: false
+
+- name: Assert that the interpreter exists (uv will not download one)
+  ansible.builtin.assert:
+    that: _pytools_python.rc == 0
+    fail_msg: >-
+      No Python {{ _pytools_python_version }} is installed, and uv is told never
+      to download one. Add ghcr.io/infrashift/trusted-devcontainer-features/python
+      (this feature installs after it), or set python_version to the one it installs.
+      uv said: {{ _pytools_python.stderr | default('') | trim }}
+    success_msg: "python {{ _pytools_python_version }}: {{ _pytools_python.stdout | trim }}"
+
+# Gate on the version the installed tool reports, not on uv's output: uv
+# prints "... is already installed" on a no-op, which reads like a change.
+- name: Check the installed basedpyright version
+  ansible.builtin.command:
+    argv: ["{{ _pytools_bin }}", --version]
+  environment: "{{ _pytools_env }}"
+  register: _pytools_installed
+  changed_when: false
+  failed_when: false
+
+- name: Install basedpyright {{ _basedpyright_version }} via uv tool install
+  ansible.builtin.command:
+    argv:
+      - "{{ _pytools_uv }}"
+      - tool
+      - install
+      - --force
+      - --python
+      - "{{ _pytools_python_version }}"
+      - "basedpyright=={{ _basedpyright_version }}"
+  environment: "{{ _pytools_env }}"
+  when: _pytools_installed.rc != 0
+        or ('basedpyright ' ~ _basedpyright_version) not in (_pytools_installed.stdout | default(''))
+  changed_when: true
+
+- name: Verify basedpyright
+  ansible.builtin.command:
+    argv: ["{{ _pytools_bin }}", --version]
+  environment: "{{ _pytools_env }}"
+  register: _pytools_verify
+  changed_when: false
+
+- name: Assert that basedpyright {{ _basedpyright_version }} is installed
+  ansible.builtin.assert:
+    that: ('basedpyright ' ~ _basedpyright_version) in _pytools_verify.stdout
+    fail_msg: "Expected basedpyright {{ _basedpyright_version }}; it reported: {{ _pytools_verify.stdout }}"
+    success_msg: "{{ _pytools_verify.stdout_lines | join('; ') }}"
+...
