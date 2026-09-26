@@ -37,6 +37,9 @@
       - _tree_sitter_checksum | length == 0 or _tree_sitter_checksum is match('^[0-9a-fA-F]{64}$')
       - _stylua_checksum | length == 0 or _stylua_checksum is match('^[0-9a-fA-F]{64}$')
       - _shfmt_checksum | length == 0 or _shfmt_checksum is match('^[0-9a-fA-F]{64}$')
+      - _lazyvim_extras is defined and _lazyvim_extras | length > 0
+      - _lazyvim_extras is match('^[a-z0-9_.]+(,[a-z0-9_.]+)*$')
+      - _lazyvim_extras_list | difference(_lazyvim_extras_supported.keys() | list) | length == 0
     fail_msg: >-
       A required role parameter was not supplied. This role has NO defaults by
       design — install.sh must pass each one via -e, sourced from the matching
@@ -47,13 +50,16 @@
         _stylua_checksum      <- stylua_checksum       (may be empty; uses the pinned map)
         _shfmt_version        <- shfmt_version         (mandatory, non-empty)
         _shfmt_checksum       <- shfmt_checksum        (may be empty; uses the pinned map)
+        _lazyvim_extras       <- extras                (mandatory; comma-separated, NO spaces,
+                                                        each one of: {{ _lazyvim_extras_supported.keys() | list | join(', ') }})
 
         every version must look like X.Y.Z
         every checksum, when not empty, must be a 64-character SHA256 hex digest
     success_msg: >-
       tree-sitter {{ _tree_sitter_version }}, stylua {{ _stylua_version }},
       shfmt {{ _shfmt_version }} ({{ _target_arch }});
-      {{ _lazyvim_lock | length }} locked plugins
+      extras {{ _lazyvim_extras_list | join(', ') }};
+      {{ _lazyvim_lock | length }} locked plugins across every supported extra
 
 # ---------------------------------------------------------------------------
 # FEATURE TASKS — userland.
@@ -197,33 +203,73 @@
     mode: '0644'
     directory_mode: '0755'
 
+- name: Render the language extras ({{ _lazyvim_extras_list | join(', ') }})
+  ansible.builtin.template:
+    src: extras.lua.j2
+    dest: "{{ _lazyvim_config_dir }}/lua/config/extras.lua"
+    mode: '0644'
+
 # --- Plugins, at their locked commits ------------------------------------------
-- name: Check each plugin's checked-out commit
+#
+# THE LOCKFILE COVERS EVERY SUPPORTED EXTRA; AN IMAGE INSTALLS ONLY WHAT ITS OWN
+# `extras` NAME. lazy.nvim installs the plugins the rendered spec asks for and
+# nothing else, so every check below asks lazy.nvim for that spec
+# (SPEC_PLUGINS) instead of walking the whole lockfile -- a plugin only lang.java
+# needs is absent from a Go image by design, not a failure. The spec can only be
+# read once lazy.nvim and LazyVim are on disk; until then every plugin is
+# pending and the restore below installs them.
+- name: Check whether lazy.nvim and LazyVim are installed
+  ansible.builtin.stat:
+    path: "{{ _lazyvim_plugin_dir }}/{{ item }}/.git"
+  loop:
+    - lazy.nvim
+    - LazyVim
+  register: _lazyvim_core_stat
+
+- name: Ask lazy.nvim which plugins the spec names (before any restore)
+  ansible.builtin.command:
+    argv:
+      - "{{ _lazyvim_nvim }}"
+      - --headless
+      - "+lua {{ _lazyvim_lua_spec_plugins }}"
+      - +qa
+  register: _lazyvim_spec_before
+  changed_when: false
+  failed_when: false
+  when: _lazyvim_core_stat.results | selectattr('stat.exists') | list | length == 2
+
+- name: Read the spec, when it could be asked for
+  ansible.builtin.set_fact:
+    _lazyvim_spec_known: "{{ (_lazyvim_spec_before.stdout | default('')) is search('SPEC_PLUGINS=') }}"
+    _lazyvim_spec: >-
+      {{ ((_lazyvim_spec_before.stdout | default('')) | regex_findall('SPEC_PLUGINS=(.*)') + ['[]']) | first | from_json }}
+
+- name: Check each plugin's checked-out commit (the spec's, or the whole lockfile before LazyVim exists)
   ansible.builtin.command:
     argv:
       - git
       - -C
-      - "{{ _lazyvim_plugin_dir }}/{{ item.key }}"
+      - "{{ _lazyvim_plugin_dir }}/{{ item }}"
       - rev-parse
       - HEAD
-  loop: "{{ _lazyvim_lock | dict2items }}"
-  loop_control:
-    label: "{{ item.key }}"
+  loop: >-
+    {{ (_lazyvim_spec | intersect(_lazyvim_lock.keys() | list)) if _lazyvim_spec_known
+       else (_lazyvim_lock.keys() | list) }}
   register: _lazyvim_plugin_probe
   failed_when: false
   changed_when: false
 
 - name: Start with no plugins pending
   ansible.builtin.set_fact:
-    _lazyvim_plugins_pending: []
+    _lazyvim_plugins_pending: "{{ [] if _lazyvim_spec_known else ['LazyVim'] }}"
 
 - name: Collect the plugins that are missing or not at their locked commit
   ansible.builtin.set_fact:
-    _lazyvim_plugins_pending: "{{ _lazyvim_plugins_pending + [item.item.key] }}"
+    _lazyvim_plugins_pending: "{{ _lazyvim_plugins_pending + [item.item] }}"
   loop: "{{ _lazyvim_plugin_probe.results }}"
   loop_control:
-    label: "{{ item.item.key }}"
-  when: item.rc != 0 or (item.stdout | trim) != item.item.value.commit
+    label: "{{ item.item }}"
+  when: item.rc != 0 or (item.stdout | trim) != _lazyvim_lock[item.item].commit
 
 # lazy.nvim is the plugin manager, so it cannot install itself. Clone it at the
 # locked commit; lazy.lua refuses to fetch an unpinned copy if it is missing.
@@ -233,25 +279,22 @@
     dest: "{{ _lazyvim_plugin_dir }}/lazy.nvim"
     version: "{{ _lazyvim_lock['lazy.nvim'].commit }}"
     force: true
-  when: "'lazy.nvim' in _lazyvim_plugins_pending"
+  when: not (_lazyvim_core_stat.results | selectattr('item', 'equalto', 'lazy.nvim') | first).stat.exists
+        or 'lazy.nvim' in _lazyvim_plugins_pending
 
 # `Lazy! restore` installs any missing plugin and moves every plugin to the
 # commit in lazy-lock.json. Its exit status says little -- headless Neovim exits
-# 0 after most plugin errors -- so success is decided by the re-check below,
-# not by this command. That replaces the `|| true` the hand-built image used.
+# 0 after most plugin errors -- so success is decided by the re-check below.
 #
-# ONE PASS IS NOT ENOUGH, and the reason is lazy.nvim's own bookkeeping. The
-# headless Neovim that runs the restore first starts up, and at startup lazy
-# installs every missing plugin -- cloning each at its default branch -- and
-# then REWRITES lazy-lock.json from the commits it finds on disk. A plugin
-# whose install-time checkout to the locked commit did not happen is recorded
-# at its branch tip, and the restore that follows reads the rewritten lockfile
-# and has nothing to do. It passed for as long as no pinned plugin's upstream
-# had moved; the first time one did (nvim-treesitter `main`, 2026-09-26: three
-# commits past its pin) every build failed the re-check below, on every
-# machine. So: put the shipped lockfile back, restore again for whatever is
-# still off its pin, and put the shipped lockfile back once more so the image
-# carries exactly the file this feature ships, not lazy's rewrite of it.
+# ONE PASS IS NOT ENOUGH (1.0.1). The headless Neovim that runs the restore
+# first starts up, and at startup lazy installs every missing plugin -- cloning
+# each at its default branch -- and then REWRITES lazy-lock.json from the
+# commits it finds on disk (and drops every entry its spec does not name). A
+# plugin whose install-time checkout did not happen is recorded at its branch
+# tip, and the restore that follows reads the rewritten lockfile and has nothing
+# to do (nvim-treesitter, 2026-09-26). So: put the shipped lockfile back,
+# restore again for whatever is still off its pin, and put it back once more so
+# the image carries exactly the file this feature ships.
 - name: Restore every plugin to its locked commit
   ansible.builtin.command:
     argv:
@@ -270,17 +313,46 @@
     mode: '0644'
   when: _lazyvim_plugins_pending | length > 0
 
+- name: Ask lazy.nvim which plugins the spec names (after the first pass)
+  ansible.builtin.command:
+    argv:
+      - "{{ _lazyvim_nvim }}"
+      - --headless
+      - "+lua {{ _lazyvim_lua_spec_plugins }}"
+      - +qa
+  register: _lazyvim_spec_after
+  changed_when: false
+
+- name: Assert that the spec probe ran
+  ansible.builtin.assert:
+    that: _lazyvim_spec_after.stdout is search('SPEC_PLUGINS=')
+    fail_msg: "The lazy.nvim spec probe did not report. stdout: {{ _lazyvim_spec_after.stdout }} stderr: {{ _lazyvim_spec_after.stderr }}"
+    quiet: true
+
+- name: Read the spec
+  ansible.builtin.set_fact:
+    _lazyvim_spec: "{{ _lazyvim_spec_after.stdout | regex_findall('SPEC_PLUGINS=(.*)') | last | from_json }}"
+
+# Every plugin the spec names must be one the lockfile pins: a plugin outside it
+# would be installed at whatever its branch tip happens to be.
+- name: Assert that the lockfile covers every plugin the spec names
+  ansible.builtin.assert:
+    that: _lazyvim_spec | difference(_lazyvim_lock.keys() | list) | length == 0
+    fail_msg: >-
+      The spec names plugins lazy-lock.json does not pin:
+      {{ _lazyvim_spec | difference(_lazyvim_lock.keys() | list) | join(', ') }}.
+      Add the extra to files/extras.json and run `make lazy-lock`.
+    success_msg: "all {{ _lazyvim_spec | length }} plugins of the spec are pinned in lazy-lock.json"
+
 - name: Check which plugins the first pass left off their locked commit
   ansible.builtin.command:
     argv:
       - git
       - -C
-      - "{{ _lazyvim_plugin_dir }}/{{ item.key }}"
+      - "{{ _lazyvim_plugin_dir }}/{{ item }}"
       - rev-parse
       - HEAD
-  loop: "{{ _lazyvim_lock | dict2items }}"
-  loop_control:
-    label: "{{ item.key }}"
+  loop: "{{ _lazyvim_spec }}"
   register: _lazyvim_plugin_second
   failed_when: false
   changed_when: false
@@ -292,13 +364,13 @@
 
 - name: Collect the plugins the first pass left off their locked commit
   ansible.builtin.set_fact:
-    _lazyvim_plugins_off: "{{ _lazyvim_plugins_off + [item.item.key] }}"
+    _lazyvim_plugins_off: "{{ _lazyvim_plugins_off + [item.item] }}"
   loop: "{{ _lazyvim_plugin_second.results | default([]) }}"
   loop_control:
-    label: "{{ item.item.key }}"
+    label: "{{ item.item }}"
   when:
     - item is not skipped
-    - item.rc != 0 or (item.stdout | trim) != item.item.value.commit
+    - item.rc != 0 or (item.stdout | trim) != _lazyvim_lock[item.item].commit
 
 - name: Restore again, from the shipped lockfile, what the first pass missed ({{ _lazyvim_plugins_off | join(', ') }})
   ansible.builtin.command:
@@ -323,27 +395,25 @@
     argv:
       - git
       - -C
-      - "{{ _lazyvim_plugin_dir }}/{{ item.key }}"
+      - "{{ _lazyvim_plugin_dir }}/{{ item }}"
       - rev-parse
       - HEAD
-  loop: "{{ _lazyvim_lock | dict2items }}"
-  loop_control:
-    label: "{{ item.key }}"
+  loop: "{{ _lazyvim_spec }}"
   register: _lazyvim_plugin_verify
   failed_when: false
   changed_when: false
 
-- name: Assert that every plugin is at its locked commit
+- name: Assert that every plugin of the spec is at its locked commit
   ansible.builtin.assert:
-    that: item.rc == 0 and (item.stdout | trim) == item.item.value.commit
+    that: item.rc == 0 and (item.stdout | trim) == _lazyvim_lock[item.item].commit
     fail_msg: >-
-      {{ item.item.key }} is at '{{ item.stdout | default('') | trim }}' (rc={{ item.rc }}),
-      but lazy-lock.json pins {{ item.item.value.commit }}.
+      {{ item.item }} is at '{{ item.stdout | default('') | trim }}' (rc={{ item.rc }}),
+      but lazy-lock.json pins {{ _lazyvim_lock[item.item].commit }}.
       {{ (((_lazyvim_restore_second.stderr | default('')) or (_lazyvim_restore.stderr | default(''))) | trim)[-800:] }}
     quiet: true
   loop: "{{ _lazyvim_plugin_verify.results }}"
   loop_control:
-    label: "{{ item.item.key }}"
+    label: "{{ item.item }}"
 
 - name: Ask lazy.nvim which plugins it considers missing
   ansible.builtin.command:
@@ -372,7 +442,7 @@
       lazy.nvim reports plugins in the spec that are not installed -- the spec
       names a plugin lazy-lock.json does not cover. Run `make lazy-lock`.
       {{ _lazyvim_lazy_state.stdout }}
-    success_msg: "all {{ _lazyvim_lock | length }} plugins installed at their locked commits"
+    success_msg: "all {{ _lazyvim_spec | length }} plugins of the spec installed at their locked commits"
 
 # --- Tree-sitter parsers -------------------------------------------------------
 # nvim-treesitter builds each parser from the grammar revision its own (locked)

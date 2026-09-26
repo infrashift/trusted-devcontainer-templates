@@ -21,9 +21,18 @@
 {
     "name": "lazyvim-feature",
     "id": "lazyvim",
-    "version": "1.0.1",
-    "description": "Installs a pinned LazyVim configuration (Go extra) with every plugin, tree-sitter parser and formatter preinstalled, so Neovim fetches nothing at runtime.",
+    "version": "1.1.0",
+    "description": "Installs a pinned LazyVim configuration with the language extras you name (Go by default) and every plugin, tree-sitter parser and formatter preinstalled, so Neovim fetches nothing at runtime.",
     "options": {
+        // ONE WORD: comma-separated, no spaces. The bootstrap runner hands each
+        // option to Ansible as `key=value`, which splits on whitespace, so
+        // "lang.go, lang.python" would silently become "lang.go,".
+        "extras": {
+            "type": "string",
+            "proposals": ["lang.go", "lang.python", "lang.java", "infrashift.cue,infrashift.ansible_lint"],
+            "default": "lang.go",
+            "description": "Comma-separated language extras, no spaces: lang.go, lang.python, lang.java (LazyVim's), infrashift.cue, infrashift.ansible_lint (this feature's). The language servers come from the matching tools feature (go-tools, python-tools, java-tools, ansible-tools; cuelang for cue)."
+        },
         // https://github.com/tree-sitter/tree-sitter/releases
         "tree_sitter_version": {
             "type": "string",
