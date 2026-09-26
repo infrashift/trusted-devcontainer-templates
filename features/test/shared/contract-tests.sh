@@ -94,8 +94,10 @@ echo "Idempotency — a second run must change nothing:"
 # The lazyvim extras THIS template installs: its "extras" option, or the
 # feature's default. A re-run with different extras is a different spec, not an
 # idempotency check.
+# `|| true`: a template with no "extras" (neovim-go) makes grep exit 1, and
+# under pipefail that killed this script right after its header, silently.
 LV_EXTRAS="$(grep -oE '"extras"[[:space:]]*:[[:space:]]*"[^"]+"' "$TMPL_CONF" \
-               | sed -E 's/.*:[[:space:]]*"([^"]+)"/\1/' | head -1)"
+               | sed -E 's/.*:[[:space:]]*"([^"]+)"/\1/' | head -1 || true)"
 LV_EXTRAS="${LV_EXTRAS:-lang.go}"
 
 # Role -> the runner arguments its install.sh passes, at their declared
