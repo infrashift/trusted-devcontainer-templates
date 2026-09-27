@@ -1,0 +1,67 @@
+FROM ghcr.io/infrashift/trusted-base-images/trusted/fedora43-minimal@sha256:382dde3e8556e4ee9c57c699187b8b2b1a3e338e33819c0f4937cc5386cf97de
+
+USER root
+
+# Base package baseline.
+#
+# Feature prerequisites — the devcontainer feature mechanism cannot work without these:
+#   tar, gzip        ansible.builtin.unarchive and every tool-tarball download
+#   curl             binary downloads (--allowerasing swaps curl-minimal for full curl)
+#   util-linux       runuser, used to drop from root to the target user
+#                    (util-linux-core does NOT ship su/runuser on Fedora)
+#
+# Interactive-use baseline — fedora43-minimal ships none of these:
+#   procps-ng, diffutils, findutils, less, which, fzf
+#
+# Shared runtime libraries. These are linked against by userland tools installed
+# by features (bun needs unzip; the .NET SDK and OpenJDK need libicu and
+# openssl-libs). Keeping them here rather than in each feature means those
+# features stay entirely userland and never need the privileged lane.
+# Upgrade before install. The base image already ships curl, openssl-libs and
+# the rest at whatever Fedora had when it was built, and `dnf5 install` of a
+# package that is already installed is a no-op: it never moves to a newer
+# build. Six curl Highs fixed in Fedora stable on 2026-08-31 stayed in every
+# template image for that reason, with the base image already at its newest
+# published digest. Upgrading first takes Fedora's current stable at build
+# time, which is what the CVE gate measures against.
+RUN dnf5 -y upgrade --setopt=install_weak_deps=False \
+    && dnf5 -y install --allowerasing --setopt=install_weak_deps=False \
+        tar \
+        gzip \
+        curl \
+        util-linux \
+        unzip \
+        libicu \
+        openssl-libs \
+        procps-ng \
+        diffutils \
+        findutils \
+        less \
+        which \
+        fzf \
+    && dnf5 clean all \
+    && rm -rf /var/cache/dnf
+
+# Create the devcontainer user
+ARG USERNAME=dev
+ARG USER_UID=1001
+ARG USER_GID=1001
+
+RUN groupadd --gid ${USER_GID} ${USERNAME} \
+    && useradd -m -s /bin/bash --uid ${USER_UID} --gid ${USER_GID} ${USERNAME}
+
+# uv and the pinned Ansible bootstrap environment (/opt/bootstrap) are provided
+# by the 'bootstrap' devcontainer feature, which every other feature dependsOn.
+# They are deliberately not baked in here: pinning and checksum verification
+# live with the feature that owns them.
+
+USER ${USERNAME}
+
+ENV HOME=/home/${USERNAME}
+ENV PATH="/home/${USERNAME}/.local/bin:${PATH}"
+
+RUN mkdir -p ${HOME}/.local/bin \
+    && echo 'export PATH="${HOME}/.local/bin:${PATH}"' >> ${HOME}/.bashrc \
+    && echo 'export PATH="${HOME}/.local/bin:${PATH}"' >> ${HOME}/.bash_profile
+
+CMD ["sleep", "infinity"]

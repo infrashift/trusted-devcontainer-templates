@@ -1,0 +1,29 @@
+{
+    "id": "neovim-java",
+    "version": "1.0.4",
+    "name": "tmux + Neovim + Java (Trusted)",
+    "description": "A trusted terminal-first Java development environment based on Fedora 43: tmux, Neovim with a pinned LazyVim configuration and its Java extra, OpenJDK, Maven, Gradle and jdtls, and an SSH server that drops into an editor | shell layout.",
+    "publisher": "InfraShift",
+    "options": {},
+    "platforms": [
+        "linux/amd64",
+        "linux/arm64"
+    ],
+    "keywords": [
+        "neovim",
+        "nvim",
+        "lazyvim",
+        "tmux",
+        "java",
+        "openjdk",
+        "maven",
+        "gradle",
+        "jdtls",
+        "ssh",
+        "terminal",
+        "fedora",
+        "fedora43",
+        "trusted",
+        "secure"
+    ]
+}

@@ -1,0 +1,93 @@
+---
+title: tmux + Neovim + Java
+description: Trusted terminal-first Java environment — tmux, Neovim with a pinned LazyVim and its Java extra, OpenJDK 21, Maven, Gradle, jdtls and sshd — based on Fedora 43.
+---
+
+import FeatureList from '../../../components/FeatureList.astro';
+import VerifyCommand from '../../../components/VerifyCommand.astro';
+import TestBadge from '../../../components/TestBadge.astro';
+import templates from '../../../data/templates.json';
+
+export const template = templates.find(t => t.id === 'neovim-java');
+
+**Status:** <TestBadge status={template.testStatus} /> &nbsp; **Version:** `v{template.version}` &nbsp; **Platforms:** `linux/amd64`, `linux/arm64`
+
+## Usage
+
+```bash
+devcontainer templates apply \
+  --template-id ghcr.io/infrashift/trusted-devcontainer-templates/neovim-java
+```
+
+## Installed Features
+
+<FeatureList primary={template.features.primary} common={template.features.common} />
+
+## Use Cases
+
+- Terminal-first Java development over SSH, with a persistent tmux session
+- Remote development on DevPod or Nomad-hosted workspaces
+- A pinned, reproducible LazyVim setup that fetches nothing at runtime
+- Maven and Gradle projects with jdtls and lombok
+
+## Connecting
+
+Log in and you land in a tmux session with Neovim on the left and a shell on the right. Logging in again re-attaches to the same session. Non-interactive sessions (`ssh host cmd`, VS Code's server) get a plain shell.
+
+No SSH key is baked into the image. Mount your public key and publish the port in the project's `devcontainer.json`:
+
+```jsonc
+"mounts": [
+    "source=${localEnv:HOME}/.ssh/id_ed25519.pub,target=/run/secrets/authorized_keys,type=bind,readonly"
+],
+"appPort": ["2222:2222"]
+```
+
+```bash
+ssh -p 2222 dev@localhost
+```
+
+`devpod ssh` and an interactive `devcontainer exec … bash -l` land in the same layout. To skip it for one login, set `DEV_SESSION=off`; to skip it always, create `~/.config/dev-session/disabled`.
+
+## The Java setup
+
+The `lazyvim` feature is set to `extras: lang.java`, which imports LazyVim's Java extra (nvim-jdtls) plus `infrashift.extras.java`. The latter makes the server command just `jdtls`, because the Java extra would otherwise add a lombok agent from Mason's directory, which does not exist in this image.
+
+**jdtls** 1.61.0 (the Eclipse JDT Language Server) comes from the `java-tools` feature, installed userland under `~/.local/share/jdtls/<version>` with **lombok** beside it. The upstream launcher is a Python script and the image has no Python, so the feature renders a shell launcher, `~/.local/bin/jdtls`, that always adds the lombok agent. It runs on the OpenJDK 21 from the trusted `openjdk` feature. Per-project configuration and workspace data live under `~/.cache/jdtls/`; the first open of a project takes a while as jdtls indexes it.
+
+## What is pinned
+
+tmux, neovim, lazyvim and java-tools are this repository's own features (see [ADR-009](/trusted-devcontainer-templates/decisions/adr-009-repo-local-features/)):
+
+| Input | Pinned by |
+|---|---|
+| Neovim | release tarball, SHA256 per architecture |
+| LazyVim and every plugin | commits in a committed `lazy-lock.json`, checked after install |
+| tree-sitter parsers | the grammar revisions of the locked nvim-treesitter, built at image build time |
+| jdtls | milestone tarball, SHA256 |
+| lombok | Maven Central jar, SHA256 |
+| tree-sitter CLI, stylua, shfmt | release artifacts, SHA256 per architecture |
+
+After the build the editor downloads nothing: Mason and blink.cmp's native matcher are disabled, and the language servers come from `PATH`.
+
+## Containerfile
+
+The Containerfile is shared across all templates. It provides:
+
+1. Fedora 43 base image pinned by digest
+2. Non-root `dev` user (UID 1001)
+3. uv pre-installed for feature bootstrap
+
+```dockerfile
+FROM ghcr.io/infrashift/trusted-base-images/trusted/fedora43-minimal@sha256:f938c...
+
+ARG USERNAME=dev
+ARG USER_UID=1001
+ARG USER_GID=1001
+```
+
+See [Containerfile Sync](/trusted-devcontainer-templates/pipeline/containerfile-sync/) for how consistency is enforced.
+
+## Verification
+
+<VerifyCommand templateId="neovim-java" />
