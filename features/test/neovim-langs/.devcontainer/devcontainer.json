@@ -1,6 +1,8 @@
 {
-    // Test harness for the repo-local LANGUAGE features: python-tools, java-tools,
-    // ansible-tools, and lazyvim with every extra they serve. `make
+    // Test harness for the repo-local LANGUAGE features: pyrefly, python-tools,
+    // java-tools, ansible-tools, and lazyvim with every extra they serve. lazyvim's
+    // python_lsp is its default, pyrefly: pyrefly must attach, basedpyright
+    // (python-tools) is installed and checked but not started. `make
     // test-feature-template FEATURE_TEST=neovim-langs` stages features/src/* next
     // to this file, so "./lazyvim" etc. resolve to the working tree. The trusted
     // features are the ones the python, java and ansible-cue templates pin, at the
@@ -25,6 +27,7 @@
         "./tmux": {},
         "./neovim": {},
         "./python-tools": {},
+        "./pyrefly": {},
         "./java-tools": {},
         "./ansible-tools": {},
         "./lazyvim": { "extras": "lang.python,lang.java,infrashift.cue,infrashift.ansible_lint" }

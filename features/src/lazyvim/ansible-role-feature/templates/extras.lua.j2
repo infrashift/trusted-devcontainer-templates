@@ -4,6 +4,14 @@
 --
 -- One import per language extra. `lang.*` are LazyVim's own; `infrashift.*`
 -- are shipped by this feature under lua/infrashift/extras/.
+--
+-- The python extra reads these when its spec loads, which is after this file
+-- (lazy.lua requires it before lazy.nvim's setup). python_lsp={{ _lazyvim_python_lsp }}:
+-- pyrefly comes from the 'pyrefly' feature, basedpyright from 'python-tools';
+-- ruff from the trusted 'uv-ruff' feature. Harmless without lang.python.
+vim.g.lazyvim_python_lsp = "{{ _lazyvim_python_lsp }}"
+vim.g.lazyvim_python_ruff = "ruff"
+
 return {
 {% for x in _lazyvim_extras_list %}
 {% for m in _lazyvim_extras_supported[x] %}

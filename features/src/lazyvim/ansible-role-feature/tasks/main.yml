@@ -40,6 +40,7 @@
       - _lazyvim_extras is defined and _lazyvim_extras | length > 0
       - _lazyvim_extras is match('^[a-z0-9_.]+(,[a-z0-9_.]+)*$')
       - _lazyvim_extras_list | difference(_lazyvim_extras_supported.keys() | list) | length == 0
+      - _lazyvim_python_lsp is defined and _lazyvim_python_lsp in ['pyrefly', 'basedpyright']
     fail_msg: >-
       A required role parameter was not supplied. This role has NO defaults by
       design — install.sh must pass each one via -e, sourced from the matching
@@ -50,6 +51,7 @@
         _stylua_checksum      <- stylua_checksum       (may be empty; uses the pinned map)
         _shfmt_version        <- shfmt_version         (mandatory, non-empty)
         _shfmt_checksum       <- shfmt_checksum        (may be empty; uses the pinned map)
+        _lazyvim_python_lsp   <- python_lsp            (mandatory; pyrefly | basedpyright)
         _lazyvim_extras       <- extras                (mandatory; comma-separated, NO spaces,
                                                         each one of: {{ _lazyvim_extras_supported.keys() | list | join(', ') }})
 
@@ -58,7 +60,7 @@
     success_msg: >-
       tree-sitter {{ _tree_sitter_version }}, stylua {{ _stylua_version }},
       shfmt {{ _shfmt_version }} ({{ _target_arch }});
-      extras {{ _lazyvim_extras_list | join(', ') }};
+      extras {{ _lazyvim_extras_list | join(', ') }} (python_lsp {{ _lazyvim_python_lsp }});
       {{ _lazyvim_lock | length }} locked plugins across every supported extra
 
 # ---------------------------------------------------------------------------

@@ -107,8 +107,9 @@ declare -A ROLE_ARGS=(
   [tmux]='--privileged -e _tmux_session_name=dev -e _tmux_editor_pane_command=nvim -e _tmux_shell_pane_percent=35 -e _tmux_autostart=interactive'
   [go-tools]='-e _gopls_version=0.23.0 -e _gofumpt_version=0.12.0 -e _goimports_version=0.50.0 -e _gomodifytags_version=1.17.0 -e _impl_version=1.5.0 -e _delve_version=1.27.2 -e _golangci_lint_version=2.14.0 -e _golangci_lint_checksum='
   [lazyvim:system]='--role ansible-role-system --privileged'
-  [lazyvim]="-e _lazyvim_extras=${LV_EXTRAS} -e _tree_sitter_version=0.27.0 -e _tree_sitter_checksum= -e _stylua_version=2.5.2 -e _stylua_checksum= -e _shfmt_version=3.14.1 -e _shfmt_checksum="
+  [lazyvim]="-e _lazyvim_extras=${LV_EXTRAS} -e _lazyvim_python_lsp=pyrefly -e _tree_sitter_version=0.27.0 -e _tree_sitter_checksum= -e _stylua_version=2.5.2 -e _stylua_checksum= -e _shfmt_version=3.14.1 -e _shfmt_checksum="
   [python-tools]='-e _basedpyright_version=1.40.1 -e _pytools_python_version=3.14'
+  [pyrefly]='-e _pyrefly_version=1.3.1 -e _pyrefly_python_version=3.14'
   [java-tools]='-e _jdtls_version=1.61.0 -e _jdtls_build=202609031315 -e _jdtls_checksum= -e _lombok_version=1.18.48 -e _lombok_checksum='
   [ansible-tools]='-e _ansible_lint_version=26.9.0 -e _anstools_python_version=3.14'
 )
@@ -181,20 +182,33 @@ fi
 if has lazyvim; then
     lv_tools='-e _tree_sitter_version=0.27.0 -e _tree_sitter_checksum= -e _stylua_version=2.5.2 -e _stylua_checksum= -e _shfmt_version=3.14.1 -e _shfmt_checksum='
     check_fails "lazyvim: unpinned tree-sitter refuses to download unverified" "No SHA256 is pinned" \
-        run_role lazyvim -e "_lazyvim_extras=${LV_EXTRAS}" -e _tree_sitter_version=0.26.5 -e _tree_sitter_checksum= \
+        run_role lazyvim -e "_lazyvim_extras=${LV_EXTRAS}" -e _lazyvim_python_lsp=pyrefly -e _tree_sitter_version=0.26.5 -e _tree_sitter_checksum= \
             -e _stylua_version=2.5.2 -e _stylua_checksum= -e _shfmt_version=3.14.1 -e _shfmt_checksum=
     check_fails "lazyvim: malformed checksum is rejected by shape" "must be a 64-character SHA256" \
-        run_role lazyvim -e "_lazyvim_extras=${LV_EXTRAS}" -e _tree_sitter_version=0.27.0 -e _tree_sitter_checksum= \
+        run_role lazyvim -e "_lazyvim_extras=${LV_EXTRAS}" -e _lazyvim_python_lsp=pyrefly -e _tree_sitter_version=0.27.0 -e _tree_sitter_checksum= \
             -e _stylua_version=2.5.2 -e _stylua_checksum=deadbeef -e _shfmt_version=3.14.1 -e _shfmt_checksum=
     # shellcheck disable=SC2086
     check_fails "lazyvim: an extra it does not ship is rejected by name" "each one of:" \
-        run_role lazyvim -e _lazyvim_extras=lang.rust $lv_tools
+        run_role lazyvim -e _lazyvim_extras=lang.rust -e _lazyvim_python_lsp=pyrefly $lv_tools
     # A space is what the bootstrap runner's `-e key=value` would have split on.
     # shellcheck disable=SC2086
     check_fails "lazyvim: a space in extras is rejected by shape" "NO spaces" \
-        run_role lazyvim -e "_lazyvim_extras=lang.go, lang.python" $lv_tools
+        run_role lazyvim -e "_lazyvim_extras=lang.go, lang.python" -e _lazyvim_python_lsp=pyrefly $lv_tools
     check_fails "lazyvim: empty mandatory option stops in the shell" "resolved empty" \
         run_install lazyvim TREE_SITTER_VERSION= STYLUA_VERSION=2.5.2 SHFMT_VERSION=3.14.1
+fi
+
+if has lazyvim; then
+    # shellcheck disable=SC2086
+    check_fails "lazyvim: a python_lsp it does not know is rejected" "pyrefly | basedpyright" \
+        run_role lazyvim -e "_lazyvim_extras=${LV_EXTRAS}" -e _lazyvim_python_lsp=pyright $lv_tools
+fi
+
+if has pyrefly; then
+    check_fails "pyrefly: a v-prefixed version is rejected by shape" "mandatory, X.Y.Z" \
+        run_role pyrefly -e _pyrefly_version=v1.3.1 -e _pyrefly_python_version=3.14
+    check_fails "pyrefly: empty mandatory option stops in the shell" "resolved empty" \
+        run_install pyrefly PYREFLY_VERSION= PYTHON_VERSION=3.14
 fi
 
 if has python-tools; then

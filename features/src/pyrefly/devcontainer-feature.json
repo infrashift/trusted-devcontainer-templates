@@ -1,0 +1,48 @@
+// pyrefly-feature/devcontainer-feature.json
+// Find Development Container Feature Specification at https://containers.dev/implementors/features/
+//
+// THIS FILE IS THE SINGLE SOURCE OF TRUTH FOR EVERY OPTION DEFAULT.
+//
+// pyrefly -- Meta's Python type checker and language server, written in Rust --
+// pinned to an exact version and installed USERLAND with `uv tool install`: its
+// own virtualenv under ~/.local/share/uv/tools, its entry point linked into
+// ~/.local/bin. `pyrefly lsp` is what nvim-lspconfig starts for Python buffers
+// (the lazyvim feature's python_lsp=pyrefly, its default).
+//
+// NO NODE. The PyPI wheel is the native binary and has no dependencies, which
+// is why the Neovim templates use it instead of basedpyright (python-tools): a
+// Node program, whose bundled Node brings npm and npm's own CVE findings.
+//
+// Requires uv (the bootstrap feature's, or ~/.local/bin/uv) and the Python the
+// trusted python feature installs: list python before this one. uv is told
+// never to download an interpreter, and runs without a cache.
+//
+// dependsOn is absolute and digest-pinned; see neovim/devcontainer-feature.json.
+{
+    "name": "pyrefly-feature",
+    "id": "pyrefly",
+    "version": "1.0.0",
+    "description": "Installs pyrefly, a Python type checker and language server written in Rust (no Node), pinned and userland (uv tool).",
+    "options": {
+        // https://pypi.org/project/pyrefly/
+        "pyrefly_version": {
+            "type": "string",
+            "proposals": ["1.3.1"],
+            "default": "1.3.1",
+            "description": "pyrefly version (PyPI)"
+        },
+        "python_version": {
+            "type": "string",
+            "proposals": ["3.14", "3.13"],
+            "default": "3.14",
+            "description": "Python the tool's virtualenv runs on; must already be installed (the python feature)"
+        }
+    },
+    "installsAfter": [
+        "ghcr.io/infrashift/trusted-devcontainer-features/python",
+        "ghcr.io/infrashift/trusted-devcontainer-features/uv-ruff"
+    ],
+    "dependsOn": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {}
+    }
+}

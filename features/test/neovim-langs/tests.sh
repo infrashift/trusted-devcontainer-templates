@@ -16,6 +16,12 @@ attaches() {
 }
 export -f attaches
 
+echo "pyrefly"
+check "pyrefly is 1.3.1" bash -c 'pyrefly --version | grep -q "^pyrefly 1.3.1"'
+check "pyrefly lives in a uv tool venv under ~/.local" \
+    bash -c 'readlink -f "$(command -v pyrefly)" | grep -q "^$HOME/.local/share/uv/tools/pyrefly/"'
+check "pyrefly brings no Node" bash -c '! find "$HOME/.local/share/uv/tools/pyrefly" -name node -type f | grep -q .'
+
 echo "python-tools"
 check "basedpyright is 1.40.1" bash -c 'basedpyright --version | grep -q "^basedpyright 1.40.1$"'
 check "basedpyright-langserver is on PATH" command -v basedpyright-langserver
@@ -86,9 +92,9 @@ check "LazyVim has no tree-sitter parser left to download" bash -c '
     out=$(nvim --headless "+lua LazyVim.treesitter.get_installed(true) local m = vim.tbl_filter(function(l) return not LazyVim.treesitter.have(l) end, LazyVim.opts(\"nvim-treesitter\").ensure_installed or {}) io.stdout:write(\"\nTS_MISSING=\"..table.concat(m, \",\")..\"|\"..#m..\"\n\")" +qa 2>&1)
     grep -qE "^TS_MISSING=\|0$" <<<"$out" || { grep TS_MISSING <<<"$out"; exit 1; }'
 check "Mason has installed nothing" bash -c '! ls "$HOME"/.local/share/nvim/mason/packages/* > /dev/null 2>&1'
-check "the python extra is set to basedpyright" bash -c '
+check "the python extra is set to pyrefly (python_lsp default)" bash -c '
     out=$(nvim --headless "+lua io.stdout:write(\"\nPYLSP=\"..tostring(vim.g.lazyvim_python_lsp)..\"\n\")" +qa 2>&1)
-    grep -q "^PYLSP=basedpyright$" <<<"$out"'
+    grep -q "^PYLSP=pyrefly$" <<<"$out"'
 check "an ansible task file gets filetype yaml.ansible and the ansible_lint linter" bash -c '
     d=$(mktemp -d); mkdir -p "$d/roles/r/tasks"; f="$d/roles/r/tasks/main.yml"; printf -- "---\n- name: x\n  ansible.builtin.ping:\n" > "$f"
     out=$(nvim --headless "$f" "+lua io.stdout:write(\"\nFT=\"..vim.bo.filetype..\" LINT=\"..table.concat(require(\"lint\").linters_by_ft[\"yaml.ansible\"] or {}, \",\")..\"\n\")" +qa 2>&1)
@@ -97,9 +103,12 @@ check "an ansible task file gets filetype yaml.ansible and the ansible_lint lint
 # The real proof the editor works for each language: open a buffer and wait
 # for the server -- found on PATH, never through Mason -- to attach.
 echo "language servers attach"
-check "basedpyright attaches to a Python buffer" bash -c '
+check "pyrefly attaches to a Python buffer" bash -c '
     d=$(mktemp -d); cd "$d"; printf "def f() -> int:\n    return 1\n" > m.py
-    attaches m.py basedpyright'
+    attaches m.py pyrefly'
+check "basedpyright is NOT started (python_lsp=pyrefly)" bash -c '
+    d=$(mktemp -d); cd "$d"; printf "x = 1\n" > m.py
+    ! attaches m.py basedpyright 5000'
 check "ruff attaches to a Python buffer" bash -c '
     d=$(mktemp -d); cd "$d"; printf "import os\n" > m.py
     attaches m.py ruff'
