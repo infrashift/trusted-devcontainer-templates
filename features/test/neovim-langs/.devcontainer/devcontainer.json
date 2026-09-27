@@ -18,7 +18,7 @@
     "features": {
         "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/git@sha256:07a52095bed925bffa3ac3d35e657ec0a3bf66b8d9ce34fa546095f0a9c5794d": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/python@sha256:49f88bfe87b4553456be9969da18c3596fc40f9717642ec5e2691179fdd41553": {"target_version": "3.14"},
+        "ghcr.io/infrashift/trusted-devcontainer-features/python@sha256:7303d32215b9dd019e8f3b7f9b0f5ecc21d0fdaa8376f7d2ea7c4272ce270ed2": {"target_version": "3.14"},
         "ghcr.io/infrashift/trusted-devcontainer-features/uv-ruff@sha256:1ae28f3e7b3e5ef55a28eb87975466c515df469659e921f284c3bef64eaa1e04": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/openjdk@sha256:d27ddd2fc4911685480b032bdccf16b208e058795b469af9ec4396ce999b6124": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/ansible-core@sha256:52b5bd3177124e0e44eedd026b5a9fd8812b1ac8e9d6b3004e024ab238a4ebf3": {"target_version": "2.21.3", "target_python_version": "3.14"},

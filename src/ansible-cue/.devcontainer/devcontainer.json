@@ -10,7 +10,7 @@
             "target_version": "2.21.3",
             "target_python_version": "3.14"
         },
-        "ghcr.io/infrashift/trusted-devcontainer-features/python@sha256:49f88bfe87b4553456be9969da18c3596fc40f9717642ec5e2691179fdd41553": {
+        "ghcr.io/infrashift/trusted-devcontainer-features/python@sha256:7303d32215b9dd019e8f3b7f9b0f5ecc21d0fdaa8376f7d2ea7c4272ce270ed2": {
             "target_version": "3.14"
         },
         "ghcr.io/infrashift/trusted-devcontainer-features/cuelang@sha256:417051cbac4b4eb7dde6fa9e29c79d250fde98e4faab8fd8279ff3ce14f040e4": {},
