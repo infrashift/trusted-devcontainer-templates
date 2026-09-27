@@ -29,11 +29,12 @@ check "the login hook is installed" test -r /etc/profile.d/dev-session.sh
 check "python 3.14 is installed" uv python find 3.14
 check "ruff is installed" command -v ruff
 
-# python-tools: basedpyright, userland, in a uv tool venv.
-check "basedpyright is 1.40.1" bash -c 'basedpyright --version | grep -q "^basedpyright 1.40.1$"'
-check "basedpyright-langserver is on PATH" command -v basedpyright-langserver
-check "basedpyright lives in a uv tool venv under ~/.local" \
-    bash -c 'readlink -f "$(command -v basedpyright)" | grep -q "^$HOME/.local/share/uv/tools/basedpyright/"'
+# pyrefly: a native binary, userland, in a uv tool venv -- and no Node anywhere.
+check "pyrefly is 1.3.1" bash -c 'pyrefly --version | grep -q "^pyrefly 1.3.1"'
+check "pyrefly lives in a uv tool venv under ~/.local" \
+    bash -c 'readlink -f "$(command -v pyrefly)" | grep -q "^$HOME/.local/share/uv/tools/pyrefly/"'
+check "there is no node binary in the image's userland" bash -c '! find "$HOME/.local" -name node -type f 2>/dev/null | grep -q .'
+check "there is no npm package tree in the image's userland" bash -c '! find "$HOME/.local" -type d -path "*/node_modules/npm" 2>/dev/null | grep -q .'
 
 # LazyVim, with the extras this template asks for.
 check "extras.lua names exactly the extras this template asks for" bash -c '
@@ -43,9 +44,9 @@ check "extras.lua names exactly the extras this template asks for" bash -c '
     done
     ! grep "import = " "$f" | grep -qE "lang\.go|lang\.java|infrashift\.extras"'
 check "the python tree-sitter parser is installed" bash -c 'ls "$HOME"/.local/share/nvim/site/parser/python.so'
-check "the python extra is set to basedpyright" bash -c '
+check "the python extra is set to pyrefly" bash -c '
     out=$(nvim --headless "+lua io.stdout:write(\"\nPYLSP=\"..tostring(vim.g.lazyvim_python_lsp)..\"\n\")" +qa 2>&1)
-    grep -q "^PYLSP=basedpyright$" <<<"$out"'
+    grep -q "^PYLSP=pyrefly$" <<<"$out"'
 check "Mason has installed nothing" bash -c '! ls "$HOME"/.local/share/nvim/mason/packages/* > /dev/null 2>&1'
 
 # LazyVim is fully installed at build time: nothing left for lazy.nvim to
@@ -67,9 +68,9 @@ check "dev-session builds the editor | shell layout" bash -c '
 
 # The real proof the editor works: open a buffer and wait for the server --
 # found on PATH, never through Mason -- to attach.
-check "basedpyright attaches to a Python buffer" bash -c '
+check "pyrefly attaches to a Python buffer" bash -c '
     d=$(mktemp -d); cd "$d"; printf "def f() -> int:\n    return 1\n" > m.py
-    attaches m.py basedpyright'
+    attaches m.py pyrefly'
 check "ruff attaches to a Python buffer" bash -c '
     d=$(mktemp -d); cd "$d"; printf "import os\n" > m.py
     attaches m.py ruff'

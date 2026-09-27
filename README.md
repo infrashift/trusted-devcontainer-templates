@@ -15,7 +15,7 @@ Every template ships with SBOM, CVE scan results, SLSA v1.0 provenance, and dual
 | `neovim-ansible-cue` | Terminal-first Ansible + CUE: tmux + Neovim (LazyVim) over SSH | Ansible Core, ansible-lint, CUE (`cue lsp`), Neovim, tmux, sshd |
 | `neovim-go` | Terminal-first Go: tmux + Neovim (LazyVim) over SSH | Go, gopls, dlv, golangci-lint, Neovim, tmux, sshd |
 | `neovim-java` | Terminal-first Java: tmux + Neovim (LazyVim) over SSH | OpenJDK 21, Maven, Gradle, jdtls, Neovim, tmux, sshd |
-| `neovim-python` | Terminal-first Python: tmux + Neovim (LazyVim) over SSH | Python 3.14, uv, ruff, basedpyright, Neovim, tmux, sshd |
+| `neovim-python` | Terminal-first Python: tmux + Neovim (LazyVim) over SSH | Python 3.14, uv, ruff, pyrefly, Neovim, tmux, sshd |
 | `python` | Python development | Python 3.14, uv, ruff |
 
 All templates include: git, git-lfs, grype, syft, jq, yq.
