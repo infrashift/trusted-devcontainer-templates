@@ -21,6 +21,16 @@ check "basedpyright is 1.40.1" bash -c 'basedpyright --version | grep -q "^based
 check "basedpyright-langserver is on PATH" command -v basedpyright-langserver
 check "basedpyright lives in a uv tool venv under ~/.local" \
     bash -c 'readlink -f "$(command -v basedpyright)" | grep -q "^$HOME/.local/share/uv/tools/basedpyright/"'
+# The npm nodejs-wheel-binaries bundles is removed (python-tools 1.0.1): its own
+# dependencies are what CVE scans flag, and basedpyright never runs it.
+check "no bundled npm is left in basedpyright's venv" \
+    bash -c '! find "$HOME/.local/share/uv/tools/basedpyright" -type d -path "*/node_modules/npm" | grep -q .'
+check "node itself is still there" \
+    bash -c 'find "$HOME/.local/share/uv/tools/basedpyright" -path "*/nodejs_wheel/bin/node" | grep -q .'
+# Other features (the trusted ansible-core) may use uv's cache; python-tools must
+# not leave basedpyright's wheels -- and the npm inside them -- there.
+check "no copy of nodejs_wheel is left in uv's cache" \
+    bash -c '! find "$HOME/.cache/uv" -path "*nodejs_wheel*" 2>/dev/null | grep -q .'
 
 echo "ansible-tools"
 check "ansible-lint is 26.9.0" bash -c 'ansible-lint --version | grep -q "^ansible-lint 26.9.0 "'
