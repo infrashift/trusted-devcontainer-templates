@@ -186,7 +186,7 @@
   {
     "id": "neovim-python",
     "name": "tmux + Neovim + Python (Trusted)",
-    "description": "A trusted terminal-first Python development environment based on Fedora 43: tmux, Neovim with a pinned LazyVim configuration and its Python extra, basedpyright and ruff, and an SSH server that drops into an editor | shell layout.",
+    "description": "A trusted terminal-first Python development environment based on Fedora 43: tmux, Neovim with a pinned LazyVim configuration and its Python extra, pyrefly and ruff, and an SSH server that drops into an editor | shell layout.",
     "version": "1.0.4",
     "testStatus": "passing",
     "category": "data-science",
@@ -198,18 +198,18 @@
         { "id": "tmux", "name": "tmux", "options": {} },
         { "id": "neovim", "name": "Neovim", "options": {} },
         { "id": "lazyvim", "name": "LazyVim", "options": { "extras": "lang.python" } },
-        { "id": "python-tools", "name": "Python tools", "options": {} },
+        { "id": "pyrefly", "name": "pyrefly", "options": {} },
         { "id": "sshd", "name": "sshd", "options": {} },
         { "id": "make", "name": "Make", "options": {} }
       ],
       "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
     },
-    "keywords": ["neovim", "lazyvim", "tmux", "python", "uv", "ruff", "basedpyright", "ssh", "terminal", "fedora43", "trusted", "secure"],
+    "keywords": ["neovim", "lazyvim", "tmux", "python", "uv", "ruff", "pyrefly", "ssh", "terminal", "fedora43", "trusted", "secure"],
     "useCases": [
       "Terminal-first Python development over SSH, with a persistent tmux session",
       "Remote development on DevPod or Nomad-hosted workspaces",
       "A pinned, reproducible LazyVim setup that fetches nothing at runtime",
-      "Type-checked Python with basedpyright, linted and formatted by ruff"
+      "Type-checked Python with pyrefly, linted and formatted by ruff"
     ]
   },
   {

@@ -2,7 +2,7 @@
     "id": "neovim-python",
     "version": "1.0.4",
     "name": "tmux + Neovim + Python (Trusted)",
-    "description": "A trusted terminal-first Python development environment based on Fedora 43: tmux, Neovim with a pinned LazyVim configuration and its Python extra, basedpyright and ruff, and an SSH server that drops into an editor | shell layout.",
+    "description": "A trusted terminal-first Python development environment based on Fedora 43: tmux, Neovim with a pinned LazyVim configuration and its Python extra, pyrefly and ruff, and an SSH server that drops into an editor | shell layout.",
     "publisher": "InfraShift",
     "options": {},
     "platforms": [
@@ -17,7 +17,7 @@
         "python",
         "uv",
         "ruff",
-        "basedpyright",
+        "pyrefly",
         "ssh",
         "terminal",
         "fedora",

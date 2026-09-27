@@ -7,13 +7,13 @@ A terminal-first Python environment built on the trusted Fedora 43 base image. L
 - **tmux** with the `dev-session` layout (editor | shell)
 - **Neovim** with a pinned **LazyVim** configuration (core plus the Python extra, `extras: lang.python`). Every plugin is at a locked commit, and the tree-sitter parsers are built at image build time.
 - **Python 3.14**, with **uv** and **ruff**
-- **basedpyright** (the Python language server LazyVim's Python extra is set to), at an exact version, installed userland with `uv tool` by the `python-tools` feature. It carries its own Node runtime inside the wheel, so the image has no Node feature.
+- **pyrefly** (the Python type checker and language server LazyVim's Python extra is set to, `python_lsp: pyrefly`), at an exact version, installed userland with `uv tool` by the `pyrefly` feature. It is a native Rust binary: the image has no Node at all.
 - **sshd** on port 2222: public-key only, and only the `dev` user may log in
 - **Git** and **Git LFS**, **make**
 - **Grype** and **Syft** for vulnerability scanning and SBOM generation
 - **jq** and **yq** for structured data processing
 
-After the build, the editor downloads nothing. Mason and blink.cmp's native matcher are switched off, and the language servers (basedpyright, ruff) come from `PATH`. See the `lazyvim` feature's notes.
+After the build, the editor downloads nothing. Mason and blink.cmp's native matcher are switched off, and the language servers (pyrefly, ruff) come from `PATH`. See the `lazyvim` feature's notes.
 
 ## Connecting
 

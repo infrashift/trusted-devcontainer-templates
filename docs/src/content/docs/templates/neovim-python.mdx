@@ -1,6 +1,6 @@
 ---
 title: tmux + Neovim + Python
-description: Trusted terminal-first Python environment — tmux, Neovim with a pinned LazyVim and its Python extra, basedpyright, ruff and sshd — based on Fedora 43.
+description: Trusted terminal-first Python environment — tmux, Neovim with a pinned LazyVim and its Python extra, pyrefly, ruff and sshd — based on Fedora 43.
 ---
 
 import FeatureList from '../../../components/FeatureList.astro';
@@ -28,7 +28,7 @@ devcontainer templates apply \
 - Terminal-first Python development over SSH, with a persistent tmux session
 - Remote development on DevPod or Nomad-hosted workspaces
 - A pinned, reproducible LazyVim setup that fetches nothing at runtime
-- Type-checked Python with basedpyright, linted and formatted by ruff
+- Type-checked Python with pyrefly, linted and formatted by ruff
 
 ## Connecting
 
@@ -51,23 +51,23 @@ ssh -p 2222 dev@localhost
 
 ## The Python setup
 
-The `lazyvim` feature is set to `extras: lang.python`, which imports LazyVim's Python extra, with `vim.g.lazyvim_python_lsp` set to `basedpyright`. Two language servers attach to a Python buffer:
+The `lazyvim` feature is set to `extras: lang.python`, which imports LazyVim's Python extra, with its `python_lsp` option at its default, `pyrefly`. Two language servers attach to a Python buffer:
 
-- **basedpyright**, from the `python-tools` feature: installed userland with `uv tool install basedpyright==<version>`, in its own virtualenv under `~/.local/share/uv/tools`. It is a Node program shipped as a Python wheel that carries its own Node runtime, so the image has no Node feature.
+- **pyrefly**, from the `pyrefly` feature: installed userland with `uv tool install pyrefly==<version>`, in its own virtualenv under `~/.local/share/uv/tools`. It is a native Rust binary with no dependencies, so the image carries no Node -- and none of the npm packages a Node distribution bundles.
 - **ruff**, from the trusted `uv-ruff` feature, as linter and formatter.
 
 Python 3.14 comes from the trusted `python` feature, in uv's managed store (`uv python find 3.14`).
 
 ## What is pinned
 
-tmux, neovim, lazyvim and python-tools are this repository's own features (see [ADR-009](/trusted-devcontainer-templates/decisions/adr-009-repo-local-features/)):
+tmux, neovim, lazyvim and pyrefly are this repository's own features (see [ADR-009](/trusted-devcontainer-templates/decisions/adr-009-repo-local-features/)):
 
 | Input | Pinned by |
 |---|---|
 | Neovim | release tarball, SHA256 per architecture |
 | LazyVim and every plugin | commits in a committed `lazy-lock.json`, checked after install |
 | tree-sitter parsers | the grammar revisions of the locked nvim-treesitter, built at image build time |
-| basedpyright | exact PyPI version, installed with `uv tool`, no interpreter download |
+| pyrefly | exact PyPI version, installed with `uv tool`, no interpreter download |
 | tree-sitter CLI, stylua, shfmt | release artifacts, SHA256 per architecture |
 
 After the build the editor downloads nothing: Mason and blink.cmp's native matcher are disabled, and the language servers come from `PATH`.
