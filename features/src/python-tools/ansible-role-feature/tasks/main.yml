@@ -97,6 +97,32 @@
         or ('basedpyright ' ~ _basedpyright_version) not in (_pytools_installed.stdout | default(''))
   changed_when: true
 
+- name: Find the npm bundled with nodejs-wheel-binaries in basedpyright's venv
+  ansible.builtin.find:
+    paths: "{{ _pytools_venv }}"
+    recurse: true
+    file_type: any
+    patterns:
+      - npm
+      - npx
+      - corepack
+    use_regex: false
+  register: _pytools_npm
+
+# Only the npm package tree and its launchers: node_modules/npm, and the
+# npm/npx/corepack entries in nodejs_wheel/bin and the venv's bin. `node` stays.
+- name: Remove the bundled npm (basedpyright runs node, never npm)
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ _pytools_npm.files }}"
+  loop_control:
+    label: "{{ item.path | replace(_pytools_venv ~ '/', '') }}"
+  when: >-
+    item.path is search('/nodejs_wheel/lib/node_modules/(npm|corepack)$')
+    or item.path is search('/nodejs_wheel/bin/(npm|npx|corepack)$')
+    or item.path is search('/bin/(npm|npx|corepack)$')
+
 - name: Verify basedpyright
   ansible.builtin.command:
     argv: ["{{ _pytools_bin }}", --version]
@@ -104,9 +130,19 @@
   register: _pytools_verify
   changed_when: false
 
+- name: Check that no bundled npm is left
+  ansible.builtin.find:
+    paths: "{{ _pytools_venv }}"
+    recurse: true
+    file_type: directory
+    patterns: [npm]
+  register: _pytools_npm_left
+
 - name: Assert that basedpyright {{ _basedpyright_version }} is installed
   ansible.builtin.assert:
-    that: ('basedpyright ' ~ _basedpyright_version) in _pytools_verify.stdout
+    that:
+      - ('basedpyright ' ~ _basedpyright_version) in _pytools_verify.stdout
+      - _pytools_npm_left.files | selectattr('path', 'search', '/node_modules/npm$') | list | length == 0
     fail_msg: "Expected basedpyright {{ _basedpyright_version }}; it reported: {{ _pytools_verify.stdout }}"
     success_msg: "{{ _pytools_verify.stdout_lines | join('; ') }}"
 ...

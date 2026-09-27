@@ -20,7 +20,7 @@
 {
     "name": "ansible-tools-feature",
     "id": "ansible-tools",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Installs ansible-lint, pinned and userland (uv tool), for editor diagnostics without a language server.",
     "options": {
         // https://pypi.org/project/ansible-lint/

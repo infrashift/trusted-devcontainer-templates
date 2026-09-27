@@ -25,4 +25,7 @@ _anstools_env:
   UV_TOOL_DIR: "{{ _target_user_home }}/.local/share/uv/tools"
   UV_TOOL_BIN_DIR: "{{ _target_user_home }}/.local/bin"
   UV_PYTHON_DOWNLOADS: never
+  # No uv cache: the downloaded wheels would otherwise stay in ~/.cache/uv in the
+  # image, a second copy scanned like the first.
+  UV_NO_CACHE: "1"
 ...
