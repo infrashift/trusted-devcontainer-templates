@@ -23,11 +23,14 @@ export default defineConfig({
 					items: [
 						{ label: 'Template Catalog', slug: 'templates' },
 						{ label: 'Ansible + CUE', slug: 'templates/ansible-cue' },
+						{ label: 'tmux + Neovim + Ansible + CUE', slug: 'templates/neovim-ansible-cue' },
 						{ label: '.NET + Node.js', slug: 'templates/dotnet-node' },
 						{ label: 'Go + CUE', slug: 'templates/go-cue' },
 						{ label: 'tmux + Neovim + Go', slug: 'templates/neovim-go' },
 						{ label: 'Java', slug: 'templates/java' },
+						{ label: 'tmux + Neovim + Java', slug: 'templates/neovim-java' },
 						{ label: 'Python', slug: 'templates/python' },
+						{ label: 'tmux + Neovim + Python', slug: 'templates/neovim-python' },
 					],
 				},
 				{

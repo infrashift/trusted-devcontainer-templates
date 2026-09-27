@@ -1,0 +1,30 @@
+{
+    "id": "neovim-ansible-cue",
+    "version": "1.0.4",
+    "name": "tmux + Neovim + Ansible + CUE (Trusted)",
+    "description": "A trusted terminal-first Ansible and CUE development environment based on Fedora 43: tmux, Neovim with a pinned LazyVim configuration, ansible-lint diagnostics and the CUE language server, and an SSH server that drops into an editor | shell layout.",
+    "publisher": "InfraShift",
+    "options": {},
+    "platforms": [
+        "linux/amd64",
+        "linux/arm64"
+    ],
+    "keywords": [
+        "neovim",
+        "nvim",
+        "lazyvim",
+        "tmux",
+        "ansible",
+        "ansible-lint",
+        "cue",
+        "cuelang",
+        "iac",
+        "infrastructure",
+        "ssh",
+        "terminal",
+        "fedora",
+        "fedora43",
+        "trusted",
+        "secure"
+    ]
+}

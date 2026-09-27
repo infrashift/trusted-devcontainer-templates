@@ -1,4 +1,4 @@
-TEMPLATES := ansible-cue dotnet-node go-cue java neovim-go python
+TEMPLATES := ansible-cue dotnet-node go-cue java neovim-ansible-cue neovim-go neovim-java neovim-python python
 
 # Every Containerfile that must stay byte-identical to shared/Containerfile.
 # Includes this repo's own .devcontainer/Containerfile, which previously

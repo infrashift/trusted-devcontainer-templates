@@ -3,7 +3,7 @@
     "id": "ansible-cue",
     "name": "Ansible + CUE (Trusted)",
     "description": "A trusted Ansible and CUE development environment based on Fedora 43 optimized for infrastructure-as-code workflows.",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "testStatus": "passing",
     "category": "infrastructure",
     "platforms": ["linux/amd64", "linux/arm64"],
@@ -27,7 +27,7 @@
     "id": "dotnet-node",
     "name": ".NET + Node.js (Trusted)",
     "description": "A trusted .NET and Node.js development environment based on Fedora 43 with security scanning tools and supply-chain tooling.",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "testStatus": "passing",
     "category": "web",
     "platforms": ["linux/amd64", "linux/arm64"],
@@ -52,7 +52,7 @@
     "id": "go-cue",
     "name": "Go + CUE (Trusted)",
     "description": "A trusted Go and CUE development environment based on Fedora 43 for CLI/TUI development with security scanning tools.",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "testStatus": "passing",
     "category": "systems",
     "platforms": ["linux/amd64", "linux/arm64"],
@@ -75,7 +75,7 @@
     "id": "java",
     "name": "Java (Trusted)",
     "description": "A trusted Java development environment based on Fedora 43 with OpenJDK, Maven, Gradle, security scanning tools, and supply-chain tooling.",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "testStatus": "passing",
     "category": "enterprise",
     "platforms": ["linux/amd64", "linux/arm64"],
@@ -96,10 +96,40 @@
     ]
   },
   {
+    "id": "neovim-ansible-cue",
+    "name": "tmux + Neovim + Ansible + CUE (Trusted)",
+    "description": "A trusted terminal-first Ansible and CUE development environment based on Fedora 43: tmux, Neovim with a pinned LazyVim configuration, ansible-lint diagnostics and the CUE language server, and an SSH server that drops into an editor | shell layout.",
+    "version": "1.0.4",
+    "testStatus": "passing",
+    "category": "infrastructure",
+    "platforms": ["linux/amd64", "linux/arm64"],
+    "features": {
+      "primary": [
+        { "id": "ansible-core", "name": "Ansible Core", "options": { "target_version": "2.21.3", "target_python_version": "3.14" } },
+        { "id": "python", "name": "Python", "options": { "target_version": "3.14" } },
+        { "id": "cuelang", "name": "CUElang", "options": {} },
+        { "id": "tmux", "name": "tmux", "options": {} },
+        { "id": "neovim", "name": "Neovim", "options": {} },
+        { "id": "lazyvim", "name": "LazyVim", "options": { "extras": "infrashift.cue,infrashift.ansible_lint" } },
+        { "id": "ansible-tools", "name": "Ansible tools", "options": {} },
+        { "id": "sshd", "name": "sshd", "options": {} },
+        { "id": "make", "name": "Make", "options": {} }
+      ],
+      "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
+    },
+    "keywords": ["neovim", "lazyvim", "tmux", "ansible", "ansible-lint", "cue", "cuelang", "iac", "ssh", "terminal", "fedora43", "trusted", "secure"],
+    "useCases": [
+      "Terminal-first infrastructure-as-code over SSH, with a persistent tmux session",
+      "Ansible playbooks and roles with ansible-lint diagnostics in the editor",
+      "CUE configuration with the cue lsp language server",
+      "A pinned, reproducible LazyVim setup that fetches nothing at runtime"
+    ]
+  },
+  {
     "id": "neovim-go",
     "name": "tmux + Neovim + Go (Trusted)",
     "description": "A trusted terminal-first Go development environment based on Fedora 43: tmux, Neovim with a pinned LazyVim configuration, pinned Go tools, and an SSH server that drops into an editor | shell layout.",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "testStatus": "passing",
     "category": "systems",
     "platforms": ["linux/amd64", "linux/arm64"],
@@ -124,10 +154,69 @@
     ]
   },
   {
+    "id": "neovim-java",
+    "name": "tmux + Neovim + Java (Trusted)",
+    "description": "A trusted terminal-first Java development environment based on Fedora 43: tmux, Neovim with a pinned LazyVim configuration and its Java extra, OpenJDK, Maven, Gradle and jdtls, and an SSH server that drops into an editor | shell layout.",
+    "version": "1.0.4",
+    "testStatus": "passing",
+    "category": "enterprise",
+    "platforms": ["linux/amd64", "linux/arm64"],
+    "features": {
+      "primary": [
+        { "id": "openjdk", "name": "OpenJDK", "options": {} },
+        { "id": "maven", "name": "Maven", "options": {} },
+        { "id": "gradle", "name": "Gradle", "options": {} },
+        { "id": "tmux", "name": "tmux", "options": {} },
+        { "id": "neovim", "name": "Neovim", "options": {} },
+        { "id": "lazyvim", "name": "LazyVim", "options": { "extras": "lang.java" } },
+        { "id": "java-tools", "name": "Java tools", "options": {} },
+        { "id": "sshd", "name": "sshd", "options": {} },
+        { "id": "make", "name": "Make", "options": {} }
+      ],
+      "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
+    },
+    "keywords": ["neovim", "lazyvim", "tmux", "java", "openjdk", "maven", "gradle", "jdtls", "ssh", "terminal", "fedora43", "trusted", "secure"],
+    "useCases": [
+      "Terminal-first Java development over SSH, with a persistent tmux session",
+      "Remote development on DevPod or Nomad-hosted workspaces",
+      "A pinned, reproducible LazyVim setup that fetches nothing at runtime",
+      "Maven and Gradle projects with jdtls and lombok"
+    ]
+  },
+  {
+    "id": "neovim-python",
+    "name": "tmux + Neovim + Python (Trusted)",
+    "description": "A trusted terminal-first Python development environment based on Fedora 43: tmux, Neovim with a pinned LazyVim configuration and its Python extra, basedpyright and ruff, and an SSH server that drops into an editor | shell layout.",
+    "version": "1.0.4",
+    "testStatus": "passing",
+    "category": "data-science",
+    "platforms": ["linux/amd64", "linux/arm64"],
+    "features": {
+      "primary": [
+        { "id": "python", "name": "Python", "options": { "target_version": "3.14" } },
+        { "id": "uv-ruff", "name": "UV & Ruff", "options": {} },
+        { "id": "tmux", "name": "tmux", "options": {} },
+        { "id": "neovim", "name": "Neovim", "options": {} },
+        { "id": "lazyvim", "name": "LazyVim", "options": { "extras": "lang.python" } },
+        { "id": "python-tools", "name": "Python tools", "options": {} },
+        { "id": "sshd", "name": "sshd", "options": {} },
+        { "id": "make", "name": "Make", "options": {} }
+      ],
+      "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
+    },
+    "keywords": ["neovim", "lazyvim", "tmux", "python", "uv", "ruff", "basedpyright", "ssh", "terminal", "fedora43", "trusted", "secure"],
+    "useCases": [
+      "Terminal-first Python development over SSH, with a persistent tmux session",
+      "Remote development on DevPod or Nomad-hosted workspaces",
+      "A pinned, reproducible LazyVim setup that fetches nothing at runtime",
+      "Type-checked Python with basedpyright, linted and formatted by ruff"
+    ]
+  },
+  {
     "id": "python",
     "name": "Python (Trusted)",
     "description": "A trusted Python development environment based on Fedora 43 with uv, ruff, and security scanning tools.",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "testStatus": "passing",
     "category": "data-science",
     "platforms": ["linux/amd64", "linux/arm64"],
