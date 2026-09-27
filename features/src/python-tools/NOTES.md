@@ -12,6 +12,13 @@ its entry points (`basedpyright`, `basedpyright-langserver`) in `~/.local/bin`.
 basedpyright is a Node program packaged as a Python wheel; its dependency
 `nodejs-wheel-binaries` carries the Node runtime, so no Node feature is needed.
 
+**The bundled npm is removed** (1.0.1). `nodejs-wheel-binaries` ships npm beside
+Node; basedpyright runs `node` only, and npm's own dependencies are what CVE
+scans flag (tar 7.5.16, GHSA-23hp-3jrh-7fpw, 2026-09-26). The role deletes
+`nodejs_wheel/lib/node_modules/npm` (and `corepack`) and the `npm`/`npx`
+launchers, and asserts none is left. uv runs with its cache off, so no second
+copy of the wheels stays in `~/.cache/uv`.
+
 ruff (the extra's linter and formatter) comes from the trusted `uv-ruff` feature.
 
 ## Requirements

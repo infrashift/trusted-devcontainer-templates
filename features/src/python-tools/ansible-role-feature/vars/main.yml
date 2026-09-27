@@ -25,4 +25,16 @@ _pytools_env:
   UV_TOOL_DIR: "{{ _target_user_home }}/.local/share/uv/tools"
   UV_TOOL_BIN_DIR: "{{ _target_user_home }}/.local/bin"
   UV_PYTHON_DOWNLOADS: never
+  # No uv cache: the downloaded wheels would otherwise stay in ~/.cache/uv in the
+  # image -- a second copy of everything, scanned like the first (the bundled npm
+  # below was found in BOTH places).
+  UV_NO_CACHE: "1"
+
+# THE npm THAT nodejs-wheel-binaries BUNDLES IS REMOVED. basedpyright is a Node
+# program; its dependency nodejs-wheel-binaries ships the Node runtime AND npm,
+# and basedpyright runs `node` only. npm's own dependencies are what CVE scans
+# find (tar 7.5.16, GHSA-23hp-3jrh-7fpw, Critical, in the neovim-python template
+# 2026-09-26, with no fixed nodejs-wheel-binaries release yet). Removing code the
+# tool never runs removes the finding without a waiver.
+_pytools_venv: "{{ _pytools_env.UV_TOOL_DIR }}/basedpyright"
 ...

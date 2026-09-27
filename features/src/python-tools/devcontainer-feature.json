@@ -10,7 +10,10 @@
 //
 // basedpyright is a Node program shipped as a Python wheel; its dependency
 // nodejs-wheel-binaries carries the Node runtime, so the image needs no Node
-// feature for it. ruff (lint + format) is the trusted uv-ruff feature's.
+// feature for it. The npm that package also bundles is REMOVED (1.0.1):
+// basedpyright never runs it, and its dependencies are what CVE scans flag.
+// uv's download cache is off, so no second copy stays in ~/.cache/uv.
+// ruff (lint + format) is the trusted uv-ruff feature's.
 //
 // Requires uv (the bootstrap feature's, or uv-ruff's in ~/.local/bin) and the
 // Python the trusted python feature installs: list python before this one.
@@ -21,7 +24,7 @@
 {
     "name": "python-tools-feature",
     "id": "python-tools",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Installs basedpyright, the Python language server LazyVim's python extra uses, pinned and userland (uv tool).",
     "options": {
         // https://pypi.org/project/basedpyright/
