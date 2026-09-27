@@ -12,7 +12,7 @@ option as `key=value`, which splits on whitespace):
 | Value | Imports | Language server / linter, and the feature that installs it |
 |---|---|---|
 | `lang.go` (default) | LazyVim's go extra | gopls, gofumpt, goimports, dlv, golangci-lint -- `go-tools` |
-| `lang.python` | LazyVim's python extra | basedpyright -- `python-tools`; ruff -- trusted `uv-ruff` |
+| `lang.python` | LazyVim's python extra | pyrefly -- `pyrefly` (`python_lsp=pyrefly`, default) or basedpyright -- `python-tools` (`python_lsp=basedpyright`); ruff -- trusted `uv-ruff` |
 | `lang.java` | LazyVim's java extra + `infrashift.extras.java` | jdtls (+ lombok) -- `java-tools` |
 | `infrashift.cue` | `infrashift.extras.cue` | `cue lsp` -- trusted `cuelang` |
 | `infrashift.ansible_lint` | `infrashift.extras.ansible_lint` | ansible-lint through nvim-lint -- `ansible-tools` |
@@ -34,7 +34,10 @@ The role renders `~/.config/nvim/lua/config/extras.lua` from the option.
   `yaml.ansible`, runs ansible-lint on them through nvim-lint, and keeps YAML
   highlighting -- diagnostics without a language server, so without Node.
 
-`vim.g.lazyvim_python_lsp` is `basedpyright` in `lua/config/options.lua`.
+`python_lsp` (1.2.0) picks the python extra's language server: `pyrefly` (default;
+a native binary, the `pyrefly` feature) or `basedpyright` (a Node program, the
+`python-tools` feature). It is rendered into `extras.lua` as
+`vim.g.lazyvim_python_lsp`, which the extra reads when its spec loads.
 
 **One lockfile covers every extra** (`files/extras.json` lists them; `make
 lazy-lock` resolves over all of them). An image installs only the plugins its
@@ -92,6 +95,7 @@ the lockfile does not have yet are resolved. `DOCKER=podman` runs it with podman
 | Option | Default | |
 |---|---|---|
 | `extras` | `lang.go` | comma-separated language extras, no spaces (see above) |
+| `python_lsp` | `pyrefly` | `pyrefly` or `basedpyright`, for `lang.python` |
 | `tree_sitter_version` / `tree_sitter_checksum` | `0.27.0` / `""` | tree-sitter CLI |
 | `stylua_version` / `stylua_checksum` | `2.5.2` / `""` | Lua formatter |
 | `shfmt_version` / `shfmt_checksum` | `3.14.1` / `""` | shell formatter |

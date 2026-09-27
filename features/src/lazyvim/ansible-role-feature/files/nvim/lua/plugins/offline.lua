@@ -7,8 +7,8 @@
 -- needed -- none of it versioned by this image, checksummed, or in its SBOM.
 --
 -- The tools themselves are on PATH instead, from the language's tools feature
--- (go-tools: gopls, gofumpt, goimports, dlv, golangci-lint; python-tools:
--- basedpyright; java-tools: jdtls; ansible-tools: ansible-lint; cuelang:
+-- (go-tools: gopls, gofumpt, goimports, dlv, golangci-lint; pyrefly: pyrefly,
+-- or python-tools: basedpyright; java-tools: jdtls; ansible-tools: ansible-lint; cuelang:
 -- `cue lsp`), and stylua, shfmt and tree-sitter from this one.
 return {
   {

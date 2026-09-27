@@ -11,10 +11,11 @@ and how they move there later, is recorded in
 | [`tmux`](src/tmux/NOTES.md) | privileged | tmux, `/etc/tmux.conf`, the `dev-session` layout (editor \| shell) and its login hook |
 | [`neovim`](src/neovim/NOTES.md) | userland | the upstream Neovim release build |
 | [`go-tools`](src/go-tools/NOTES.md) | userland | gopls, gofumpt, goimports, gomodifytags, impl, dlv, golangci-lint |
-| [`python-tools`](src/python-tools/NOTES.md) | userland | basedpyright (`uv tool install`) |
+| [`pyrefly`](src/pyrefly/NOTES.md) | userland | pyrefly, a Python type checker + language server in Rust -- no Node (`uv tool install`) |
+| [`python-tools`](src/python-tools/NOTES.md) | userland | basedpyright (`uv tool install`; its bundled npm removed) |
 | [`java-tools`](src/java-tools/NOTES.md) | userland | Eclipse JDT Language Server + lombok, and a `jdtls` launcher that needs no Python |
 | [`ansible-tools`](src/ansible-tools/NOTES.md) | userland | ansible-lint (`uv tool install`) |
-| [`lazyvim`](src/lazyvim/NOTES.md) | both | LazyVim with the language extras you name (`extras`: Go by default; python, java, cue, ansible-lint), every plugin at a locked commit, its tree-sitter parsers, and stylua/shfmt/tree-sitter |
+| [`lazyvim`](src/lazyvim/NOTES.md) | both | LazyVim with the language extras you name (`extras`: Go by default; python -- pyrefly or basedpyright via `python_lsp` --, java, cue, ansible-lint), every plugin at a locked commit, its tree-sitter parsers, and stylua/shfmt/tree-sitter |
 
 Published as `ghcr.io/infrashift/trusted-devcontainer-templates/features/<id>`, signed
 with this repository's release key and keylessly through Sigstore.

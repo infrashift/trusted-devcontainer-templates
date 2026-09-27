@@ -3,8 +3,5 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 
--- The python extra (extras=lang.python) reads these when its spec loads, which
--- is after this file. basedpyright is what the 'python-tools' feature installs;
--- ruff comes from the trusted 'uv-ruff' feature. Harmless for other languages.
-vim.g.lazyvim_python_lsp = "basedpyright"
-vim.g.lazyvim_python_ruff = "ruff"
+-- The python language server (vim.g.lazyvim_python_lsp) is set in
+-- lua/config/extras.lua, rendered from the feature's `python_lsp` option.

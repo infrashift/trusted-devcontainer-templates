@@ -1,0 +1,112 @@
+# pyrefly-feature/ansible-role-feature/tasks/main.yml
+---
+# ---------------------------------------------------------------------------
+# PARAMETER BRACKET
+# ---------------------------------------------------------------------------
+- name: Assert that _securedevcontainer_variant is in the _securedevcontainer_compatibility_list
+  ansible.builtin.assert:
+    that: _securedevcontainer_variant in _securedevcontainer_compatibility_list
+    fail_msg: "_securedevcontainer_variant = '{{ _securedevcontainer_variant }}' is NOT in the _securedevcontainer_compatibility_list = '{{ _securedevcontainer_compatibility_list }}'."
+
+- name: Assert that the runner contract was satisfied
+  ansible.builtin.assert:
+    that:
+      - _target_username is defined and _target_username | length > 0
+      - _target_user_home is defined and _target_user_home | length > 0
+      - _target_arch in ['amd64', 'arm64']
+    fail_msg: >-
+      This role must be invoked through /opt/bootstrap/run-feature.sh, which
+      injects _target_username, _target_user_home and _target_arch.
+
+- name: Assert that every required role parameter was supplied
+  ansible.builtin.assert:
+    that:
+      - _pyrefly_version is defined and _pyrefly_version | length > 0
+      - _pyrefly_python_version is defined and _pyrefly_python_version | length > 0
+      - _pyrefly_version is match('^\d+\.\d+\.\d+$')
+      - _pyrefly_python_version is match('^\d+\.\d+$')
+    fail_msg: >-
+      A required role parameter was not supplied. This role has NO defaults by
+      design — install.sh must pass each one via -e, sourced from the matching
+      option default in devcontainer-feature.json:
+        _pyrefly_version   <- pyrefly_version  (mandatory, X.Y.Z)
+        _pyrefly_python_version <- python_version        (mandatory, X.Y)
+    success_msg: "pyrefly {{ _pyrefly_version }} on python {{ _pyrefly_python_version }}"
+
+# ---------------------------------------------------------------------------
+# FEATURE TASKS — userland only. Everything lands under ~/.local.
+# ---------------------------------------------------------------------------
+- name: Look for uv
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop: "{{ _pyrefly_uv_candidates }}"
+  register: _pyrefly_uv_stat
+
+- name: Select the first uv found
+  ansible.builtin.set_fact:
+    _pyrefly_uv: "{{ (_pyrefly_uv_stat.results | selectattr('stat.exists') | map(attribute='item') | list + ['']) | first }}"
+
+- name: Assert that uv is available
+  ansible.builtin.assert:
+    that: _pyrefly_uv | length > 0
+    fail_msg: >-
+      pyrefly installs with `uv tool install`, and found no uv at
+      {{ _pyrefly_uv_candidates | join(', ') }}. The bootstrap feature provides
+      one; this feature depends on it.
+
+- name: Check that Python {{ _pyrefly_python_version }} is installed
+  ansible.builtin.command:
+    argv: ["{{ _pyrefly_uv }}", python, find, "{{ _pyrefly_python_version }}"]
+  environment: "{{ _pyrefly_env }}"
+  register: _pyrefly_python
+  changed_when: false
+  failed_when: false
+
+- name: Assert that the interpreter exists (uv will not download one)
+  ansible.builtin.assert:
+    that: _pyrefly_python.rc == 0
+    fail_msg: >-
+      No Python {{ _pyrefly_python_version }} is installed, and uv is told never
+      to download one. Add ghcr.io/infrashift/trusted-devcontainer-features/python
+      (this feature installs after it), or set python_version to the one it installs.
+      uv said: {{ _pyrefly_python.stderr | default('') | trim }}
+    success_msg: "python {{ _pyrefly_python_version }}: {{ _pyrefly_python.stdout | trim }}"
+
+# Gate on the version the installed tool reports, not on uv's output: uv
+# prints "... is already installed" on a no-op, which reads like a change.
+- name: Check the installed pyrefly version
+  ansible.builtin.command:
+    argv: ["{{ _pyrefly_bin }}", --version]
+  environment: "{{ _pyrefly_env }}"
+  register: _pyrefly_installed
+  changed_when: false
+  failed_when: false
+
+- name: Install pyrefly {{ _pyrefly_version }} via uv tool install
+  ansible.builtin.command:
+    argv:
+      - "{{ _pyrefly_uv }}"
+      - tool
+      - install
+      - --force
+      - --python
+      - "{{ _pyrefly_python_version }}"
+      - "pyrefly=={{ _pyrefly_version }}"
+  environment: "{{ _pyrefly_env }}"
+  when: _pyrefly_installed.rc != 0
+        or ('pyrefly ' ~ _pyrefly_version) not in (_pyrefly_installed.stdout | default(''))
+  changed_when: true
+
+- name: Verify pyrefly
+  ansible.builtin.command:
+    argv: ["{{ _pyrefly_bin }}", --version]
+  environment: "{{ _pyrefly_env }}"
+  register: _pyrefly_verify
+  changed_when: false
+
+- name: Assert that pyrefly {{ _pyrefly_version }} is installed
+  ansible.builtin.assert:
+    that: ('pyrefly ' ~ _pyrefly_version) in _pyrefly_verify.stdout
+    fail_msg: "Expected pyrefly {{ _pyrefly_version }}; it reported: {{ _pyrefly_verify.stdout }}"
+    success_msg: "{{ _pyrefly_verify.stdout_lines | join('; ') }}"
+...

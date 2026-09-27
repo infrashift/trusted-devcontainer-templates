@@ -1,0 +1,20 @@
+# pyrefly-feature/ansible-role-feature/meta/main.yml
+---
+galaxy_info:
+  author: ryancraig
+  description: Pinned Python language server and type checker (pyrefly) for Fedora containers, installed userland with uv
+  company: infrashift.sh
+  license: MIT
+  min_ansible_version: "2.18"
+  platforms:
+  - name: Fedora
+    versions:
+    - 43
+  galaxy_tags:
+    - python
+    - pyrefly
+    - lsp
+    - fedora
+
+dependencies: []
+...
