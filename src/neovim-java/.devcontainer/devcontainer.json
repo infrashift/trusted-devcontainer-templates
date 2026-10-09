@@ -27,7 +27,7 @@
         "ghcr.io/infrashift/trusted-devcontainer-templates/features/tmux@sha256:45a807381578a04cf4d3a40b7c89a38921cc07044b0f8ce0875349d001e3b78c": {},
         "ghcr.io/infrashift/trusted-devcontainer-templates/features/neovim@sha256:083f4694c1dfb59983f1c4d92caccfb08d1357bc3fa5d0c0c2f622b5cd369611": {},
         "ghcr.io/infrashift/trusted-devcontainer-templates/features/java-tools@sha256:4c1528f1fb67521823fd5ee4f7d137e68ab752989a443a963689cf6e7e81796e": {},
-        "ghcr.io/infrashift/trusted-devcontainer-templates/features/lazyvim@sha256:c2e2be7cda7f43530a1a621585d53d832e37d5850bd7143915af1c9effb08c5a": {
+        "ghcr.io/infrashift/trusted-devcontainer-templates/features/lazyvim@sha256:28bbbe8130cf79c83d3b5748337393b8529c107700b915989b270728e48da20e": {
             "extras": "lang.java"
         }
     }
