@@ -101,16 +101,41 @@ _shfmt_pinned_checksums:
 # startup install included, so it shows both. A parser missing at return with
 # an `error' line failed to build; one missing with `Compiling parser' and no
 # outcome was still being built when install() returned.
+#
+# THE WAIT (1.2.3). The report named the cause on gcloud-dc's 1-core runners
+# (2026-10-09, three builds alike): `ok=false seconds=60 missing_at_return=vim',
+# and vim's only log lines are ONE download and `Compiling parser'. LazyVim's
+# treesitter config installs every missing parser when the plugin loads, in this
+# same Neovim, and it got to vim first. nvim-treesitter (main f603a2f4,
+# install_lang) lets a second install of a language that one is already
+# building wait at most INSTALL_TIMEOUT (60 s), then return false. vim is the
+# one parser whose `tree-sitter build' outlasts that on one core; when this
+# command ended, Neovim exited and took the unfinished build with it. So
+# install() is called again with the parsers still missing, each call waiting
+# out the build in progress, until none is missing. An attempt that fails in
+# under 55 s cannot be that wait (it always lasts the whole 60 s): the parser
+# failed on its own, and calling again would only repeat it. 1800 s bounds all
+# attempts together. `attempts' in the report counts the calls.
 _lazyvim_lua_build_parsers: >-
+  local ts = require('nvim-treesitter')
   local t0 = vim.uv.hrtime()
   local want = { {{ _lazyvim_parsers_pending | map('to_json') | join(', ') }} }
-  local ok = require('nvim-treesitter').install(want, { force = true }):wait(1800000)
-  local secs = (vim.uv.hrtime() - t0) / 1e9
+  local function missing()
   local have = {}
-  for _, l in ipairs(require('nvim-treesitter').get_installed('parsers')) do have[l] = true end
-  local gone = vim.tbl_filter(function(l) return not have[l] end, want)
+  for _, l in ipairs(ts.get_installed('parsers')) do have[l] = true end
+  return vim.tbl_filter(function(l) return not have[l] end, want)
+  end
+  local ok, attempts, gone = false, 0, want
+  repeat
+  attempts = attempts + 1
+  local a0 = vim.uv.hrtime()
+  ok = ts.install(gone, { force = true }):wait(1800000)
+  local took = (vim.uv.hrtime() - a0) / 1e9
+  gone = missing()
+  until #gone == 0 or took < 55 or (vim.uv.hrtime() - t0) / 1e9 > 1800
+  local secs = (vim.uv.hrtime() - t0) / 1e9
   local log = vim.api.nvim_exec2("lua require('nvim-treesitter.log').show()", { output = true }).output
-  io.stdout:write(("\nPARSERS_INSTALLED ok=%s seconds=%.0f wanted=%d missing_at_return=%s\n"):format(tostring(ok), secs, #want, table.concat(gone, ",")))
+  io.stdout:write(("\nPARSERS_INSTALLED ok=%s seconds=%.0f wanted=%d attempts=%d missing_at_return=%s\n"):format(tostring(ok), secs, #want, attempts, table.concat(gone, ",")))
   io.stdout:write("\nTS_LOG_BEGIN\n" .. log .. "\nTS_LOG_END\n")
 
 # The parsers LazyVim wants (core plus the Go extra) that it would install at

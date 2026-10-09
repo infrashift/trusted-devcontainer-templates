@@ -68,8 +68,10 @@ the cause could not be read anywhere. Since 1.2.1 the build step prints one
 line in every build:
 
 ```
-PARSERS_INSTALLED ok=<install()'s verdict> seconds=<n> wanted=<n> missing_at_return=<parsers>
+PARSERS_INSTALLED ok=<install()'s verdict> seconds=<n> wanted=<n> attempts=<n> missing_at_return=<parsers>
 ```
+
+(`attempts` since 1.2.3.)
 
 When the re-check still finds a parser missing, the task before the failing
 assert prints that line, every `error`/`warn` nvim-treesitter logged, and every
@@ -77,6 +79,27 @@ log line about each missing parser. The log covers every installer in that
 Neovim, LazyVim's startup install included. A parser with an `error` line
 failed. A parser with `Compiling parser` and no outcome was still compiling
 when `install()` returned. The pass/fail rule is unchanged.
+
+## The build waits out LazyVim's own parser install (1.2.3)
+
+That report named the cause on gcloud-dc's 1-core CI runners (2026-10-09, three
+builds alike): `ok=false seconds=60 missing_at_return=vim`, with one download
+of `tree-sitter-vim` and `Compiling parser` as its last log line.
+
+LazyVim's treesitter config installs every missing parser when the plugin
+loads, in the same Neovim the build step runs, and it started `vim` first.
+nvim-treesitter lets a second install of a language that is already being built
+wait at most 60 s (`INSTALL_TIMEOUT` in `install_lang`, main `f603a2f4`), then
+return false. `vim` is the one parser whose `tree-sitter build` takes longer
+than that on one core. The step then ended, Neovim exited, and the unfinished
+build went with it. A faster machine finishes `vim` inside the 60 s, which is
+why it passed elsewhere and on retries.
+
+Since 1.2.3 the build step calls `install()` again with the parsers still
+missing, until none is missing. Each call waits out the build in progress. An
+attempt that fails in under 55 s cannot be that wait, because the wait always
+lasts the full 60 s: the parser failed on its own, so the step stops calling.
+1800 s bounds all attempts together.
 
 ## No runtime downloads
 
