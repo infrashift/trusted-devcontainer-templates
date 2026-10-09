@@ -486,7 +486,8 @@
   failed_when: _lazyvim_parsers_install.stdout is not search('PARSERS_INSTALLED')
 
 # One line in every build log, so a slow or partial build is visible before it
-# fails anything (CI 2026-10-09: 61 s, then four parsers missing).
+# fails anything (CI 2026-10-09: 61 s, then four parsers missing). 1.2.3's
+# `attempts=' above 1 means it waited out LazyVim's own install of a parser.
 - name: Report the tree-sitter build
   ansible.builtin.debug:
     msg: "{{ _lazyvim_parsers_install.stdout | regex_search('PARSERS_INSTALLED[^\\n]*') }}"
