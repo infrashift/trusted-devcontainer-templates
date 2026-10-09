@@ -22,7 +22,7 @@
 {
     "name": "java-tools-feature",
     "id": "java-tools",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Installs the Eclipse JDT Language Server (jdtls) with lombok, pinned and userland, and a jdtls launcher that needs no Python.",
     "options": {
         // https://download.eclipse.org/jdtls/milestones/
@@ -60,6 +60,6 @@
         "ghcr.io/infrashift/trusted-devcontainer-features/openjdk"
     ],
     "dependsOn": {
-        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {}
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:5f7d508100f879933cb307544aa7135eb1e238d4d2b2866443a7c27e24ec8b9d": {}
     }
 }

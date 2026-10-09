@@ -21,7 +21,7 @@
 {
     "name": "lazyvim-feature",
     "id": "lazyvim",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "description": "Installs a pinned LazyVim configuration with the language extras you name (Go by default) and every plugin, tree-sitter parser and formatter preinstalled, so Neovim fetches nothing at runtime.",
     "options": {
         // ONE WORD: comma-separated, no spaces. The bootstrap runner hands each
@@ -84,6 +84,6 @@
         "./go-tools"
     ],
     "dependsOn": {
-        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {}
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:5f7d508100f879933cb307544aa7135eb1e238d4d2b2866443a7c27e24ec8b9d": {}
     }
 }

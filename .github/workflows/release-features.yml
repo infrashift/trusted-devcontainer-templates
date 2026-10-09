@@ -21,7 +21,7 @@ name: Release Features
 # features depend on it by digest. These depend on the bootstrap published from
 # trusted-devcontainer-features, pinned in source, so every feature here can be
 # staged and reviewed together. Review requires every dependsOn to equal the
-# bootstrap the templates in this repository pin.
+# bootstrap the feature test templates in this repository pin.
 #
 # WHY ON PUSH TO MAIN, NOT ON A TAG. Templates pin features by digest, and a
 # digest does not exist until the feature is published. So a feature release
@@ -101,10 +101,13 @@ jobs:
           jq -r '.[] | "  \(.)"' features.json
           echo "features=$(jq -c '.' features.json)" >> "$GITHUB_OUTPUT"
 
-          # The one bootstrap every template pins; check-bootstrap-pin.sh has
-          # already asserted there is exactly one.
+          # The one bootstrap the feature test templates pin -- they build these
+          # features from source; check-bootstrap-pin.sh has already asserted
+          # there is exactly one and that every dependsOn names it. Not src/*:
+          # the published templates move to a new bootstrap only AFTER these
+          # features are released against it (see check-bootstrap-pin.sh).
           dep=$(grep -hoE 'ghcr\.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:[0-9a-f]{64}' \
-                  src/*/.devcontainer/devcontainer.json | sort -u)
+                  features/test/*/.devcontainer/devcontainer.json | sort -u)
           [[ "$dep" =~ ^ghcr\.io/[a-z0-9./-]+@sha256:[0-9a-f]{64}$ ]] \
             || { echo "::error::could not resolve a single bootstrap pin: ${dep}"; exit 1; }
           echo "depends_on=${dep}" >> "$GITHUB_OUTPUT"

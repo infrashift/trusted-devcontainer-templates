@@ -12,7 +12,7 @@
 {
     "name": "neovim-feature",
     "id": "neovim",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Installs the upstream Neovim release build, checksum-verified, into the target user's home on Fedora and Red Hat UBI DevContainers.",
     "options": {
         // See available versions at https://github.com/neovim/neovim/releases
@@ -31,6 +31,6 @@
     },
     "installsAfter": [],
     "dependsOn": {
-        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {}
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:5f7d508100f879933cb307544aa7135eb1e238d4d2b2866443a7c27e24ec8b9d": {}
     }
 }
