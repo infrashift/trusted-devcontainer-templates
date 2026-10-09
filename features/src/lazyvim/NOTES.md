@@ -59,6 +59,25 @@ status (`|| true`). Here `Lazy! restore` installs from the lockfile, and the
 role then checks every plugin's commit itself, because headless Neovim exits 0
 after most plugin errors.
 
+## The parser build reports what happened (1.2.1)
+
+nvim-treesitter keeps its log in memory and only echoes it, so a parser that
+failed to download or compile never reached a CI log. A cold build lost bash,
+tsx, typescript and vim with the build step reporting success after 61 s, and
+the cause could not be read anywhere. Since 1.2.1 the build step prints one
+line in every build:
+
+```
+PARSERS_INSTALLED ok=<install()'s verdict> seconds=<n> wanted=<n> missing_at_return=<parsers>
+```
+
+When the re-check still finds a parser missing, the task before the failing
+assert prints that line, every `error`/`warn` nvim-treesitter logged, and every
+log line about each missing parser. The log covers every installer in that
+Neovim, LazyVim's startup install included. A parser with an `error` line
+failed. A parser with `Compiling parser` and no outcome was still compiling
+when `install()` returned. The pass/fail rule is unchanged.
+
 ## No runtime downloads
 
 `lua/plugins/offline.lua`:

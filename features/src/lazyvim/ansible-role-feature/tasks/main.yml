@@ -470,29 +470,27 @@
     _lazyvim_parsers_pending: >-
       {{ _lazyvim_parsers_probe.stdout | regex_findall('MISSING_PARSERS=(.*)') | last | from_json | list }}
 
-# install() is asynchronous; :wait() blocks until every parser is built, so
-# Neovim cannot exit halfway through (which is what `+qa` alone would do).
-#
-# The list is rendered as a Lua table -- {"go","bash"} -- not with to_json,
-# whose ["go","bash"] is a Lua syntax error that headless Neovim prints and
-# ignores. The marker line proves the call actually ran to completion.
-#
-# force: only the parsers the probe found missing are passed, and a parser whose
-# .so is gone but whose install record survived would otherwise be skipped as
-# already installed.
+# The Lua and why it reports what it does: _lazyvim_lua_build_parsers (vars).
+# The marker line proves the call ran to completion; pass/fail is still the
+# re-check's, below.
 - name: Build the missing tree-sitter parsers
   ansible.builtin.command:
     argv:
       - "{{ _lazyvim_nvim }}"
       - --headless
-      - >-
-        +lua require('nvim-treesitter').install({ {{ _lazyvim_parsers_pending | map('to_json') | join(', ') }} }, { force = true }):wait(1800000)
-        io.stdout:write("\nPARSERS_INSTALLED\n")
+      - "+lua {{ _lazyvim_lua_build_parsers }}"
       - +qa
   register: _lazyvim_parsers_install
   when: _lazyvim_parsers_pending | length > 0
   changed_when: true
   failed_when: _lazyvim_parsers_install.stdout is not search('PARSERS_INSTALLED')
+
+# One line in every build log, so a slow or partial build is visible before it
+# fails anything (CI 2026-10-09: 61 s, then four parsers missing).
+- name: Report the tree-sitter build
+  ansible.builtin.debug:
+    msg: "{{ _lazyvim_parsers_install.stdout | regex_search('PARSERS_INSTALLED[^\\n]*') }}"
+  when: _lazyvim_parsers_pending | length > 0
 
 - name: Re-check the tree-sitter parsers
   ansible.builtin.command:
@@ -510,10 +508,28 @@
     fail_msg: "The tree-sitter re-check did not report. stdout: {{ _lazyvim_parsers_verify.stdout }} stderr: {{ _lazyvim_parsers_verify.stderr }}"
     quiet: true
 
+- name: Collect the parsers still missing
+  ansible.builtin.set_fact:
+    _lazyvim_parsers_still_missing: >-
+      {{ _lazyvim_parsers_verify.stdout | regex_findall('MISSING_PARSERS=(.*)') | last | from_json | list }}
+
+# Only when something is missing: the build's verdict, then every error and
+# warning nvim-treesitter logged and every line about a missing parser. A list,
+# so each line prints as a line. ONE backslash in the regexes: a folded scalar
+# does no unescaping and neither does a Jinja string, so `\\n' here would be
+# a literal backslash and an `n' (the double-quoted msg above is the other way).
+- name: Show nvim-treesitter's log for the missing parsers
+  ansible.builtin.debug:
+    msg: >-
+      {{ [(_lazyvim_parsers_install.stdout | default('') | regex_search('PARSERS_INSTALLED[^\n]*')) | default('the build step did not run', true)]
+         + (_lazyvim_parsers_install.stdout_lines | default([])
+            | select('search', '^(error|warn)|\(install/(' ~ (_lazyvim_parsers_still_missing | join('|')) ~ ')\)')
+            | list) }}
+  when: _lazyvim_parsers_still_missing | length > 0
+
 - name: Assert that every parser LazyVim wants is installed
   ansible.builtin.assert:
-    that: >-
-      (_lazyvim_parsers_verify.stdout | regex_findall('MISSING_PARSERS=(.*)') | last | from_json | list) == []
-    fail_msg: "tree-sitter parsers still missing after install: {{ _lazyvim_parsers_verify.stdout }}"
+    that: _lazyvim_parsers_still_missing == []
+    fail_msg: "tree-sitter parsers still missing after install: {{ _lazyvim_parsers_still_missing }} (nvim-treesitter's log for them is the task above)"
     success_msg: "every tree-sitter parser LazyVim asks for is installed"
 ...
