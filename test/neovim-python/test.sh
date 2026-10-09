@@ -24,9 +24,9 @@ check "tmux is installed" command -v tmux
 check "dev-session is installed" test -x /usr/local/bin/dev-session
 check "the login hook is installed" test -r /etc/profile.d/dev-session.sh
 
-# Python: the python feature installs into uv's MANAGED store, not onto PATH,
-# so `uv python find` is the contract (see test/python/test.sh).
+# Python: the interpreter AND its executable (see test/python/test.sh).
 check "python 3.14 is installed" uv python find 3.14
+check "python3.14 is on the PATH" python3.14 --version
 check "ruff is installed" command -v ruff
 
 # pyrefly: a native binary, userland, in a uv tool venv -- and no Node anywhere.
