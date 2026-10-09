@@ -85,9 +85,19 @@ while IFS=$'\t' read -r feature digest; do
     exit 1
   fi
 
-  # Copy every tag staging carries, so production ends up with the same version,
-  # major, minor and latest tags a consumer resolves against. Each copy is of the
-  # SAME digest, so the tag set differs but the bytes cannot.
+  # Copy the tags staging carries ON THE REVIEWED DIGEST, so production ends up
+  # with the same version, major, minor and latest tags a consumer resolves
+  # against. Each copy is of the SAME digest, so the tag set differs but the
+  # bytes cannot.
+  #
+  # ONLY THOSE TAGS. The staging repository keeps every earlier release's tags,
+  # each still on its own build. Copying all of them pointed every historical
+  # version tag of a feature at its newest build: promoting lazyvim 1.2.1
+  # (2026-10-09) moved production's 1.0.0, 1.0.1, 1.0, 1.1.0, 1.1 and 1.2.0 onto
+  # the 1.2.1 digest, and ansible-tools/python-tools 1.0.0 had already met the
+  # same fate at their 1.0.1. A version tag that changes under a consumer is
+  # worse than no tag. So a tag goes to production only when staging resolves it
+  # to the reviewed digest; any other tag is left alone, and said so.
   #
   # EXCEPT the cosign tags. A signature is its own manifest under a tag derived
   # from the digest it signs, so copying `$src' onto that name would overwrite
@@ -97,6 +107,7 @@ while IFS=$'\t' read -r feature digest; do
   [ "${#tags[@]}" -gt 0 ] || { echo "::error::${feature}: no tags in staging" >&2; exit 1; }
 
   sigs=0
+  copied=0
   for t in "${tags[@]}"; do
     case "$t" in
       sha256-*.sig|sha256-*.att|sha256-*.sbom)
@@ -109,11 +120,17 @@ while IFS=$'\t' read -r feature digest; do
         continue
         ;;
     esac
+    on=$(crane digest "${staging}/${feature}:${t}" 2>/dev/null || true)
+    if [ "$on" != "$digest" ]; then
+      echo "  leave ${feature}:${t} -- staging holds it on ${on:-nothing}, not the reviewed ${digest}"
+      continue
+    fi
     if [ "${DRY_RUN:-0}" = "1" ]; then
       echo "  would copy ${src} -> ${prod}/${feature}:${t}"
     else
       crane copy "$src" "${prod}/${feature}:${t}"
     fi
+    copied=$((copied + 1))
   done
 
   if [ "${DRY_RUN:-0}" != "1" ]; then
@@ -124,7 +141,7 @@ while IFS=$'\t' read -r feature digest; do
       echo "::error::${feature}: promoted digest ${landed} != reviewed ${digest}" >&2; exit 1; }
   fi
 
-  echo "  promoted ${feature} @ ${digest} (${#tags[@]} tag(s), ${sigs} signature tag(s))"
+  echo "  promoted ${feature} @ ${digest} (${copied} tag(s), ${sigs} signature tag(s))"
   promoted=$((promoted + 1))
 done < <(jq -r '.features[] | [.feature, .digest] | @tsv' "$VERDICT")
 
