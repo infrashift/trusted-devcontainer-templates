@@ -81,6 +81,38 @@ _shfmt_pinned_checksums:
 # Lua run by headless Neovim. Each prints one marker line so the result can be
 # picked out of whatever else plugins write to stdout while starting.
 #
+# Build the parsers the probe found missing, then report what happened. Rendered
+# with the pending list (a Lua table literal -- {"go","bash"}; to_json's
+# ["go","bash"] is a Lua syntax error that headless Neovim prints and ignores).
+#
+# install() is asynchronous; :wait() blocks until it returns, so Neovim cannot
+# exit halfway through (which is what `+qa' alone would do). force: only missing
+# parsers are passed, and a parser whose .so is gone but whose install record
+# survived would otherwise be skipped as already installed.
+#
+# THE REPORT (1.2.1). A cold CI build lost the largest parsers (bash, tsx,
+# typescript, vim) with the build step "succeeding" in 61 s, and the cause was
+# unknowable: nvim-treesitter keeps its log in memory and echoes it, so a
+# download or `tree-sitter build' error never reached the job log. After
+# :wait() returns this prints one verdict line -- install()'s own result, the
+# seconds it took, and which wanted parsers are not installed AT THAT MOMENT --
+# then nvim-treesitter's whole log (log.show(), captured with nvim_exec2) between
+# markers. The log is shared by every installer in this Neovim, LazyVim's
+# startup install included, so it shows both. A parser missing at return with
+# an `error' line failed to build; one missing with `Compiling parser' and no
+# outcome was still being built when install() returned.
+_lazyvim_lua_build_parsers: >-
+  local t0 = vim.uv.hrtime()
+  local want = { {{ _lazyvim_parsers_pending | map('to_json') | join(', ') }} }
+  local ok = require('nvim-treesitter').install(want, { force = true }):wait(1800000)
+  local secs = (vim.uv.hrtime() - t0) / 1e9
+  local have = {}
+  for _, l in ipairs(require('nvim-treesitter').get_installed('parsers')) do have[l] = true end
+  local gone = vim.tbl_filter(function(l) return not have[l] end, want)
+  local log = vim.api.nvim_exec2("lua require('nvim-treesitter.log').show()", { output = true }).output
+  io.stdout:write(("\nPARSERS_INSTALLED ok=%s seconds=%.0f wanted=%d missing_at_return=%s\n"):format(tostring(ok), secs, #want, table.concat(gone, ",")))
+  io.stdout:write("\nTS_LOG_BEGIN\n" .. log .. "\nTS_LOG_END\n")
+
 # The parsers LazyVim wants (core plus the Go extra) that it would install at
 # startup. This asks LazyVim.treesitter.have() -- the exact test LazyVim runs
 # before it downloads a parser -- rather than looking for a parser .so on the
