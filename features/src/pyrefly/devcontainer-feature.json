@@ -21,7 +21,7 @@
 {
     "name": "pyrefly-feature",
     "id": "pyrefly",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Installs pyrefly, a Python type checker and language server written in Rust (no Node), pinned and userland (uv tool).",
     "options": {
         // https://pypi.org/project/pyrefly/
@@ -43,6 +43,6 @@
         "ghcr.io/infrashift/trusted-devcontainer-features/uv-ruff"
     ],
     "dependsOn": {
-        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {}
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:5f7d508100f879933cb307544aa7135eb1e238d4d2b2866443a7c27e24ec8b9d": {}
     }
 }

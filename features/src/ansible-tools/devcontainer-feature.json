@@ -20,7 +20,7 @@
 {
     "name": "ansible-tools-feature",
     "id": "ansible-tools",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Installs ansible-lint, pinned and userland (uv tool), for editor diagnostics without a language server.",
     "options": {
         // https://pypi.org/project/ansible-lint/
@@ -42,6 +42,6 @@
         "ghcr.io/infrashift/trusted-devcontainer-features/ansible-core"
     ],
     "dependsOn": {
-        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:7f5bc8021fc701d0141dc4937b9faebfc2abcadcb905530fd3513ee4ee5df70b": {}
+        "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:5f7d508100f879933cb307544aa7135eb1e238d4d2b2866443a7c27e24ec8b9d": {}
     }
 }
