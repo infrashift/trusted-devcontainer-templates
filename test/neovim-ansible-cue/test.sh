@@ -26,9 +26,9 @@ check "the login hook is installed" test -r /etc/profile.d/dev-session.sh
 
 check "ansible is installed" command -v ansible
 check "ansible-playbook is installed" command -v ansible-playbook
-# The python feature installs into uv's MANAGED store, not onto PATH, so
-# `uv python find` is the contract (see test/ansible-cue/test.sh).
+# Python: the interpreter AND its executable (see test/ansible-cue/test.sh).
 check "python 3.14 is installed" uv python find 3.14
+check "python3.14 is on the PATH" python3.14 --version
 check "cue is installed" command -v cue
 check "cue has an lsp subcommand" bash -c 'cue help lsp > /dev/null 2>&1'
 

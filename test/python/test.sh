@@ -7,12 +7,13 @@ source "${SCRIPT_DIR}/../test-utils/test-utils.sh"
 
 checkCommon
 
-# The python feature installs into uv's MANAGED store, not onto PATH, so
-# `command -v python3` asserts something the feature never promised -- and the
-# shared base ships no python at all. `uv python find` is the contract the
-# feature repo's own tests use; matching it keeps one definition of "installed"
-# across both repos.
+# The python feature installs CPython into uv's managed store AND puts the
+# versioned executable, ~/.local/bin/python3.14, on the PATH (since 1.7.1). `uv python
+# find` alone is not enough: it passed on a 1.7.0 image that had the interpreter
+# and no executable, because uv-ruff's tool install had fetched it first
+# (trusted-devcontainer-features#22). The shared base ships no python at all.
 check "python 3.14 is installed" uv python find 3.14
+check "python3.14 is on the PATH" python3.14 --version
 check "ruff is installed" command -v ruff
 
 reportResults
