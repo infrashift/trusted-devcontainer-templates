@@ -46,7 +46,7 @@ No check asserts that the pinned tool versions are current, so drift shows only 
 | `syft` | v1.55.0 | A release built with Go 1.26.9 and go-jose 4.1.6 |
 | `cue` | v0.17.1 | A release with `golang.org/x/mod` 0.40.0, `golang.org/x/text` 0.39.0 and Go 1.26.9 |
 | `git-lfs` | Fedora `3.7.1-6.fc43` | A Fedora 43 build of git-lfs 3.8.1 or later |
-| npm (in Node 22) | 10.9.9 | An npm 10.x that bundles `undici` 6.29.1 |
+| npm (dotnet-node) | 12.2.1 | An npm release that bundles `undici` 6.29.1 |
 | `dotnet-format` (in SDK 8.0) | SDK 8.0.427 | An SDK 8.0 that bundles fixed `System.Security.Cryptography.*` packages |
 
 See [After the 2026-10-28 re-pin, no template has a blocking CVE finding](/findings/after-the-2026-10-28-re-pin-no-template-has-a-blocking-cve-finding--01a18379270b.md).

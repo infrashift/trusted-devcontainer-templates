@@ -164,6 +164,7 @@ jobs:
     if: always() && needs.gate-check.result == 'success'
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
       statuses: write
       actions: read
@@ -246,6 +247,43 @@ jobs:
 
           cat /tmp/report.md >> "$GITHUB_STEP_SUMMARY"
           echo "overall=$OVERALL" >> "$GITHUB_OUTPUT"
+
+      # Which installed tools are behind upstream (wiki issue #22). Advisory:
+      # every step here may fail without touching the verdict or the status.
+      #
+      # The script and its registry come from main -- a workflow_run checkout
+      # is the default branch -- never from the PR, because this job holds
+      # pull-requests and statuses write. The PR contributes only data: its
+      # build's SBOMs and its tools.lock, read through the API at the head SHA.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          path: trusted
+          persist-credentials: false
+        continue-on-error: true
+
+      - name: Download the build's SBOMs
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: evidence-*
+          path: evidence/
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Add tools behind upstream to the report
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ needs.gate-check.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          gh api "/repos/${REPO}/contents/tools.lock?ref=${HEAD_SHA}" --jq .content | base64 -d > /tmp/tools.lock
+          python3 trusted/scripts/check-upstream-currency.py \
+            --registry trusted/.github/upstream-tools.json \
+            --sbom-dir evidence --tools-lock /tmp/tools.lock --markdown /tmp/currency.md
+          { echo; cat /tmp/currency.md; } >> /tmp/report.md
+          cat /tmp/currency.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Comment on the PR
         env:

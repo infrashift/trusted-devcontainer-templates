@@ -89,6 +89,16 @@ check-assertions: ## Verify smoke tests assert the versions their template reque
 check-doc-keys: ## Verify the docs verify with the keys the pipeline signs with
 	./scripts/check-doc-keys.sh
 
+.PHONY: check-currency
+check-currency: ## Self-test the upstream currency check (offline)
+	python3 scripts/check-upstream-currency.py --self-test
+
+.PHONY: currency
+currency: ## Compare the latest release's tools and tools.lock with upstream (needs gh, network)
+	@d=$$(mktemp -d) && trap 'rm -rf "$$d"' EXIT && \
+	gh release download --pattern '*-sbom.json' --dir "$$d" && \
+	python3 scripts/check-upstream-currency.py --sbom-dir "$$d" --tools-lock tools.lock
+
 .PHONY: check-workflows
 check-workflows: ## Lint workflows for pinning and required-context drift
 	./scripts/lint-workflows.sh
@@ -104,7 +114,7 @@ repo-gate: ## Run the repository-scoped PDP against the working tree
 # Everything CI's repo-gate job runs, minus the container builds. Fast enough to
 # run before every push.
 .PHONY: check
-check: check-sync check-pins check-assertions check-doc-keys check-workflows check-features check-policy repo-gate ## Run every static check
+check: check-sync check-pins check-assertions check-doc-keys check-currency check-workflows check-features check-policy repo-gate ## Run every static check
 	@echo "── all static checks passed ──"
 
 .PHONY: test
