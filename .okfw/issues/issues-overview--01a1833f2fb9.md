@@ -45,7 +45,6 @@ Do not put multi-step work. Put it in `plans/` and link the issues.
 * [The attestations have no Rekor transparency-log entry](/issues/the-attestations-have-no-rekor-transparency-log-entry--01a183462140.md) (TODO 24)
 * [A fork PR fails the build check instead of skipping it](/issues/a-fork-pr-fails-the-build-check-instead-of-skipping-it--01a18346218e.md) (TODO 25)
 * [The review workflow has no concurrency group](/issues/the-review-workflow-has-no-concurrency-group--01a1834621dd.md) (TODO 26)
-* [The docs tell users to verify releases with the wrong public key](/issues/the-docs-tell-users-to-verify-releases-with-the-wrong-public-key--01a18346229a.md) (new)
 * [The docs site describes the old pipeline and trust model](/issues/the-docs-site-describes-the-old-pipeline-and-trust-model--01a1834bba2d.md) (new)
 * [Three ADRs no longer match the code](/issues/three-adrs-no-longer-match-the-code--01a1834bba80.md) (new)
 * [No CUE schema validates devcontainer.json](/issues/no-cue-schema-validates-devcontainer-json--01a1834bbad5.md) (new)
@@ -56,6 +55,7 @@ Do not put multi-step work. Put it in `plans/` and link the issues.
 
 ### Resolved
 
+* [The docs tell users to verify releases with the wrong public key](/issues/the-docs-tell-users-to-verify-releases-with-the-wrong-public-key--01a18346229a.md) (PR #34)
 * [Ansible role vars in the features used a deprecated list syntax](/issues/ansible-role-vars-in-the-features-used-a-deprecated-list-syntax--01a183461982.md) (TODO 1)
 * [The ansible-core feature failed because the uv environment was not active](/issues/the-ansible-core-feature-failed-because-the-uv-environment-was-not-active--01a1834619c9.md) (TODO 2)
 * [The npm feature failed because Node.js was not on the PATH](/issues/the-npm-feature-failed-because-node-js-was-not-on-the-path--01a183461a0d.md) (TODO 3)

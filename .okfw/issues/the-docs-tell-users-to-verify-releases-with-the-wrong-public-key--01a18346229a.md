@@ -5,11 +5,11 @@ type: "issue"
 kind: "issue"
 tags:
   - "issue"
-  - "open"
   - "signing"
   - "docs"
+  - "resolved"
 created: "2026-10-28T11:09:34-05:00"
-timestamp: "2026-10-28T11:09:34-05:00"
+timestamp: "2026-10-28T11:28:40-05:00"
 description: "README and the docs site cite cosign-release.pub, but the Release-Actor signs with the key whose public half is release.pub."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/tree/main/.github/pdp/public-keys"
 sources:
@@ -21,8 +21,8 @@ sources:
     title: "README.md"
 generated:
   by: "claude-code/opus-5-5"
-  at: "2026-10-28T11:09:34-05:00"
-status: "draft"
+  at: "2026-10-28T11:28:40-05:00"
+status: "deprecated"
 ---
 
 # The docs tell users to verify releases with the wrong public key
@@ -88,6 +88,17 @@ Other errors on the same pages:
 - [ ] `verification.md` tells users to verify evidence blobs with `build.pub` and verdicts with `review.pub`, with the current asset names.
 - [ ] `cosign-release.pub` is removed, or a comment marks it as retired.
 - [ ] A check fails when a doc cites a key that the release does not use.
+
+## Resolution
+
+Fixed on 2026-10-28 in PR #34 (`fix/docs-release-key`).
+
+* `README.md`, `getting-started.md`, `trust/verification.md`, `VerifyCommand.astro` and the architecture tree name `release.pub`. ADR-005 has an amendment.
+* `trust/verification.md` verifies evidence files with `build.pub` and the verdict with `review.pub`, with the `<template>-<file>` asset names, and lists all 9 templates.
+* `cosign-release.pub` is removed.
+* `scripts/check-doc-keys.sh` runs in `make check` and the PR gate. It reads the keys from the signing scripts and fails when a doc names a key that does not exist, or verifies with the wrong key.
+
+All four acceptance criteria are met. The `:latest` tag was kept: it resolves to the attested digest, and `cosign verify --key release.pub` on `python:latest` passed.
 
 ## Related
 
