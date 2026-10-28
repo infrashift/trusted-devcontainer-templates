@@ -1,0 +1,47 @@
+{
+  "_comment": [
+    "Tools whose installed version scripts/check-upstream-currency.py compares with upstream.",
+    "match.purl is a package-URL prefix as the template SBOMs record it; match.path, when set,",
+    "must appear in the package's SBOM location (grype embeds syft as a library, so syft needs it).",
+    "source.kind: goproxy | pypi | npm | fedora | nodejs | dotnet | python | endoflife.",
+    "line: compare only within the installed major ('major') or major.minor ('minor') release line.",
+    "tools_lock maps each tools.lock variable to the same kinds of source."
+  ],
+  "threshold_days": 7,
+  "tools": [
+    {"name": "grype",          "match": {"purl": "pkg:golang/github.com/anchore/grype@", "path": "/bin/grype"},  "source": {"kind": "goproxy", "module": "github.com/anchore/grype"}},
+    {"name": "syft",           "match": {"purl": "pkg:golang/github.com/anchore/syft@", "path": "/bin/syft"},    "source": {"kind": "goproxy", "module": "github.com/anchore/syft"}},
+    {"name": "cue",            "match": {"purl": "pkg:golang/cuelang.org/go@", "path": "/cue/cue"},             "source": {"kind": "goproxy", "module": "cuelang.org/go"}},
+    {"name": "yq",             "match": {"purl": "pkg:golang/github.com/mikefarah/yq/v4@"},                       "source": {"kind": "goproxy", "module": "github.com/mikefarah/yq/v4"}},
+    {"name": "shfmt",          "match": {"purl": "pkg:golang/mvdan.cc/sh/v3@", "path": "/shfmt"},               "source": {"kind": "goproxy", "module": "mvdan.cc/sh/v3"}},
+    {"name": "golangci-lint",  "match": {"purl": "pkg:golang/github.com/golangci/golangci-lint/v2@"},            "source": {"kind": "goproxy", "module": "github.com/golangci/golangci-lint/v2"}},
+    {"name": "gopls",          "match": {"purl": "pkg:golang/golang.org/x/tools/gopls@", "path": "/bin/gopls"}, "source": {"kind": "goproxy", "module": "golang.org/x/tools/gopls"}},
+    {"name": "gofumpt",        "match": {"purl": "pkg:golang/mvdan.cc/gofumpt@", "path": "/bin/gofumpt"},       "source": {"kind": "goproxy", "module": "mvdan.cc/gofumpt"}},
+    {"name": "delve",          "match": {"purl": "pkg:golang/github.com/go-delve/delve@"},                        "source": {"kind": "goproxy", "module": "github.com/go-delve/delve"}},
+    {"name": "go",             "match": {"purl": "pkg:generic/go@"},                                              "source": {"kind": "endoflife", "product": "go"}, "line": "minor"},
+    {"name": "python",         "match": {"purl": "pkg:generic/python@"},                                          "source": {"kind": "python"}, "line": "minor"},
+    {"name": "openjdk",        "match": {"purl": "pkg:generic/oracle/openjdk@"},                                  "source": {"kind": "endoflife", "product": "eclipse-temurin"}, "line": "major"},
+    {"name": "node",           "match": {"purl": "pkg:generic/node@"},                                            "source": {"kind": "nodejs"}, "line": "major"},
+    {"name": ".NET runtime",   "match": {"purl": "pkg:nuget/Microsoft.NETCore.App.Runtime.linux-"},               "source": {"kind": "dotnet"}, "line": "minor"},
+    {"name": "npm",            "match": {"purl": "pkg:npm/npm@", "path": "/node_modules/npm/"},                  "source": {"kind": "npm", "package": "npm"}},
+    {"name": "uv",             "match": {"purl": "pkg:cargo/uv@"},                                                "source": {"kind": "pypi", "package": "uv"}},
+    {"name": "ansible-core",   "match": {"purl": "pkg:pypi/ansible-core@"},                                       "source": {"kind": "pypi", "package": "ansible-core"}},
+    {"name": "ansible-lint",   "match": {"purl": "pkg:pypi/ansible-lint@"},                                       "source": {"kind": "pypi", "package": "ansible-lint"}},
+    {"name": "ruff",           "match": {"purl": "pkg:pypi/ruff@"},                                               "source": {"kind": "pypi", "package": "ruff"}},
+    {"name": "pyrefly",        "match": {"purl": "pkg:pypi/pyrefly@"},                                            "source": {"kind": "pypi", "package": "pyrefly"}},
+    {"name": "yamllint",       "match": {"purl": "pkg:pypi/yamllint@"},                                           "source": {"kind": "pypi", "package": "yamllint"}},
+    {"name": "git-lfs",        "match": {"purl": "pkg:rpm/fedora/git-lfs@"},                                      "source": {"kind": "fedora", "package": "git-lfs", "release": "F43"}},
+    {"name": "git",            "match": {"purl": "pkg:rpm/fedora/git@"},                                          "source": {"kind": "fedora", "package": "git", "release": "F43"}},
+    {"name": "tmux",           "match": {"purl": "pkg:rpm/fedora/tmux@"},                                         "source": {"kind": "fedora", "package": "tmux", "release": "F43"}},
+    {"name": "fzf",            "match": {"purl": "pkg:rpm/fedora/fzf@"},                                          "source": {"kind": "fedora", "package": "fzf", "release": "F43"}},
+    {"name": "ripgrep",        "match": {"purl": "pkg:rpm/fedora/ripgrep@"},                                      "source": {"kind": "fedora", "package": "ripgrep", "release": "F43"}}
+  ],
+  "tools_lock": {
+    "COSIGN_VERSION":           {"name": "cosign (CI)",           "source": {"kind": "goproxy", "module": "github.com/sigstore/cosign/v2"}},
+    "SYFT_VERSION":             {"name": "syft (CI)",             "source": {"kind": "goproxy", "module": "github.com/anchore/syft"}},
+    "GRYPE_VERSION":            {"name": "grype (CI)",            "source": {"kind": "goproxy", "module": "github.com/anchore/grype"}},
+    "OPA_VERSION":              {"name": "opa (CI)",              "source": {"kind": "goproxy", "module": "github.com/open-policy-agent/opa"}},
+    "GITLEAKS_VERSION":         {"name": "gitleaks (CI)",         "source": {"kind": "goproxy", "module": "github.com/zricethezav/gitleaks/v8"}},
+    "DEVCONTAINER_CLI_VERSION": {"name": "devcontainer CLI (CI)", "source": {"kind": "npm", "package": "@devcontainers/cli"}}
+  }
+}

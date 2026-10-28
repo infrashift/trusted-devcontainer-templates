@@ -34,6 +34,8 @@ Run `make pin-features` to pin each feature to its newest digest. To move the ba
 
 ## Procedure: features
 
+To see which tools are behind before you start, run `make currency`, or read the open GitHub issue with the label `upstream-currency`.
+
 1. Create a branch from `main`.
 2. Run `make pin-features`.
 
@@ -69,3 +71,4 @@ WARNING: If two features in one template name different bootstrap digests, `--ch
 * [Base image](/architecture/base-image--01a183441025.md)
 * [Shared Containerfile](/architecture/shared-containerfile--01a183447e12.md)
 * [Waiver EXC-2026-0002](/findings/waiver-exc-2026-0002-accepts-two-go-advisories-in-grype-syft-cue-and-shfmt-until-2026-11-27--01a18346ee2f.md)
+* [Upstream currency check](/supply-chain/upstream-currency-check--01a1839540cb.md)

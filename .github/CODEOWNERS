@@ -41,6 +41,7 @@
 
 # --- Pipeline engines ------------------------------------------------------
 /.github/workflows/                 @ryancraig
+/.github/upstream-tools.json        @ryancraig
 /scripts/                           @ryancraig
 
 # --- What ships inside a template ------------------------------------------

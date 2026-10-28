@@ -1,0 +1,104 @@
+name: Upstream Currency
+
+# Weekly: are the tools in the published templates, and the CI tools in
+# tools.lock, on the newest upstream release?
+#
+# The CVE gate records a High vendored inside a tool instead of blocking it, on
+# the theory that the fix is a re-pin once upstream ships one. Upstream ships on
+# its own schedule, with no PR here to notice, so this runs on a timer against
+# the SBOMs attached to the latest release.
+#
+# It reports through one GitHub issue labelled `upstream-currency`: opened when
+# a tool falls behind, updated each week, commented on when a tool newly falls
+# behind (an edit alone notifies nobody), and closed when everything is current.
+# The run itself stays green: a gap is a task, not a broken pipeline.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: upstream-currency
+  cancel-in-progress: false
+
+jobs:
+  currency:
+    name: Check tools against upstream
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Download the latest release's SBOMs
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag=$(gh release view --repo "$REPO" --json tagName --jq .tagName)
+          gh release download "$tag" --repo "$REPO" --pattern '*-sbom.json' --dir sboms
+          n=$(find sboms -name '*-sbom.json' | wc -l)
+          [ "$n" -gt 0 ] || { echo "::error::release ${tag} has no *-sbom.json assets" >&2; exit 1; }
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "${tag}: ${n} SBOM(s)"
+
+      - name: Compare with upstream
+        run: |
+          set -euo pipefail
+          python3 scripts/check-upstream-currency.py \
+            --sbom-dir sboms --tools-lock tools.lock \
+            --markdown report.md --json report.json
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open, update or close the tracking issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ steps.release.outputs.tag }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          label=upstream-currency
+          gh label create "$label" --repo "$REPO" --color FBCA04 --force \
+            --description "A pinned tool is behind its newest upstream release" >/dev/null
+
+          # One row per tool and installed version, so a second copy of a tool
+          # at another version is its own line.
+          jq -r '.rows[] | select(.status == "behind") | "\(.tool) \(.installed)"' report.json | sort -u > behind.txt
+          num=$(gh issue list --repo "$REPO" --label "$label" --state open --json number --jq '.[0].number // empty')
+
+          {
+            cat report.md
+            echo
+            echo "_Release checked: \`${TAG}\`. Updated by [this run](${RUN_URL}). Closes itself when every tool is current._"
+            echo
+            echo "<!-- behind: $(paste -sd'|' behind.txt) -->"
+          } > body.md
+
+          if [ -s behind.txt ]; then
+            if [ -z "$num" ]; then
+              gh issue create --repo "$REPO" --title "Tools behind upstream" --label "$label" --body-file body.md
+              exit 0
+            fi
+            # Read last week's list from the marker before replacing the body.
+            gh issue view "$num" --repo "$REPO" --json body --jq .body \
+              | sed -nE 's/.*<!-- behind: (.*) -->.*/\1/p' | tr '|' '\n' | sort -u > before.txt
+            gh issue edit "$num" --repo "$REPO" --body-file body.md
+            new=$(comm -13 before.txt behind.txt)
+            if [ -n "$new" ]; then
+              { echo "Newly behind upstream:"; echo; sed 's/^/- /' <<<"$new"; echo; echo "[Run](${RUN_URL})"; } > comment.md
+              gh issue comment "$num" --repo "$REPO" --body-file comment.md
+            fi
+          elif [ -n "$num" ]; then
+            gh issue close "$num" --repo "$REPO" \
+              --comment "Every checked tool is on the newest upstream release in its line, in \`${TAG}\`. [Run](${RUN_URL})"
+          fi

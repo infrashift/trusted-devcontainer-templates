@@ -16,4 +16,5 @@
 * [Signing actors](signing-actors--01a18348db6c.md) - Three GitHub environments, Build-Actor, Review-Actor and Release-Actor, hold different cosign keys, so no one job can build, grade and publish.
 * [Supply chain overview](supply-chain-overview--01a1833f2f1f.md) - How the pipeline builds, scans, signs, attests and releases the templates, and how the PDP decides.
 * [Test Features workflow](test-features-workflow--01a18348dabd.md) - The test-features.yml workflow builds the feature test templates on amd64 and arm64 for a pull request, and runs smoke and contract tests.
+* [Upstream currency check](upstream-currency-check--01a1839540cb.md) - A weekly and per-PR report of each installed tool and CI tool that is behind its newest upstream release by 7 days or more.
 

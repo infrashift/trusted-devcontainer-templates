@@ -67,6 +67,11 @@ jobs:
       - name: Verify smoke tests assert the versions the templates request
         run: ./scripts/check-test-assertions.sh
 
+      - name: Self-test the upstream currency check
+        # Offline: version ordering, the age threshold, and the registry's
+        # shape. The live comparison runs in review.yml and upstream-currency.yml.
+        run: python3 scripts/check-upstream-currency.py --self-test
+
       - name: Verify the docs verify with the keys the pipeline signs with
         # The docs named a retired key for two months after the rotation, and
         # every verification a user ran from them failed.
