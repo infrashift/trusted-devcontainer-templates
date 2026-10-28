@@ -6,7 +6,7 @@ A terminal-first Ansible and CUE environment built on the trusted Fedora 43 base
 
 - **tmux** with the `dev-session` layout (editor | shell)
 - **Neovim** with a pinned **LazyVim** configuration (core plus the `infrashift.cue` and `infrashift.ansible_lint` extras). Every plugin is at a locked commit, and the tree-sitter parsers are built at image build time.
-- **Ansible Core 2.21.3** with **Python 3.14**
+- **Ansible Core 2.21.5** with **Python 3.14**
 - **ansible-lint**, at an exact version, installed userland with `uv tool` by the `ansible-tools` feature. It has its own copy of ansible-core in its own virtualenv; the `ansible` on `PATH` is untouched.
 - **CUE**, including its language server, `cue lsp`
 - **sshd** on port 2222: public-key only, and only the `dev` user may log in

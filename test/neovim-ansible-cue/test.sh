@@ -37,7 +37,7 @@ check "cue has an lsp subcommand" bash -c 'cue help lsp > /dev/null 2>&1'
 check "ansible-lint is 26.9.0" bash -c 'ansible-lint --version | grep -q "^ansible-lint 26.9.0 "'
 check "ansible-lint lives in a uv tool venv under ~/.local" \
     bash -c 'readlink -f "$(command -v ansible-lint)" | grep -q "^$HOME/.local/share/uv/tools/ansible-lint/"'
-check "the ansible-core feature's ansible is untouched (2.21.3)" bash -c 'ansible --version | grep -q "core 2.21.3"'
+check "the ansible-core feature's ansible is untouched (2.21.5)" bash -c 'ansible --version | grep -q "core 2.21.5"'
 check "ansible-lint lints a playbook" bash -c '
     d=$(mktemp -d); cd "$d"
     printf -- "---\n- name: Example\n  hosts: localhost\n  tasks:\n    - name: Ping\n      ansible.builtin.ping:\n" > site.yml

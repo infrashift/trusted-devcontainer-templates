@@ -47,7 +47,8 @@ waivers:
     owner: "@ryancraig"
     justification: >-
       Critical findings in golang.org/x/crypto and the Go stdlib vendored into
-      /usr/bin/git-lfs, a Fedora RPM built with go1.25.1. The fixes grype cites
+      /usr/bin/git-lfs, a Fedora RPM (built with go1.25.12 as of the 2026-10-28
+      base). The fixes grype cites
       are Go TOOLCHAIN versions, so clearing them means Fedora rebuilding the
       package; we install it via dnf and cannot influence that. The base image is
       already pinned to the newest published digest, so there is no bump to take.
@@ -63,3 +64,45 @@ waivers:
     - GHSA-vgwf-h737-ff37
     - GHSA-x527-x647-q7gg
     - GO-2026-4337
+    - GO-2026-6604         # added 2026-10-28: Windows-only os.Root junction escape
+    - GO-2026-6612         # added 2026-10-28: HTTP/2 server flow control; git-lfs is a client
+
+  # --------------------------------------------------------------------------
+  # GO-2026-6604 / GO-2026-6612 in the newest upstream release of four Go tools:
+  #
+  #   grype 0.121.0, syft 1.55.0   go1.26.8   both ids
+  #   cue 0.17.1 (cuelang)         go1.26.5   GO-2026-6612
+  #   shfmt 3.14.1 (lazyvim)       go1.27.1   GO-2026-6604
+  #
+  # Same shape as EXC-2026-0001: the fix grype cites is a Go TOOLCHAIN version,
+  # so only an upstream rebuild clears it, and as of 2026-10-28 each of these is
+  # the newest release there is. Scoped to these exact paths so the same ids
+  # keep blocking in every other Go binary; the shfmt path carries its version,
+  # so bumping shfmt stops this entry matching on its own. Kept short (30 days)
+  # on purpose: the next release of each should land on go>=1.26.9 / 1.27.2 and
+  # make its location here suppress nothing.
+  # --------------------------------------------------------------------------
+
+  - id: EXC-2026-0002
+    templates: []          # grype/syft: every template; cue and shfmt: some
+    locations:
+      - /home/dev/.local/bin/grype
+      - /home/dev/.local/bin/syft
+      - /home/dev/.local/share/cue/cue
+      - /home/dev/.local/share/shfmt/3.14.1/shfmt
+    issued: "2026-10-28T00:00:00Z"
+    expires: "2026-11-27T00:00:00Z"
+    owner: "@ryancraig"
+    justification: >-
+      Go stdlib vendored into the newest grype (0.121.0), syft (1.55.0), cue
+      (0.17.1) and shfmt (3.14.1) releases; the fix is a toolchain rebuild
+      upstream that has not shipped yet. Neither finding is reachable here:
+      GO-2026-6604 is a Windows-only os.Root junction escape, and these images
+      are Linux. GO-2026-6612 is HTTP/2 SERVER connection-level flow control;
+      grype, syft and cue only act as HTTP clients (cue's LSP is stdio, and its
+      experimental local registry is plain HTTP, where Go does not serve HTTP/2
+      unless explicitly enabled). Re-evaluate as each tool ships a build on
+      go>=1.26.9 / 1.27.2: re-pin its feature and drop its location here.
+    cves:
+    - GO-2026-6604
+    - GO-2026-6612

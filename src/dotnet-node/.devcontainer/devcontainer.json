@@ -6,15 +6,14 @@
     "updateRemoteUserUID": false,
     "features": {
         "ghcr.io/infrashift/trusted-devcontainer-features/bootstrap@sha256:5f7d508100f879933cb307544aa7135eb1e238d4d2b2866443a7c27e24ec8b9d": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/dotnet@sha256:7fae093c5fb9c57642b6d1ec1f29060af30a2c5e17c641465482f59e7e7939c6": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/nodejs@sha256:e01b5563db3cb3ac70e5a7fe1d74ae5187373b0eedf9f5964c39cb2700d560eb": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/npm@sha256:b16b15af77121567a39cd8d0f89eab36f272c6a6e00550850003b71debdc7a94": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/pnpm@sha256:ebed197c5b887b8323b7de5446c6e1e4f24484dbe47fb80c7417bff9310d705a": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/dotnet@sha256:cc1ead46a6176c7caa9e93c6683313b493e7238b94e4ae090923ed2efcbe95d3": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/nodejs@sha256:975994dbd4d74fc3ea56c4f8ef9d7281b8a132f80f24542780d58b4e4e52f065": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/pnpm@sha256:88cdfd5a947c5877766935f7cf7bf65456f12bc9e378b8ff24ad5dfcc9db6ec2": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/git@sha256:b0376331c9c6053a1ace30d3b946b8ff2f3e8d8e0676eac96319bb210a6ad16b": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/git-lfs@sha256:23fbc69b4e739c0f3a0151c20f182ab115327f5aafe2c1b6207022416936396c": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/grype@sha256:08dfbb08019e32d597561a7bcb3bdcbf259be2ff6abe7c7c3f497b7143dff4c6": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/syft@sha256:64842995be43cfa8afa2ef4f5bd5f07a01d38ae1b6ca21011122f532c9e0b74c": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/grype@sha256:d3763305a4fed3389e20b67d6062b370d0216a573e560486066024c1f64a13a3": {},
+        "ghcr.io/infrashift/trusted-devcontainer-features/syft@sha256:2643a9b3cb8087cb8082c53a956ffd3cfd903992e7702ad709d77ae683b3d385": {},
         "ghcr.io/infrashift/trusted-devcontainer-features/jq@sha256:d5dabb81c9046908682e3b5ae80ac83852a1def185bcef67deb8591f3637d7b5": {},
-        "ghcr.io/infrashift/trusted-devcontainer-features/yq@sha256:95dbed71ab7359996a10abcffa33332cfacc80f6b44993a85be745adba9b39bb": {}
+        "ghcr.io/infrashift/trusted-devcontainer-features/yq@sha256:c4417457d1d3d99bffa60b1230a4989826b561ae292041df5891ebbaccd772db": {}
     }
 }
