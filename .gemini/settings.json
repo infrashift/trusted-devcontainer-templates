@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "okfw": {
+      "command": "okfw",
+      "args": ["mcp"],
+      "timeout": 30000
+    }
+  }
+}

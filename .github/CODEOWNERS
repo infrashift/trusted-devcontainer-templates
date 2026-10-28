@@ -61,3 +61,12 @@
 /docs/                              @ryancraig
 /README.md                          @ryancraig
 /TODO.md                            @ryancraig
+# Project knowledge and agent instructions.
+/.okfw/                             @ryancraig
+/CLAUDE.md                          @ryancraig
+/AGENTS.md                          @ryancraig
+/GEMINI.md                          @ryancraig
+# MCP servers and agent settings decide which tools an agent can run.
+/.mcp.json                          @ryancraig
+/.gemini/                           @ryancraig
+/.claude/                           @ryancraig
