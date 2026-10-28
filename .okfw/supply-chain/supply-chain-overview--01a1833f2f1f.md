@@ -51,6 +51,7 @@ Do not put dated measurements and waivers. Put them in `findings/`. Do not put s
 * [Policy decision point (PDP)](/supply-chain/policy-decision-point-pdp--01a18348dbcd.md)
 * [CVE gate and waivers](/supply-chain/cve-gate-and-waivers--01a18348dc3e.md)
 * [Release evidence: SBOM, attestations and provenance](/supply-chain/release-evidence-sbom-attestations-and-provenance--01a18348dca7.md)
+* [Upstream currency check](/supply-chain/upstream-currency-check--01a1839540cb.md)
 
 ## Related
 

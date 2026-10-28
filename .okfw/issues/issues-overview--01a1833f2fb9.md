@@ -40,7 +40,6 @@ Do not put multi-step work. Put it in `plans/` and link the issues.
 * [No workflow builds the templates for arm64](/issues/no-workflow-builds-the-templates-for-arm64--01a183461f0e.md) (TODO 12)
 * [The three-actor model needs GitHub settings that only a human can apply](/issues/the-three-actor-model-needs-github-settings-that-only-a-human-can-apply--01a183461f5e.md) (TODO 18)
 * [CODEOWNERS and the human gate assume a multi-person org](/issues/codeowners-and-the-human-gate-assume-a-multi-person-org--01a183461fbb.md) (TODO 19)
-* [No check asserts that pinned tool versions are current](/issues/no-check-asserts-that-pinned-tool-versions-are-current--01a183462092.md) (TODO 22)
 * [The attestations have no Rekor transparency-log entry](/issues/the-attestations-have-no-rekor-transparency-log-entry--01a183462140.md) (TODO 24)
 * [A fork PR fails the build check instead of skipping it](/issues/a-fork-pr-fails-the-build-check-instead-of-skipping-it--01a18346218e.md) (TODO 25)
 * [The review workflow has no concurrency group](/issues/the-review-workflow-has-no-concurrency-group--01a1834621dd.md) (TODO 26)
@@ -54,6 +53,7 @@ Do not put multi-step work. Put it in `plans/` and link the issues.
 
 ### Resolved
 
+* [No check asserts that pinned tool versions are current](/issues/no-check-asserts-that-pinned-tool-versions-are-current--01a183462092.md) (TODO 22)
 * [Stale tool binaries cause most CVE findings after the Fedora migration](/issues/stale-tool-binaries-cause-most-cve-findings-after-the-fedora-migration--01a183461e53.md) (TODO 11)
 * [The docs tell users to verify releases with the wrong public key](/issues/the-docs-tell-users-to-verify-releases-with-the-wrong-public-key--01a18346229a.md) (PR #34)
 * [Ansible role vars in the features used a deprecated list syntax](/issues/ansible-role-vars-in-the-features-used-a-deprecated-list-syntax--01a183461982.md) (TODO 1)

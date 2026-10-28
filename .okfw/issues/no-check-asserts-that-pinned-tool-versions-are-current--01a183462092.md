@@ -5,11 +5,11 @@ type: "issue"
 kind: "issue"
 tags:
   - "issue"
-  - "open"
   - "pinning"
   - "cve"
+  - "resolved"
 created: "2026-10-28T11:09:33-05:00"
-timestamp: "2026-10-28T11:09:33-05:00"
+timestamp: "2026-10-28T12:36:42-05:00"
 description: "Nothing measures whether pinned tools are current, so drift is found only when someone reads a CVE report."
 x:
   todo: 22
@@ -18,8 +18,8 @@ sources:
     title: "TODO.md"
 generated:
   by: "claude-code/opus-5-5"
-  at: "2026-10-28T11:09:33-05:00"
-status: "draft"
+  at: "2026-10-28T12:36:42-05:00"
+status: "deprecated"
 ---
 
 # No check asserts that pinned tool versions are current
@@ -53,9 +53,20 @@ See [After the 2026-10-28 re-pin, no template has a blocking CVE finding](/findi
 
 ## Acceptance criteria
 
-- [ ] A check compares each pinned tool version with the newest upstream release.
-- [ ] The check warns when the gap is more than a set threshold.
-- [ ] The PR summary shows the list of tools that are behind.
+- [x] A check compares each pinned tool version with the newest upstream release.
+- [x] The check warns when the gap is more than a set threshold.
+- [x] The PR summary shows the list of tools that are behind.
+
+## Resolution
+
+Resolved on 2026-10-28 in PR #36. See [Upstream currency check](/supply-chain/upstream-currency-check--01a1839540cb.md).
+
+* `scripts/check-upstream-currency.py` compares each tool in `.github/upstream-tools.json` with its upstream. The installed versions come from the template SBOMs and `tools.lock`.
+* The threshold is 7 days. A tool is behind only when a newer release in its line is at least 7 days old.
+* `review.yml` adds a "Tools behind upstream" table to the review comment on each PR that builds templates.
+* `upstream-currency.yml` runs each Monday. It keeps one GitHub issue with the label `upstream-currency`, and it adds a comment when a tool newly falls behind.
+
+The tools in the table above are in the registry, so the weekly issue reports the first new release of each.
 
 ## Related
 
