@@ -4,6 +4,7 @@
 
 ## Concepts
 
+* [After the 2026-10-28 re-pin, no template has a blocking CVE finding](after-the-2026-10-28-re-pin-no-template-has-a-blocking-cve-finding--01a18379270b.md) - All 9 templates have 0 blocking findings; every remaining fixed High or Critical is in a tool already on its newest upstream release.
 * [Findings overview](findings-overview--01a1833f2f52.md) - Measured facts and accepted risks that have a date: scan results, CVE counts and waivers.
 * [Stale tool binaries, not Fedora RPMs, caused most CVE findings after the migration](stale-tool-binaries-not-fedora-rpms-caused-most-cve-findings-after-the-migration--01a18346ee9b.md) - On 2026-08-23, 2 of 144 raw blocking findings on python were RPMs; stale tool binaries caused the rest.
 * [The remediation distinction cut blocking findings to 6 or 7 per template](the-remediation-distinction-cut-blocking-findings-to-6-or-7-per-template--01a18346ef2b.md) - On 2026-08-23 the vendored-finding rule cut blocking findings to 6 per template, 7 for dotnet-node, and the waivers from 41 CVEs to 8.

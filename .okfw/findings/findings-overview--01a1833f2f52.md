@@ -42,6 +42,7 @@ Do not put problems to fix. Put them in `issues/` and link the finding.
 
 ### Measurements
 
+* [After the 2026-10-28 re-pin, no template has a blocking CVE finding](/findings/after-the-2026-10-28-re-pin-no-template-has-a-blocking-cve-finding--01a18379270b.md)
 * [Stale tool binaries, not Fedora RPMs, caused most CVE findings after the migration](/findings/stale-tool-binaries-not-fedora-rpms-caused-most-cve-findings-after-the-migration--01a18346ee9b.md)
 * [The remediation distinction cut blocking findings to 6 or 7 per template](/findings/the-remediation-distinction-cut-blocking-findings-to-6-or-7-per-template--01a18346ef2b.md)
 

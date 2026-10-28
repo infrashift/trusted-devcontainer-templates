@@ -37,7 +37,6 @@ Do not put multi-step work. Put it in `plans/` and link the issues.
 
 ### Open
 
-* [Stale tool binaries cause most CVE findings after the Fedora migration](/issues/stale-tool-binaries-cause-most-cve-findings-after-the-fedora-migration--01a183461e53.md) (TODO 11)
 * [No workflow builds the templates for arm64](/issues/no-workflow-builds-the-templates-for-arm64--01a183461f0e.md) (TODO 12)
 * [The three-actor model needs GitHub settings that only a human can apply](/issues/the-three-actor-model-needs-github-settings-that-only-a-human-can-apply--01a183461f5e.md) (TODO 18)
 * [CODEOWNERS and the human gate assume a multi-person org](/issues/codeowners-and-the-human-gate-assume-a-multi-person-org--01a183461fbb.md) (TODO 19)
@@ -55,6 +54,7 @@ Do not put multi-step work. Put it in `plans/` and link the issues.
 
 ### Resolved
 
+* [Stale tool binaries cause most CVE findings after the Fedora migration](/issues/stale-tool-binaries-cause-most-cve-findings-after-the-fedora-migration--01a183461e53.md) (TODO 11)
 * [The docs tell users to verify releases with the wrong public key](/issues/the-docs-tell-users-to-verify-releases-with-the-wrong-public-key--01a18346229a.md) (PR #34)
 * [Ansible role vars in the features used a deprecated list syntax](/issues/ansible-role-vars-in-the-features-used-a-deprecated-list-syntax--01a183461982.md) (TODO 1)
 * [The ansible-core feature failed because the uv environment was not active](/issues/the-ansible-core-feature-failed-because-the-uv-environment-was-not-active--01a1834619c9.md) (TODO 2)
