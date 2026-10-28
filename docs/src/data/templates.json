@@ -9,7 +9,7 @@
     "platforms": ["linux/amd64", "linux/arm64"],
     "features": {
       "primary": [
-        { "id": "ansible-core", "name": "Ansible Core", "options": { "target_version": "2.21.3", "target_python_version": "3.14" } },
+        { "id": "ansible-core", "name": "Ansible Core", "options": { "target_version": "2.21.5", "target_python_version": "3.14" } },
         { "id": "python", "name": "Python", "options": { "target_version": "3.14" } },
         { "id": "cuelang", "name": "CUElang", "options": {} }
       ],
@@ -35,7 +35,6 @@
       "primary": [
         { "id": "dotnet", "name": ".NET SDK", "options": {} },
         { "id": "nodejs", "name": "Node.js", "options": {} },
-        { "id": "npm", "name": "npm", "options": {} },
         { "id": "pnpm", "name": "pnpm", "options": {} }
       ],
       "common": ["git", "git-lfs", "grype", "syft", "jq", "yq"]
@@ -105,7 +104,7 @@
     "platforms": ["linux/amd64", "linux/arm64"],
     "features": {
       "primary": [
-        { "id": "ansible-core", "name": "Ansible Core", "options": { "target_version": "2.21.3", "target_python_version": "3.14" } },
+        { "id": "ansible-core", "name": "Ansible Core", "options": { "target_version": "2.21.5", "target_python_version": "3.14" } },
         { "id": "python", "name": "Python", "options": { "target_version": "3.14" } },
         { "id": "cuelang", "name": "CUElang", "options": {} },
         { "id": "tmux", "name": "tmux", "options": {} },

@@ -58,7 +58,7 @@ The `lazyvim` feature is set to `extras: infrashift.cue,infrashift.ansible_lint`
 
 There is deliberately **no language server for YAML or Ansible**: both need Node, and this image has none. Diagnostics come from ansible-lint instead.
 
-ansible-lint comes from the `ansible-tools` feature, installed userland with `uv tool install ansible-lint==<version>`. It has its own copy of ansible-core inside its own virtualenv, so the `ansible` the trusted `ansible-core` feature installs (2.21.3, on Python 3.14) is untouched.
+ansible-lint comes from the `ansible-tools` feature, installed userland with `uv tool install ansible-lint==<version>`. It has its own copy of ansible-core inside its own virtualenv, so the `ansible` the trusted `ansible-core` feature installs (2.21.5, on Python 3.14) is untouched.
 
 ## What is pinned
 
