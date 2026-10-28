@@ -64,9 +64,9 @@ The public keys are in `.github/pdp/public-keys/`. A maintainer committed them o
 
 The organization has one member. An approval on `Review-Actor` or `Release-Actor` is a self-approval. It is a stop before a release, not separation of duties between two persons.
 
-## The fourth key file
+## The retired fourth key
 
-`.github/pdp/public-keys/cosign-release.pub` came from commit `cef9f89` (2026-02-17), before the three-actor model. No workflow or script reads it. On 2026-10-28 it did not verify `python:1.0.4`. Use `release.pub`. See the [issue about the wrong key](/issues/the-docs-tell-users-to-verify-releases-with-the-wrong-public-key--01a18346229a.md).
+`.github/pdp/public-keys/cosign-release.pub` came from commit `cef9f89` (2026-02-17), before the three-actor model. No workflow or script read it, and it verified no tagged release. It was removed on 2026-10-28. `scripts/check-doc-keys.sh` now fails the PR gate when a doc names a key that the pipeline does not sign with. See the [issue about the wrong key](/issues/the-docs-tell-users-to-verify-releases-with-the-wrong-public-key--01a18346229a.md).
 
 ## Related
 

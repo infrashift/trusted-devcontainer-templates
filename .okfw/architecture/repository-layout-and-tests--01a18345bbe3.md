@@ -89,7 +89,6 @@ To test one template, `make test-template TEMPLATE=<name>` does these steps:
 
 * It names the workflows `release.yaml`, `test-pr.yaml` and `sync-containerfile.yaml`. These files do not exist.
 * It shows five templates. There are nine.
-* It shows only `cosign-release.pub` in `public-keys/`. The release scripts use `release.pub`.
 * It does not show `features/`, `scripts/`, `tools.lock` or `.github/pdp/exceptions.yaml`.
 
 ## Related

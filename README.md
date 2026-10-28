@@ -56,11 +56,11 @@ All evidence artifacts (SBOMs, CVE reports, provenance statements, signatures, c
 
 Verify published templates using [cosign](https://github.com/sigstore/cosign).
 
-**Sovereign key verification:**
+**Release key verification:**
 
 ```sh
 cosign verify \
-  --key .github/pdp/public-keys/cosign-release.pub \
+  --key .github/pdp/public-keys/release.pub \
   ghcr.io/infrashift/trusted-devcontainer-templates/python:latest
 ```
 
@@ -77,12 +77,12 @@ cosign verify \
 
 ```sh
 cosign verify-attestation \
-  --key .github/pdp/public-keys/cosign-release.pub \
+  --key .github/pdp/public-keys/release.pub \
   --type spdxjson \
   ghcr.io/infrashift/trusted-devcontainer-templates/python:latest
 ```
 
-Replace `python` with any template ID.
+Replace `python` with any template ID. The evidence files on a GitHub Release are signed by other keys (`build.pub`, `review.pub`); see [Verification](https://infrashift.github.io/trusted-devcontainer-templates/trust/verification/).
 
 ## Project Knowledge
 

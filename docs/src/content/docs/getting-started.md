@@ -39,12 +39,12 @@ Every template provides:
 Before using a template in a regulated environment, verify its signature:
 
 ```bash
-# Download the public key
-curl -fsSL -o cosign-release.pub \
-  https://raw.githubusercontent.com/infrashift/trusted-devcontainer-templates/main/.github/pdp/public-keys/cosign-release.pub
+# Download the release public key
+curl -fsSL -o release.pub \
+  https://raw.githubusercontent.com/infrashift/trusted-devcontainer-templates/main/.github/pdp/public-keys/release.pub
 
 # Verify the template signature
-cosign verify --key cosign-release.pub \
+cosign verify --key release.pub \
   ghcr.io/infrashift/trusted-devcontainer-templates/python:latest
 ```
 

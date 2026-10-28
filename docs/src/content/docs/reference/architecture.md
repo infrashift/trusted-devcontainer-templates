@@ -32,7 +32,9 @@ See [ADR-007](/trusted-devcontainer-templates/decisions/adr-007-fedora43-base-im
 │   ├── pdp/
 │   │   ├── policies.rego              # OPA Rego policy
 │   │   └── public-keys/
-│   │       └── cosign-release.pub     # Cosign public key
+│   │       ├── build.pub              # Build-Actor: evidence files
+│   │       ├── review.pub             # Review-Actor: review verdicts
+│   │       └── release.pub            # Release-Actor: templates and attestations
 │   └── workflows/
 │       ├── release.yaml               # Tag-triggered release pipeline
 │       ├── test-pr.yaml               # PR validation pipeline
