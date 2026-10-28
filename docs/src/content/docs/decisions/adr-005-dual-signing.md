@@ -26,7 +26,9 @@ cosign sign --yes --key env://COSIGN_PRIVATE_KEY "${uri}"
 cosign sign --yes "${uri}"
 ```
 
-The sovereign public key is published at `.github/pdp/public-keys/cosign-release.pub`.
+The sovereign public key is published at `.github/pdp/public-keys/release.pub`.
+
+> **Amended 2026-10-28.** This ADR first named `cosign-release.pub`, the key of the single-key pipeline. The three-key rotation on 2026-08-23 replaced it with `release.pub` (Release-Actor), `build.pub` (Build-Actor, evidence files) and `review.pub` (Review-Actor, verdicts). Every tagged release, from v1.0.0 on, is signed with `release.pub`. `cosign-release.pub` verifies no published release and was removed.
 
 ## Consequences
 

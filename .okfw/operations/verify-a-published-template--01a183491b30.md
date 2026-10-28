@@ -31,7 +31,7 @@ Verify the signature and the three attestations of a published template with `re
 | `<template>-<file>.sig` assets, except the verdict | `build.pub` |
 | `<template>-review-verdict.json.sig` | `review.pub` |
 
-Do not use `cosign-release.pub`. On 2026-10-28 it did not verify `python:1.0.4`. The documentation site and `README.md` name it in error. See the [issue](/issues/the-docs-tell-users-to-verify-releases-with-the-wrong-public-key--01a18346229a.md).
+`cosign-release.pub` was the key of the single-key pipeline. It verifies no tagged release, and it was removed on 2026-10-28. Until then, the documentation site and `README.md` named it in error. See the [issue](/issues/the-docs-tell-users-to-verify-releases-with-the-wrong-public-key--01a18346229a.md).
 
 ## Procedure
 

@@ -45,7 +45,7 @@ Run `cosign sign --key env://COSIGN_PRIVATE_KEY` and then `cosign sign` (keyless
 ## Analysis
 
 * `scripts/publish-attest.sh` does sign two times, as the ADR says.
-* The ADR says that the public key is `.github/pdp/public-keys/cosign-release.pub`. `publish-attest.sh` uses `.github/pdp/public-keys/release.pub`. The two files hold different keys. The getting-started and verification pages of the docs also use `cosign-release.pub`.
+* Until 2026-10-28 the ADR named `cosign-release.pub` as the public key. `publish-attest.sh` uses `release.pub`, a different key. The ADR now has an amendment that names `release.pub`. See the [issue about the wrong key](/issues/the-docs-tell-users-to-verify-releases-with-the-wrong-public-key--01a18346229a.md).
 
 ## Related
 

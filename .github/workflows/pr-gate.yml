@@ -67,6 +67,11 @@ jobs:
       - name: Verify smoke tests assert the versions the templates request
         run: ./scripts/check-test-assertions.sh
 
+      - name: Verify the docs verify with the keys the pipeline signs with
+        # The docs named a retired key for two months after the rotation, and
+        # every verification a user ran from them failed.
+        run: ./scripts/check-doc-keys.sh
+
       - name: Verify Containerfile sync
         # The same invariant make check-sync enforces locally: all seven managed
         # Containerfiles byte-identical to shared/Containerfile.

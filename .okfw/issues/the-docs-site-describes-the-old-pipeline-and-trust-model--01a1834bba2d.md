@@ -34,7 +34,7 @@ Agents B and C compared the pages with the workflows and the policy on 2026-10-2
 | `pipeline/release.md` | It describes one job with `COSIGN_PRIVATE_KEY` and `contents: write`. Three environments hold three keys. Only `github-release` has `contents: write`. |
 | `trust/opa-policy.md`, `trust/index.md` | They document `cve_summary` and `violation_security_threshold`. The real entry points are `data.tdt.pdp.decision` and `repo_decision`, with the classes blocking, waived and recorded. A High finding blocks only when it has a fix and is not vendored. |
 | `trust/supply-chain.md` | It shows the old base digest `1ed67eb1…` (current: `27dbbbb9…`), one "sovereign key", 4 evidence files (there are 6 and the verdict), and `sync-containerfile.yaml`. |
-| `reference/architecture.md` | It shows the old workflows, 5 templates (there are 9) and only `cosign-release.pub`. It omits `features/`, `scripts/`, `tools.lock` and `exceptions.yaml`. |
+| `reference/architecture.md` | It shows the old workflows and 5 templates (there are 9). It omits `features/`, `scripts/`, `tools.lock` and `exceptions.yaml`. |
 | `reference/contributing.md`, `README.md` (Contributing) | They name `test-pr.yaml`. |
 | `reference/roadmap.md` | It lists digest pinning of features and matrix scanning as planned. Both are done. |
 

@@ -10,23 +10,23 @@ const ref = `ghcr.io/infrashift/trusted-devcontainer-templates/${templateId}:lat
 <div class="verify-commands">
 	<div class="verify-block">
 		<div class="code-header">
-			<span>Verify signature (sovereign key)</span>
+			<span>Verify signature (release key)</span>
 		</div>
-		<pre><code set:text={`cosign verify --key cosign-release.pub ${ref}`} /></pre>
+		<pre><code set:text={`cosign verify --key release.pub ${ref}`} /></pre>
 	</div>
 
 	<div class="verify-block">
 		<div class="code-header">
 			<span>Verify SBOM attestation</span>
 		</div>
-		<pre><code set:text={`cosign verify-attestation --key cosign-release.pub --type spdxjson ${ref}`} /></pre>
+		<pre><code set:text={`cosign verify-attestation --key release.pub --type spdxjson ${ref}`} /></pre>
 	</div>
 
 	<div class="verify-block">
 		<div class="code-header">
 			<span>Verify SLSA provenance</span>
 		</div>
-		<pre><code set:text={`cosign verify-attestation --key cosign-release.pub --type slsaprovenance1 ${ref}`} /></pre>
+		<pre><code set:text={`cosign verify-attestation --key release.pub --type slsaprovenance1 ${ref}`} /></pre>
 	</div>
 </div>
 
