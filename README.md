@@ -84,6 +84,17 @@ cosign verify-attestation \
 
 Replace `python` with any template ID.
 
+## Project Knowledge
+
+Plans, issues, findings, runbooks and design notes live in an [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) wiki in [`.okfw/`](.okfw/index.md), managed with [`okfw`](https://github.com/infrashift/okf-wiki). Start at the wiki map:
+
+```sh
+okfw search "wiki map"
+okfw search --kind issue --tag open   # open issues
+```
+
+Wiki prose follows Simplified Technical English (ASD-STE100). AI agents use the same wiki through `okfw mcp` (configured in `.mcp.json` and `.gemini/settings.json`).
+
 ## Contributing
 
 Pull requests trigger the [`test-pr.yaml`](.github/workflows/test-pr.yaml) workflow which runs functional tests for changed templates and an informational CVE scan (warnings only, does not block merging).
