@@ -93,7 +93,7 @@ okfw search "wiki map"
 okfw search --kind issue --tag open   # open issues
 ```
 
-Wiki prose follows Simplified Technical English (ASD-STE100). AI agents use the same wiki through `okfw mcp` (configured in `.mcp.json` and `.gemini/settings.json`).
+Wiki prose follows Simplified Technical English (ASD-STE100). AI agents use the same wiki through `okfw mcp` (`~/.local/bin/okfw`, configured in `.mcp.json` and `.gemini/settings.json`).
 
 ## Contributing
 
