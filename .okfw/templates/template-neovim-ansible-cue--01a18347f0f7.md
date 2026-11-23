@@ -1,13 +1,13 @@
 ---
-id: "01a18347-f0f7-73de-9a69-ddf885eef395"
+x-okfw-id: "01a18347-f0f7-73de-9a69-ddf885eef395"
 title: "Template: neovim-ansible-cue"
 type: "template"
 tags:
   - "template"
   - "neovim-ansible-cue"
   - "neovim"
-created: "2026-10-28T11:11:32-05:00"
-timestamp: "2026-10-28T11:11:32-05:00"
+x-okfw-created: "2026-10-28T11:11:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:11:32-05:00"
 description: "The neovim-ansible-cue template gives tmux, Neovim with LazyVim 1.2.3, Ansible, ansible-lint, the CUE language server and sshd."
 x:
   template: "neovim-ansible-cue"

@@ -1,5 +1,5 @@
 ---
-id: "01a18346-a5e4-7f3c-b965-8064a3a4741a"
+x-okfw-id: "01a18346-a5e4-7f3c-b965-8064a3a4741a"
 title: "ADR-004: OPA policy gate for CVEs"
 type: "decision"
 tags:
@@ -8,8 +8,8 @@ tags:
   - "pdp"
   - "opa"
   - "cve"
-created: "2026-10-28T11:10:07-05:00"
-timestamp: "2026-10-28T11:10:07-05:00"
+x-okfw-created: "2026-10-28T11:10:07-05:00"
+x-okfw-timestamp: "2026-10-28T11:10:07-05:00"
 description: "ADR-004 makes an OPA Rego policy, the PDP, the release gate that blocks Critical and High CVE findings."
 x:
   adr: 4

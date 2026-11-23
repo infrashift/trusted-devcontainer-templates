@@ -1,15 +1,15 @@
 ---
-id: "01a18346-222c-753b-9d2e-5cc905fb5e60"
+x-okfw-id: "01a18346-222c-753b-9d2e-5cc905fb5e60"
 title: "The v1.0.0 release attached 13 evidence assets instead of 70"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "release"
   - "evidence"
-created: "2026-10-28T11:09:33-05:00"
-timestamp: "2026-10-28T11:09:34-05:00"
+x-okfw-created: "2026-10-28T11:09:33-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:34-05:00"
 description: "Every template produces files with the same names, so v1.0.0 attached one file for each name; PR #9 adds the template prefix."
 x:
   todo: 27

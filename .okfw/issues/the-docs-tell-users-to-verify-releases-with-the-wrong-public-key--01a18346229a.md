@@ -1,15 +1,15 @@
 ---
-id: "01a18346-229a-793c-9139-129cac49a42c"
+x-okfw-id: "01a18346-229a-793c-9139-129cac49a42c"
 title: "The docs tell users to verify releases with the wrong public key"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "signing"
   - "docs"
   - "resolved"
-created: "2026-10-28T11:09:34-05:00"
-timestamp: "2026-10-28T11:28:40-05:00"
+x-okfw-created: "2026-10-28T11:09:34-05:00"
+x-okfw-timestamp: "2026-10-28T11:28:40-05:00"
 description: "README and the docs site cite cosign-release.pub, but the Release-Actor signs with the key whose public half is release.pub."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/tree/main/.github/pdp/public-keys"
 sources:

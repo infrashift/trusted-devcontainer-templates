@@ -1,12 +1,12 @@
 ---
-id: "01a1833f-2fb9-7ddd-980f-c38e5e0c7ae7"
+x-okfw-id: "01a1833f-2fb9-7ddd-980f-c38e5e0c7ae7"
 title: "Issues overview"
 type: "overview"
 tags:
   - "hub"
   - "issue"
-created: "2026-10-28T11:01:58-05:00"
-timestamp: "2026-10-28T11:01:58-05:00"
+x-okfw-created: "2026-10-28T11:01:58-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:58-05:00"
 description: "All problems and tasks for this project, open and resolved. This bundle replaces TODO.md."
 generated:
   by: "claude-code/opus-5-5"

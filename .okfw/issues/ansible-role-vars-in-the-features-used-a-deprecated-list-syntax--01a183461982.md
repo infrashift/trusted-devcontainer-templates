@@ -1,15 +1,15 @@
 ---
-id: "01a18346-1982-7e66-953f-ab0d118d2144"
+x-okfw-id: "01a18346-1982-7e66-953f-ab0d118d2144"
 title: "Ansible role vars in the features used a deprecated list syntax"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "features-repo"
   - "ansible"
-created: "2026-10-28T11:09:31-05:00"
-timestamp: "2026-10-28T11:09:31-05:00"
+x-okfw-created: "2026-10-28T11:09:31-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:31-05:00"
 description: "The features repo Ansible roles declared vars as a list; commit 1e0157f changed all 20 files to dict syntax in v1.0.1."
 x:
   todo: 1

@@ -1,12 +1,12 @@
 ---
-id: "01a18347-efb8-7d90-91f6-13c9c17cef7e"
+x-okfw-id: "01a18347-efb8-7d90-91f6-13c9c17cef7e"
 title: "Template: go-cue"
 type: "template"
 tags:
   - "template"
   - "go-cue"
-created: "2026-10-28T11:11:32-05:00"
-timestamp: "2026-10-28T11:11:32-05:00"
+x-okfw-created: "2026-10-28T11:11:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:11:32-05:00"
 description: "The go-cue template gives Go 1.27 and CUE for CLI and TUI development, with the common scanning and data tools."
 x:
   template: "go-cue"

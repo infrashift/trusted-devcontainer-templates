@@ -1,12 +1,12 @@
 ---
-id: "01a1833f-2e4d-70f2-936f-0b4568a50ca8"
+x-okfw-id: "01a1833f-2e4d-70f2-936f-0b4568a50ca8"
 title: "Guides overview"
 type: "overview"
 tags:
   - "hub"
   - "guide"
-created: "2026-10-28T11:01:58-05:00"
-timestamp: "2026-10-28T11:01:58-05:00"
+x-okfw-created: "2026-10-28T11:01:58-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:58-05:00"
 description: "The rules for this wiki and for how to write in it."
 generated:
   by: "claude-code/opus-5-5"

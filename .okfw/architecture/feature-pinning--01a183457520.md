@@ -1,5 +1,5 @@
 ---
-id: "01a18345-7520-7bc1-9386-6cde17baf7a8"
+x-okfw-id: "01a18345-7520-7bc1-9386-6cde17baf7a8"
 title: "Feature pinning"
 type: "component"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "pinning"
   - "features"
   - "supply-chain"
-created: "2026-10-28T11:08:49-05:00"
-timestamp: "2026-10-28T11:08:49-05:00"
+x-okfw-created: "2026-10-28T11:08:49-05:00"
+x-okfw-timestamp: "2026-10-28T11:08:49-05:00"
 description: "Templates reference every feature by sha256 digest; scripts/pin-features.sh sets the pins and checks that all dependsOn name the pinned bootstrap."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/scripts/pin-features.sh"
 sources:

@@ -1,15 +1,15 @@
 ---
-id: "01a18346-1ca9-7008-bffe-fcb6e86f4029"
+x-okfw-id: "01a18346-1ca9-7008-bffe-fcb6e86f4029"
 title: "Local tests used cached containers after a feature update"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "testing"
   - "makefile"
-created: "2026-10-28T11:09:32-05:00"
-timestamp: "2026-10-28T11:09:32-05:00"
+x-okfw-created: "2026-10-28T11:09:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:32-05:00"
 description: "Local test runs used old containers after a feature update; make clean-containers removes them."
 x:
   todo: 7

@@ -1,12 +1,12 @@
 ---
-id: "01a1833f-2f85-7d42-b2a3-72ebc662b8ce"
+x-okfw-id: "01a1833f-2f85-7d42-b2a3-72ebc662b8ce"
 title: "Operations overview"
 type: "overview"
 tags:
   - "hub"
   - "runbook"
-created: "2026-10-28T11:01:58-05:00"
-timestamp: "2026-10-28T11:01:58-05:00"
+x-okfw-created: "2026-10-28T11:01:58-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:58-05:00"
 description: "Runbooks: the steps to set up, test, re-pin, release and verify the templates."
 generated:
   by: "claude-code/opus-5-5"

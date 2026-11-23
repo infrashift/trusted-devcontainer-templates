@@ -1,12 +1,12 @@
 ---
-id: "01a18349-1a78-7625-a1f3-a54d45378d2f"
+x-okfw-id: "01a18349-1a78-7625-a1f3-a54d45378d2f"
 title: "Cut a release of the templates"
 type: "runbook"
 tags:
   - "runbook"
   - "release"
-created: "2026-10-28T11:12:48-05:00"
-timestamp: "2026-10-28T11:12:48-05:00"
+x-okfw-created: "2026-10-28T11:12:48-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:48-05:00"
 description: "Set one version in every template, merge, and push a matching vX.Y.Z tag; approve the Review-Actor and Release-Actor deployments."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/.github/workflows/release.yml"
 generated:

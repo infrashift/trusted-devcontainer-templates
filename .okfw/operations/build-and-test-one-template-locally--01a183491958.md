@@ -1,13 +1,13 @@
 ---
-id: "01a18349-1958-764c-9eae-4faa64aed336"
+x-okfw-id: "01a18349-1958-764c-9eae-4faa64aed336"
 title: "Build and test one template locally"
 type: "runbook"
 tags:
   - "runbook"
   - "test"
   - "make"
-created: "2026-10-28T11:12:48-05:00"
-timestamp: "2026-10-28T11:12:48-05:00"
+x-okfw-created: "2026-10-28T11:12:48-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:48-05:00"
 description: "Run make test-template TEMPLATE=<name> to build one template with the devcontainer CLI and run its smoke test from test/<name>/test.sh."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/Makefile"
 generated:

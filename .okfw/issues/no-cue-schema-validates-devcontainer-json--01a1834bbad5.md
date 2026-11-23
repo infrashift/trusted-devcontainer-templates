@@ -1,15 +1,15 @@
 ---
-id: "01a1834b-bad5-79bb-abf7-34e044408007"
+x-okfw-id: "01a1834b-bad5-79bb-abf7-34e044408007"
 title: "No CUE schema validates devcontainer.json"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "open"
   - "cue"
   - "drift"
-created: "2026-10-28T11:15:40-05:00"
-timestamp: "2026-10-28T11:15:40-05:00"
+x-okfw-created: "2026-10-28T11:15:40-05:00"
+x-okfw-timestamp: "2026-10-28T11:15:40-05:00"
 description: "CLAUDE.md requires CUE validation of devcontainer.json, but the repository has no CUE file and no check."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/CLAUDE.md"
 generated:

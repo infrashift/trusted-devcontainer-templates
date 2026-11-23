@@ -1,16 +1,16 @@
 ---
-id: "01a1834b-bb8b-7460-b61e-6c5b62dec992"
+x-okfw-id: "01a1834b-bb8b-7460-b61e-6c5b62dec992"
 title: "Template NOTES and a lock file give old versions"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "open"
   - "pinning"
   - "python"
   - "ansible-cue"
-created: "2026-10-28T11:15:40-05:00"
-timestamp: "2026-10-28T11:15:40-05:00"
+x-okfw-created: "2026-10-28T11:15:40-05:00"
+x-okfw-timestamp: "2026-10-28T11:15:40-05:00"
 description: "Two NOTES.md files and the python devcontainer-lock.json give versions older than the pins, and no script updates them."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/src/python/.devcontainer/devcontainer-lock.json"
 generated:

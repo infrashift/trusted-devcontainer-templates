@@ -1,14 +1,14 @@
 ---
-id: "01a1834b-bbec-727b-8e4b-6ea2f48183a9"
+x-okfw-id: "01a1834b-bbec-727b-8e4b-6ea2f48183a9"
 title: "The go-cue template does not supply gopls"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "open"
   - "go-cue"
-created: "2026-10-28T11:15:41-05:00"
-timestamp: "2026-10-28T11:15:41-05:00"
+x-okfw-created: "2026-10-28T11:15:41-05:00"
+x-okfw-timestamp: "2026-10-28T11:15:41-05:00"
 description: "CLAUDE.md requires gopls and the CUE language server in go-cue, but only neovim-go installs gopls."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/src/go-cue/.devcontainer/devcontainer.json"
 generated:

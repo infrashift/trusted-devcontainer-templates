@@ -1,13 +1,13 @@
 ---
-id: "01a18349-1b8e-7ec9-8351-6d74b04cf6d8"
+x-okfw-id: "01a18349-1b8e-7ec9-8351-6d74b04cf6d8"
 title: "Adopt OKF Wiki for project knowledge"
 type: "plan"
 tags:
   - "plan"
   - "active"
   - "okfw"
-created: "2026-10-28T11:12:48-05:00"
-timestamp: "2026-10-28T11:12:48-05:00"
+x-okfw-created: "2026-10-28T11:12:48-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:48-05:00"
 description: "Move the project knowledge from TODO.md, docs and agent memory into one OKF wiki in .okfw/, written in Simplified Technical English."
 sources:
   - resource: "https://github.com/infrashift/okf-wiki"

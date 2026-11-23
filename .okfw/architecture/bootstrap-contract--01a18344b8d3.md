@@ -1,5 +1,5 @@
 ---
-id: "01a18344-b8d3-70f5-9b41-91b217273486"
+x-okfw-id: "01a18344-b8d3-70f5-9b41-91b217273486"
 title: "Bootstrap contract"
 type: "component"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "bootstrap"
   - "ansible"
   - "features"
-created: "2026-10-28T11:08:01-05:00"
-timestamp: "2026-10-28T11:08:01-05:00"
+x-okfw-created: "2026-10-28T11:08:01-05:00"
+x-okfw-timestamp: "2026-10-28T11:08:01-05:00"
 description: "Every feature installs through /opt/bootstrap/run-feature.sh, which applies one idempotent Ansible role with pinned uv, Python and ansible-core."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/docs/src/content/docs/decisions/adr-008-ansible-bootstrap-contract.md"
 sources:

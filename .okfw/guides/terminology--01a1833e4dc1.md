@@ -1,13 +1,13 @@
 ---
-id: "01a1833e-4dc1-765f-a442-ef478098bbfb"
+x-okfw-id: "01a1833e-4dc1-765f-a442-ef478098bbfb"
 title: "Terminology"
 type: "guide"
 tags:
   - "guide"
   - "ste"
   - "terminology"
-created: "2026-10-28T11:01:00-05:00"
-timestamp: "2026-10-28T11:01:00-05:00"
+x-okfw-created: "2026-10-28T11:01:00-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:00-05:00"
 description: "The controlled words of this project: one word for one thing, and one meaning for each word."
 generated:
   by: "claude-code/opus-5-5"

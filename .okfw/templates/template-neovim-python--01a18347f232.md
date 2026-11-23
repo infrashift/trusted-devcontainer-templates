@@ -1,13 +1,13 @@
 ---
-id: "01a18347-f232-7acd-97a0-407acb78ce3c"
+x-okfw-id: "01a18347-f232-7acd-97a0-407acb78ce3c"
 title: "Template: neovim-python"
 type: "template"
 tags:
   - "template"
   - "neovim-python"
   - "neovim"
-created: "2026-10-28T11:11:32-05:00"
-timestamp: "2026-10-28T11:11:32-05:00"
+x-okfw-created: "2026-10-28T11:11:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:11:32-05:00"
 description: "The neovim-python template gives tmux, Neovim with LazyVim 1.2.3 and its Python extra, pyrefly, ruff and sshd."
 x:
   template: "neovim-python"

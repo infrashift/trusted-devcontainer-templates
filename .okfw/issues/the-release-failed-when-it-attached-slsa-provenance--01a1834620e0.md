@@ -1,15 +1,15 @@
 ---
-id: "01a18346-20e0-792c-b001-756dc3061e19"
+x-okfw-id: "01a18346-20e0-792c-b001-756dc3061e19"
 title: "The release failed when it attached SLSA provenance"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "signing"
   - "release"
-created: "2026-10-28T11:09:33-05:00"
-timestamp: "2026-10-28T11:09:33-05:00"
+x-okfw-created: "2026-10-28T11:09:33-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:33-05:00"
 description: "publish-attest.sh gave cosign a full in-toto Statement as the predicate; PR #8 passes the predicate body and reads the registry back."
 x:
   todo: 23

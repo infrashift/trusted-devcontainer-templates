@@ -1,13 +1,13 @@
 ---
-id: "01a18349-1902-7971-975b-c3b268427998"
+x-okfw-id: "01a18349-1902-7971-975b-c3b268427998"
 title: "Set up the GitHub environments and signing keys"
 type: "runbook"
 tags:
   - "runbook"
   - "setup"
   - "signing"
-created: "2026-10-28T11:12:48-05:00"
-timestamp: "2026-10-28T11:12:48-05:00"
+x-okfw-created: "2026-10-28T11:12:48-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:48-05:00"
 description: "Make the three cosign keypairs, the three GitHub environments, their secrets, reviewers and ref policies, and the main ruleset, as SETUP-ENVIRONMENTS.md tells."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/SETUP-ENVIRONMENTS.md"
 generated:

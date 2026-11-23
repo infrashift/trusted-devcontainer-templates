@@ -1,5 +1,5 @@
 ---
-id: "01a18348-dabd-7c27-864e-b9dc94bd86d2"
+x-okfw-id: "01a18348-dabd-7c27-864e-b9dc94bd86d2"
 title: "Test Features workflow"
 type: "component"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "workflow"
   - "features"
   - "test"
-created: "2026-10-28T11:12:32-05:00"
-timestamp: "2026-10-28T11:12:32-05:00"
+x-okfw-created: "2026-10-28T11:12:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:32-05:00"
 description: "The test-features.yml workflow builds the feature test templates on amd64 and arm64 for a pull request, and runs smoke and contract tests."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/.github/workflows/test-features.yml"
 generated:

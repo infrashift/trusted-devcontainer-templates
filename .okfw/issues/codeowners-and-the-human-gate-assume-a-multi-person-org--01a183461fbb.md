@@ -1,15 +1,15 @@
 ---
-id: "01a18346-1fbb-75e8-8c22-733744ef8cc8"
+x-okfw-id: "01a18346-1fbb-75e8-8c22-733744ef8cc8"
 title: "CODEOWNERS and the human gate assume a multi-person org"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "open"
   - "github-settings"
   - "governance"
-created: "2026-10-28T11:09:33-05:00"
-timestamp: "2026-10-28T11:09:33-05:00"
+x-okfw-created: "2026-10-28T11:09:33-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:33-05:00"
 description: "The org has one member, so required approvals and code owner review block every merge; approvals stay at 0 until a second maintainer joins."
 x:
   todo: 19

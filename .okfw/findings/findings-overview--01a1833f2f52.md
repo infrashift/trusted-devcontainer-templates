@@ -1,12 +1,12 @@
 ---
-id: "01a1833f-2f52-76ca-a8df-4bad5f40d842"
+x-okfw-id: "01a1833f-2f52-76ca-a8df-4bad5f40d842"
 title: "Findings overview"
 type: "overview"
 tags:
   - "hub"
   - "finding"
-created: "2026-10-28T11:01:58-05:00"
-timestamp: "2026-10-28T11:01:58-05:00"
+x-okfw-created: "2026-10-28T11:01:58-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:58-05:00"
 description: "Measured facts and accepted risks that have a date: scan results, CVE counts and waivers."
 generated:
   by: "claude-code/opus-5-5"

@@ -1,13 +1,13 @@
 ---
-id: "01a18344-7e12-7796-bfba-73a18f52168d"
+x-okfw-id: "01a18344-7e12-7796-bfba-73a18f52168d"
 title: "Shared Containerfile"
 type: "component"
 tags:
   - "architecture"
   - "containerfile"
   - "drift"
-created: "2026-10-28T11:07:46-05:00"
-timestamp: "2026-10-28T11:07:46-05:00"
+x-okfw-created: "2026-10-28T11:07:46-05:00"
+x-okfw-timestamp: "2026-10-28T11:07:46-05:00"
 description: "shared/Containerfile is the one build file for all templates; make check-sync fails when one of its ten managed copies is different."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/shared/Containerfile"
 sources:

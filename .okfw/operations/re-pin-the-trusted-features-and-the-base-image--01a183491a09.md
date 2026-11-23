@@ -1,5 +1,5 @@
 ---
-id: "01a18349-1a09-7a0a-872b-9d062a1ec3e8"
+x-okfw-id: "01a18349-1a09-7a0a-872b-9d062a1ec3e8"
 title: "Re-pin the trusted features and the base image"
 type: "runbook"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "pin"
   - "features"
   - "base-image"
-created: "2026-10-28T11:12:48-05:00"
-timestamp: "2026-10-28T11:12:48-05:00"
+x-okfw-created: "2026-10-28T11:12:48-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:48-05:00"
 description: "Run make pin-features to pin each feature to its newest digest; edit the FROM digest in shared/Containerfile and sync it to move the base image."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/scripts/pin-features.sh"
 sources:

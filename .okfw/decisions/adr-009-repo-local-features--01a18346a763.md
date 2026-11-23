@@ -1,5 +1,5 @@
 ---
-id: "01a18346-a763-7a93-9b58-17795ecc3d12"
+x-okfw-id: "01a18346-a763-7a93-9b58-17795ecc3d12"
 title: "ADR-009: Repo-local features"
 type: "decision"
 tags:
@@ -8,8 +8,8 @@ tags:
   - "features"
   - "repo-local-features"
   - "neovim"
-created: "2026-10-28T11:10:08-05:00"
-timestamp: "2026-10-28T11:10:08-05:00"
+x-okfw-created: "2026-10-28T11:10:08-05:00"
+x-okfw-timestamp: "2026-10-28T11:10:08-05:00"
 description: "ADR-009 builds, tests and publishes the editor features from features/ in this repository, under the trusted feature contract."
 x:
   adr: 9

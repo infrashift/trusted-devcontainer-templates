@@ -1,5 +1,5 @@
 ---
-id: "01a18346-edbb-7bac-aa46-7695552e60bb"
+x-okfw-id: "01a18346-edbb-7bac-aa46-7695552e60bb"
 title: "Waiver EXC-2026-0001 accepts Critical Go findings in git-lfs until 2026-11-22"
 type: "finding"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "waiver"
   - "cve"
   - "git-lfs"
-created: "2026-10-28T11:10:26-05:00"
-timestamp: "2026-10-28T11:10:26-05:00"
+x-okfw-created: "2026-10-28T11:10:26-05:00"
+x-okfw-timestamp: "2026-10-28T11:10:26-05:00"
 description: "EXC-2026-0001 waives 10 Critical Go advisories inside /usr/bin/git-lfs in every template until Fedora rebuilds it; it expires 2026-11-22."
 x:
   waiver: "EXC-2026-0001"

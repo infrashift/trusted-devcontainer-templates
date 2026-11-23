@@ -1,15 +1,15 @@
 ---
-id: "01a18346-1df0-79a7-a019-6dc4984fb374"
+x-okfw-id: "01a18346-1df0-79a7-a019-6dc4984fb374"
 title: "The templates referenced trusted features by tag, not by digest"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "pinning"
   - "features"
-created: "2026-10-28T11:09:32-05:00"
-timestamp: "2026-10-28T11:09:32-05:00"
+x-okfw-created: "2026-10-28T11:09:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:32-05:00"
 description: "Feature references in the templates had no digest; commit df81891 pinned all 47 references and added a check."
 x:
   todo: 9

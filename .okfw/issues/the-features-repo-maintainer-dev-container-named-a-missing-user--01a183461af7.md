@@ -1,15 +1,15 @@
 ---
-id: "01a18346-1af7-7018-a554-05e2e1865f55"
+x-okfw-id: "01a18346-1af7-7018-a554-05e2e1865f55"
 title: "The features repo maintainer dev container named a missing user"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "features-repo"
   - "dev-user"
-created: "2026-10-28T11:09:32-05:00"
-timestamp: "2026-10-28T11:09:32-05:00"
+x-okfw-created: "2026-10-28T11:09:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:32-05:00"
 description: "The features repo maintainer dev container did not run as dev and sent 250 MB of build context; both are fixed."
 x:
   todo: 14

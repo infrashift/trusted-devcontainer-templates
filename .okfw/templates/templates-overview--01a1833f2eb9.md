@@ -1,12 +1,12 @@
 ---
-id: "01a1833f-2eb9-7491-8939-640a81d0d4f7"
+x-okfw-id: "01a1833f-2eb9-7491-8939-640a81d0d4f7"
 title: "Templates overview"
 type: "overview"
 tags:
   - "hub"
   - "template"
-created: "2026-10-28T11:01:58-05:00"
-timestamp: "2026-10-28T11:01:58-05:00"
+x-okfw-created: "2026-10-28T11:01:58-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:58-05:00"
 description: "One pointer concept for each published template, with its runtimes, features and test script."
 generated:
   by: "claude-code/opus-5-5"

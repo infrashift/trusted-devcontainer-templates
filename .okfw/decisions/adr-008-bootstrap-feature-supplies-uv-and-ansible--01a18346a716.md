@@ -1,5 +1,5 @@
 ---
-id: "01a18346-a716-7149-a3b4-8dbb5a4668c2"
+x-okfw-id: "01a18346-a716-7149-a3b4-8dbb5a4668c2"
 title: "ADR-008: Bootstrap feature supplies uv and Ansible"
 type: "decision"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "decision"
   - "bootstrap"
   - "ansible"
-created: "2026-10-28T11:10:08-05:00"
-timestamp: "2026-10-28T11:10:08-05:00"
+x-okfw-created: "2026-10-28T11:10:08-05:00"
+x-okfw-timestamp: "2026-10-28T11:10:08-05:00"
 description: "ADR-008 removes uv from the Containerfile; the bootstrap feature supplies pinned uv, Python, ansible-core and run-feature.sh."
 x:
   adr: 8

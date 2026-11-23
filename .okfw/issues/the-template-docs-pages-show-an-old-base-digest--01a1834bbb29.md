@@ -1,15 +1,15 @@
 ---
-id: "01a1834b-bb29-7d33-8b2a-7f04b62cda1e"
+x-okfw-id: "01a1834b-bb29-7d33-8b2a-7f04b62cda1e"
 title: "The template docs pages show an old base digest"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "open"
   - "docs"
   - "base-image"
-created: "2026-10-28T11:15:40-05:00"
-timestamp: "2026-10-28T11:15:40-05:00"
+x-okfw-created: "2026-10-28T11:15:40-05:00"
+x-okfw-timestamp: "2026-10-28T11:15:40-05:00"
 description: "All 9 template pages show the old UBI 9 digest prefix and say that uv is pre-installed."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/docs/src/content/docs/templates/index.mdx"
 generated:

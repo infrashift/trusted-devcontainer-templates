@@ -1,12 +1,12 @@
 ---
-id: "01a1833f-2fed-7883-80ec-787459f2857c"
+x-okfw-id: "01a1833f-2fed-7883-80ec-787459f2857c"
 title: "Plans overview"
 type: "overview"
 tags:
   - "hub"
   - "plan"
-created: "2026-10-28T11:01:58-05:00"
-timestamp: "2026-10-28T11:01:58-05:00"
+x-okfw-created: "2026-10-28T11:01:58-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:58-05:00"
 description: "Plans for multi-step work, with their state and the issues that they close."
 generated:
   by: "claude-code/opus-5-5"

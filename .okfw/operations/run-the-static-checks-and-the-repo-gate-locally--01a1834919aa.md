@@ -1,13 +1,13 @@
 ---
-id: "01a18349-19aa-79f7-b7e4-e10fdeb23dde"
+x-okfw-id: "01a18349-19aa-79f7-b7e4-e10fdeb23dde"
 title: "Run the static checks and the repo gate locally"
 type: "runbook"
 tags:
   - "runbook"
   - "pdp"
   - "make"
-created: "2026-10-28T11:12:48-05:00"
-timestamp: "2026-10-28T11:12:48-05:00"
+x-okfw-created: "2026-10-28T11:12:48-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:48-05:00"
 description: "Run make check before a push. It runs the static checks of the repo-gate CI job, including the PDP, without container builds."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/scripts/repo-gate.sh"
 sources:

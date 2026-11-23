@@ -1,15 +1,15 @@
 ---
-id: "01a18346-1f5e-772c-948c-6a6c86fd4773"
+x-okfw-id: "01a18346-1f5e-772c-948c-6a6c86fd4773"
 title: "The three-actor model needs GitHub settings that only a human can apply"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "open"
   - "signing"
   - "github-settings"
-created: "2026-10-28T11:09:33-05:00"
-timestamp: "2026-10-28T11:09:33-05:00"
+x-okfw-created: "2026-10-28T11:09:33-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:33-05:00"
 description: "The signing actors need keys, environments and a ruleset set by a human; as of 2026-10-28 only a key-storage check remains."
 x:
   todo: 18

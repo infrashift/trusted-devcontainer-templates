@@ -1,15 +1,15 @@
 ---
-id: "01a18346-1c03-749a-b218-ae8566e151ff"
+x-okfw-id: "01a18346-1c03-749a-b218-ae8566e151ff"
 title: "The Makefile test path was outside the dev container mount"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "testing"
   - "makefile"
-created: "2026-10-28T11:09:32-05:00"
-timestamp: "2026-10-28T11:09:32-05:00"
+x-okfw-created: "2026-10-28T11:09:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:32-05:00"
 description: "A template dev container mounts only its folder, so the test scripts were not reachable; the build now bind-mounts test to /tmp/tdt-test."
 x:
   todo: 5

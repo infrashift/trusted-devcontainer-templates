@@ -1,5 +1,5 @@
 ---
-id: "01a18346-a677-7a41-8f2d-6bc26bf191ae"
+x-okfw-id: "01a18346-a677-7a41-8f2d-6bc26bf191ae"
 title: "ADR-006: Trusted features only"
 type: "decision"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "decision"
   - "features"
   - "supply-chain"
-created: "2026-10-28T11:10:07-05:00"
-timestamp: "2026-10-28T11:10:07-05:00"
+x-okfw-created: "2026-10-28T11:10:07-05:00"
+x-okfw-timestamp: "2026-10-28T11:10:07-05:00"
 description: "ADR-006 permits only features that InfraShift builds, tests, signs and publishes, from two registry prefixes after its amendments."
 x:
   adr: 6

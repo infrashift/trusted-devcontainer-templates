@@ -1,5 +1,5 @@
 ---
-id: "01a18346-a6c7-78c0-99b9-b0ffc3c9fbc8"
+x-okfw-id: "01a18346-a6c7-78c0-99b9-b0ffc3c9fbc8"
 title: "ADR-007: Fedora 43 minimal base image"
 type: "decision"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "decision"
   - "base-image"
   - "fedora"
-created: "2026-10-28T11:10:07-05:00"
-timestamp: "2026-10-28T11:10:07-05:00"
+x-okfw-created: "2026-10-28T11:10:07-05:00"
+x-okfw-timestamp: "2026-10-28T11:10:07-05:00"
 description: "ADR-007 moves all templates from UBI 9 to the digest-pinned trusted fedora43-minimal image, and supersedes ADR-001."
 x:
   adr: 7

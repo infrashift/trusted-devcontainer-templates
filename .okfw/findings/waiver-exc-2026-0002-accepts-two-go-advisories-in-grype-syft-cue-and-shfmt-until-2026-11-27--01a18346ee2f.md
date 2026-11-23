@@ -1,13 +1,13 @@
 ---
-id: "01a18346-ee2f-70a7-a50d-203873d4ea1a"
+x-okfw-id: "01a18346-ee2f-70a7-a50d-203873d4ea1a"
 title: "Waiver EXC-2026-0002 accepts two Go advisories in grype, syft, cue and shfmt until 2026-11-27"
 type: "finding"
 tags:
   - "finding"
   - "waiver"
   - "cve"
-created: "2026-10-28T11:10:26-05:00"
-timestamp: "2026-10-28T11:10:26-05:00"
+x-okfw-created: "2026-10-28T11:10:26-05:00"
+x-okfw-timestamp: "2026-10-28T11:10:26-05:00"
 description: "EXC-2026-0002 waives GO-2026-6604 and GO-2026-6612 in four Go tools until upstream rebuilds them; it expires 2026-11-27."
 x:
   waiver: "EXC-2026-0002"

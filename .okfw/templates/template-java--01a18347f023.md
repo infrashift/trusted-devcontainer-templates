@@ -1,12 +1,12 @@
 ---
-id: "01a18347-f023-7178-9a04-1de6eb0411c6"
+x-okfw-id: "01a18347-f023-7178-9a04-1de6eb0411c6"
 title: "Template: java"
 type: "template"
 tags:
   - "template"
   - "java"
-created: "2026-10-28T11:11:32-05:00"
-timestamp: "2026-10-28T11:11:32-05:00"
+x-okfw-created: "2026-10-28T11:11:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:11:32-05:00"
 description: "The java template gives OpenJDK 21, Maven and Gradle, with the common scanning and data tools."
 x:
   template: "java"

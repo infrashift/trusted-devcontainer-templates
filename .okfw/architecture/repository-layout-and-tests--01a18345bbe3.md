@@ -1,5 +1,5 @@
 ---
-id: "01a18345-bbe3-7ed8-8641-5cad8806efd0"
+x-okfw-id: "01a18345-bbe3-7ed8-8641-5cad8806efd0"
 title: "Repository layout and tests"
 type: "component"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "layout"
   - "tests"
   - "workflows"
-created: "2026-10-28T11:09:07-05:00"
-timestamp: "2026-10-28T11:09:07-05:00"
+x-okfw-created: "2026-10-28T11:09:07-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:07-05:00"
 description: "A map of the repository: src/ templates, test/ smoke tests and test-utils, the seven workflows, and the Makefile check and test targets."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/Makefile"
 sources:
