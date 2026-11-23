@@ -1,15 +1,15 @@
 ---
-id: "01a18346-19c9-774e-b5fc-89c09bdebd0a"
+x-okfw-id: "01a18346-19c9-774e-b5fc-89c09bdebd0a"
 title: "The ansible-core feature failed because the uv environment was not active"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "features-repo"
   - "ansible"
-created: "2026-10-28T11:09:31-05:00"
-timestamp: "2026-10-28T11:09:31-05:00"
+x-okfw-created: "2026-10-28T11:09:31-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:31-05:00"
 description: "The ansible-core feature failed its Python check without an active uv environment; v1.0.1 made the check non-fatal."
 x:
   todo: 2

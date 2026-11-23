@@ -1,13 +1,13 @@
 ---
-id: "01a18348-dbcd-7ab1-b323-18c4d4bbfae6"
+x-okfw-id: "01a18348-dbcd-7ab1-b323-18c4d4bbfae6"
 title: "Policy decision point (PDP)"
 type: "component"
 tags:
   - "supply-chain"
   - "pdp"
   - "opa"
-created: "2026-10-28T11:12:32-05:00"
-timestamp: "2026-10-28T11:12:32-05:00"
+x-okfw-created: "2026-10-28T11:12:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:32-05:00"
 description: "The PDP is one OPA policy in .github/pdp/policies.rego with two entry points: repo_decision for the repository and decision for one template."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/.github/pdp/policies.rego"
 sources:

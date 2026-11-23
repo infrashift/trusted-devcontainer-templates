@@ -1,15 +1,15 @@
 ---
-id: "01a1834b-ba2d-7129-9035-83c5e0569b16"
+x-okfw-id: "01a1834b-ba2d-7129-9035-83c5e0569b16"
 title: "The docs site describes the old pipeline and trust model"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "open"
   - "docs"
   - "ci"
-created: "2026-10-28T11:15:40-05:00"
-timestamp: "2026-10-28T11:15:40-05:00"
+x-okfw-created: "2026-10-28T11:15:40-05:00"
+x-okfw-timestamp: "2026-10-28T11:15:40-05:00"
 description: "Pipeline, trust, architecture and roadmap pages name workflows, policy inputs and keys that the code no longer has."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/docs/src/content/docs/pipeline/index.md"
 generated:

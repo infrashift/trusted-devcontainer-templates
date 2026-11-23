@@ -1,14 +1,14 @@
 ---
-id: "01a18346-21dd-7523-8bc8-f723263ffb07"
+x-okfw-id: "01a18346-21dd-7523-8bc8-f723263ffb07"
 title: "The review workflow has no concurrency group"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "open"
   - "ci"
-created: "2026-10-28T11:09:33-05:00"
-timestamp: "2026-10-28T11:09:33-05:00"
+x-okfw-created: "2026-10-28T11:09:33-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:33-05:00"
 description: "review.yml has no concurrency group, so two reviews can race and leave an old review/cve-policy verdict visible."
 x:
   todo: 26

@@ -1,15 +1,15 @@
 ---
-id: "01a18346-1c57-7544-a499-2185f1098368"
+x-okfw-id: "01a18346-1c57-7544-a499-2185f1098368"
 title: "The shared Containerfile installed sudo as a workaround"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "containerfile"
   - "privileges"
-created: "2026-10-28T11:09:32-05:00"
-timestamp: "2026-10-28T11:09:32-05:00"
+x-okfw-created: "2026-10-28T11:09:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:32-05:00"
 description: "The shared Containerfile installed sudo only for feature privilege escalation; commit b4ae498 removed it on 2026-02-18."
 x:
   todo: 6

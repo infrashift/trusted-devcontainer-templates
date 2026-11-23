@@ -1,5 +1,5 @@
 ---
-id: "01a18348-dca7-7d82-bb8b-360f868bd155"
+x-okfw-id: "01a18348-dca7-7d82-bb8b-360f868bd155"
 title: "Release evidence: SBOM, attestations and provenance"
 type: "component"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "sbom"
   - "attestation"
   - "slsa"
-created: "2026-10-28T11:12:32-05:00"
-timestamp: "2026-10-28T11:12:32-05:00"
+x-okfw-created: "2026-10-28T11:12:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:32-05:00"
 description: "Each released template has SBOM, CVE and SLSA provenance attestations signed by the release key, and signed evidence files on the GitHub release."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/scripts/publish-attest.sh"
 sources:

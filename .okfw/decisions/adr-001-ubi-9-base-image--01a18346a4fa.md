@@ -1,5 +1,5 @@
 ---
-id: "01a18346-a4fa-7060-9776-bd8ab50b7f4d"
+x-okfw-id: "01a18346-a4fa-7060-9776-bd8ab50b7f4d"
 title: "ADR-001: UBI 9 base image"
 type: "decision"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "decision"
   - "base-image"
   - "ubi9"
-created: "2026-10-28T11:10:07-05:00"
-timestamp: "2026-10-28T11:10:07-05:00"
+x-okfw-created: "2026-10-28T11:10:07-05:00"
+x-okfw-timestamp: "2026-10-28T11:10:07-05:00"
 description: "ADR-001 chose UBI 9 Standard as the base image; ADR-007 supersedes it with Fedora 43 minimal."
 x:
   adr: 1

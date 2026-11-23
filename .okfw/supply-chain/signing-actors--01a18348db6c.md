@@ -1,13 +1,13 @@
 ---
-id: "01a18348-db6c-77ad-930b-5f6b690c458e"
+x-okfw-id: "01a18348-db6c-77ad-930b-5f6b690c458e"
 title: "Signing actors"
 type: "component"
 tags:
   - "supply-chain"
   - "signing"
   - "actors"
-created: "2026-10-28T11:12:32-05:00"
-timestamp: "2026-10-28T11:12:32-05:00"
+x-okfw-created: "2026-10-28T11:12:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:32-05:00"
 description: "Three GitHub environments, Build-Actor, Review-Actor and Release-Actor, hold different cosign keys, so no one job can build, grade and publish."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/tree/main/.github/pdp/public-keys"
 sources:

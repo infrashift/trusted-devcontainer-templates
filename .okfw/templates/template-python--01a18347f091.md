@@ -1,12 +1,12 @@
 ---
-id: "01a18347-f091-73a5-8f68-36577f0fde6f"
+x-okfw-id: "01a18347-f091-73a5-8f68-36577f0fde6f"
 title: "Template: python"
 type: "template"
 tags:
   - "template"
   - "python"
-created: "2026-10-28T11:11:32-05:00"
-timestamp: "2026-10-28T11:11:32-05:00"
+x-okfw-created: "2026-10-28T11:11:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:11:32-05:00"
 description: "The python template gives Python 3.14 with uv and ruff, with the common scanning and data tools."
 x:
   template: "python"

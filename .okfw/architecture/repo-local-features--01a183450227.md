@@ -1,5 +1,5 @@
 ---
-id: "01a18345-0227-70c9-9bcc-9ea6b30541c6"
+x-okfw-id: "01a18345-0227-70c9-9bcc-9ea6b30541c6"
 title: "Repo-local features"
 type: "component"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "features"
   - "repo-local-features"
   - "neovim"
-created: "2026-10-28T11:08:20-05:00"
-timestamp: "2026-10-28T11:08:20-05:00"
+x-okfw-created: "2026-10-28T11:08:20-05:00"
+x-okfw-timestamp: "2026-10-28T11:08:20-05:00"
 description: "This repository builds, tests and releases eight features in features/src/, under the same contract as trusted-devcontainer-features."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/tree/main/features"
 sources:

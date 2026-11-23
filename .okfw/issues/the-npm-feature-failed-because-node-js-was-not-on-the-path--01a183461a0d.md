@@ -1,15 +1,15 @@
 ---
-id: "01a18346-1a0d-784d-930e-71cdaf09c746"
+x-okfw-id: "01a18346-1a0d-784d-930e-71cdaf09c746"
 title: "The npm feature failed because Node.js was not on the PATH"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "features-repo"
   - "ansible"
-created: "2026-10-28T11:09:31-05:00"
-timestamp: "2026-10-28T11:09:31-05:00"
+x-okfw-created: "2026-10-28T11:09:31-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:31-05:00"
 description: "The npm feature version check could not find Node.js; v1.0.1 sets PATH in that task."
 x:
   todo: 3

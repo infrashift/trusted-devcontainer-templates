@@ -1,13 +1,13 @@
 ---
-id: "01a18349-1bf1-762a-b4a2-a72a76eb949d"
+x-okfw-id: "01a18349-1bf1-762a-b4a2-a72a76eb949d"
 title: "Roadmap"
 type: "plan"
 tags:
   - "plan"
   - "proposed"
   - "roadmap"
-created: "2026-10-28T11:12:49-05:00"
-timestamp: "2026-10-28T11:12:49-05:00"
+x-okfw-created: "2026-10-28T11:12:49-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:49-05:00"
 description: "Pointer to the roadmap page: planned templates and security, pipeline and documentation work; two items are already done in the code."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/docs/src/content/docs/reference/roadmap.md"
 generated:

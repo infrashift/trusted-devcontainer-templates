@@ -1,12 +1,12 @@
 ---
-id: "01a1833e-d461-7ec7-ac10-3bbc52a40987"
+x-okfw-id: "01a1833e-d461-7ec7-ac10-3bbc52a40987"
 title: "Plan workflow"
 type: "guide"
 tags:
   - "guide"
   - "plan-workflow"
-created: "2026-10-28T11:01:35-05:00"
-timestamp: "2026-10-28T11:01:35-05:00"
+x-okfw-created: "2026-10-28T11:01:35-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:35-05:00"
 description: "How to record a multi-step plan in the wiki, link it to its issues, and move it through its state tags."
 generated:
   by: "claude-code/opus-5-5"

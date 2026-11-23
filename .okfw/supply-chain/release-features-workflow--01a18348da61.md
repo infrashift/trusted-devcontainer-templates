@@ -1,5 +1,5 @@
 ---
-id: "01a18348-da61-76da-ac57-5d0730bfb755"
+x-okfw-id: "01a18348-da61-76da-ac57-5d0730bfb755"
 title: "Release Features workflow"
 type: "component"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "workflow"
   - "features"
   - "release"
-created: "2026-10-28T11:12:32-05:00"
-timestamp: "2026-10-28T11:12:32-05:00"
+x-okfw-created: "2026-10-28T11:12:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:32-05:00"
 description: "The release-features.yml workflow publishes the repo-local features on a push to main: stage, review, then promote by digest."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/.github/workflows/release-features.yml"
 sources:

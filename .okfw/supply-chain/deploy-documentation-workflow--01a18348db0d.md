@@ -1,13 +1,13 @@
 ---
-id: "01a18348-db0d-7ce6-a0fc-b98772135e78"
+x-okfw-id: "01a18348-db0d-7ce6-a0fc-b98772135e78"
 title: "Deploy Documentation workflow"
 type: "component"
 tags:
   - "supply-chain"
   - "workflow"
   - "docs"
-created: "2026-10-28T11:12:32-05:00"
-timestamp: "2026-10-28T11:12:32-05:00"
+x-okfw-created: "2026-10-28T11:12:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:32-05:00"
 description: "The deploy-docs.yaml workflow builds the documentation site with Bun and deploys it to GitHub Pages when a push to main changes docs/."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/.github/workflows/deploy-docs.yaml"
 generated:

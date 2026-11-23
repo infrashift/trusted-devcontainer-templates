@@ -1,12 +1,12 @@
 ---
-id: "01a18347-eeeb-78e1-9dbc-6ddfa06e76b8"
+x-okfw-id: "01a18347-eeeb-78e1-9dbc-6ddfa06e76b8"
 title: "Template: ansible-cue"
 type: "template"
 tags:
   - "template"
   - "ansible-cue"
-created: "2026-10-28T11:11:31-05:00"
-timestamp: "2026-10-28T11:11:32-05:00"
+x-okfw-created: "2026-10-28T11:11:31-05:00"
+x-okfw-timestamp: "2026-10-28T11:11:32-05:00"
 description: "The ansible-cue template gives Ansible 2.21.5 on Python 3.14 and CUE, with the common scanning and data tools."
 x:
   template: "ansible-cue"

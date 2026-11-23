@@ -1,16 +1,16 @@
 ---
-id: "01a18346-1a52-7e57-b014-f5d33c26833a"
+x-okfw-id: "01a18346-1a52-7e57-b014-f5d33c26833a"
 title: "The features needed sudo in the base image"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "features-repo"
   - "ansible"
   - "privileges"
-created: "2026-10-28T11:09:31-05:00"
-timestamp: "2026-10-28T11:09:32-05:00"
+x-okfw-created: "2026-10-28T11:09:31-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:32-05:00"
 description: "The feature Ansible tasks used become and needed sudo; v1.0.1 set become false, and the bootstrap runner later removed privilege handling."
 x:
   todo: 4

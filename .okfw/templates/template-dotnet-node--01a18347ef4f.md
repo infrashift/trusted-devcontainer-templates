@@ -1,12 +1,12 @@
 ---
-id: "01a18347-ef4f-75db-823f-1f6d587aa7d7"
+x-okfw-id: "01a18347-ef4f-75db-823f-1f6d587aa7d7"
 title: "Template: dotnet-node"
 type: "template"
 tags:
   - "template"
   - "dotnet-node"
-created: "2026-10-28T11:11:32-05:00"
-timestamp: "2026-10-28T11:11:32-05:00"
+x-okfw-created: "2026-10-28T11:11:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:11:32-05:00"
 description: "The dotnet-node template gives the .NET 8 SDK, Node.js 22 with npm 12.2.1, and pnpm, with the common tools."
 x:
   template: "dotnet-node"

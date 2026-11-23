@@ -1,5 +1,5 @@
 ---
-id: "01a18346-a548-712b-9c5a-9821a651c0a5"
+x-okfw-id: "01a18346-a548-712b-9c5a-9821a651c0a5"
 title: "ADR-002: One shared Containerfile"
 type: "decision"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "decision"
   - "containerfile"
   - "drift"
-created: "2026-10-28T11:10:07-05:00"
-timestamp: "2026-10-28T11:10:07-05:00"
+x-okfw-created: "2026-10-28T11:10:07-05:00"
+x-okfw-timestamp: "2026-10-28T11:10:07-05:00"
 description: "ADR-002 makes shared/Containerfile the one source; each template copy must be byte-identical, and make check-sync enforces it."
 x:
   adr: 2

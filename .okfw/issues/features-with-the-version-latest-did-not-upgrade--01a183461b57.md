@@ -1,16 +1,16 @@
 ---
-id: "01a18346-1b57-7574-b80d-8997acf67258"
+x-okfw-id: "01a18346-1b57-7574-b80d-8997acf67258"
 title: "Features with the version latest did not upgrade"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "features-repo"
   - "pinning"
   - "npm"
-created: "2026-10-28T11:09:32-05:00"
-timestamp: "2026-10-28T11:09:32-05:00"
+x-okfw-created: "2026-10-28T11:09:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:32-05:00"
 description: "The claude-code and openai-codex features skipped the install for latest; they now resolve the npm dist-tag to a concrete version."
 x:
   todo: 15

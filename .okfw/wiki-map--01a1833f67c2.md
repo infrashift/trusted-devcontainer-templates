@@ -1,12 +1,12 @@
 ---
-id: "01a1833f-67c2-7d2d-9282-8ebea083a285"
+x-okfw-id: "01a1833f-67c2-7d2d-9282-8ebea083a285"
 title: "Wiki map"
 type: "map"
 tags:
   - "hub"
   - "map"
-created: "2026-10-28T11:02:13-05:00"
-timestamp: "2026-10-28T11:02:13-05:00"
+x-okfw-created: "2026-10-28T11:02:13-05:00"
+x-okfw-timestamp: "2026-10-28T11:02:13-05:00"
 description: "Start here: what this wiki holds, the bundles, and the commands for common questions."
 generated:
   by: "claude-code/opus-5-5"

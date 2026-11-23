@@ -1,5 +1,5 @@
 ---
-id: "01a18346-a62e-7b64-97da-85619d18da83"
+x-okfw-id: "01a18346-a62e-7b64-97da-85619d18da83"
 title: "ADR-005: Dual signing of templates"
 type: "decision"
 tags:
@@ -8,8 +8,8 @@ tags:
   - "signing"
   - "cosign"
   - "supply-chain"
-created: "2026-10-28T11:10:07-05:00"
-timestamp: "2026-10-28T11:10:07-05:00"
+x-okfw-created: "2026-10-28T11:10:07-05:00"
+x-okfw-timestamp: "2026-10-28T11:10:07-05:00"
 description: "ADR-005 signs each published template two times: with a sovereign cosign key and keylessly through Sigstore."
 x:
   adr: 5

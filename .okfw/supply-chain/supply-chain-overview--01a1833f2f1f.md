@@ -1,12 +1,12 @@
 ---
-id: "01a1833f-2f1f-7161-a988-41bdadd882fc"
+x-okfw-id: "01a1833f-2f1f-7161-a988-41bdadd882fc"
 title: "Supply chain overview"
 type: "overview"
 tags:
   - "hub"
   - "supply-chain"
-created: "2026-10-28T11:01:58-05:00"
-timestamp: "2026-10-28T11:01:58-05:00"
+x-okfw-created: "2026-10-28T11:01:58-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:58-05:00"
 description: "How the pipeline builds, scans, signs, attests and releases the templates, and how the PDP decides."
 generated:
   by: "claude-code/opus-5-5"

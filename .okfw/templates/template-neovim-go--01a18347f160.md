@@ -1,13 +1,13 @@
 ---
-id: "01a18347-f160-7e68-ba4a-7ddf14fb34ec"
+x-okfw-id: "01a18347-f160-7e68-ba4a-7ddf14fb34ec"
 title: "Template: neovim-go"
 type: "template"
 tags:
   - "template"
   - "neovim-go"
   - "neovim"
-created: "2026-10-28T11:11:32-05:00"
-timestamp: "2026-10-28T11:11:32-05:00"
+x-okfw-created: "2026-10-28T11:11:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:11:32-05:00"
 description: "The neovim-go template gives tmux, Neovim with LazyVim 1.2.3, Go with pinned Go tools, and sshd on port 2222."
 x:
   template: "neovim-go"

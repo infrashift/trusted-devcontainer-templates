@@ -1,13 +1,13 @@
 ---
-id: "01a18349-1b30-72f0-8b55-b5203a0a8cf2"
+x-okfw-id: "01a18349-1b30-72f0-8b55-b5203a0a8cf2"
 title: "Verify a published template"
 type: "runbook"
 tags:
   - "runbook"
   - "verify"
   - "signing"
-created: "2026-10-28T11:12:48-05:00"
-timestamp: "2026-10-28T11:12:48-05:00"
+x-okfw-created: "2026-10-28T11:12:48-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:48-05:00"
 description: "Verify a template signature and its attestations with release.pub, the evidence files with build.pub, and the verdict with review.pub."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/scripts/publish-attest.sh"
 sources:

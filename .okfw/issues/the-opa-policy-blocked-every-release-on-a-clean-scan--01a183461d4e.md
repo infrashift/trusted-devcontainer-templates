@@ -1,16 +1,16 @@
 ---
-id: "01a18346-1d4e-7b32-ba69-27d26540e603"
+x-okfw-id: "01a18346-1d4e-7b32-ba69-27d26540e603"
 title: "The OPA policy blocked every release on a clean scan"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "pdp"
   - "opa"
   - "ci"
-created: "2026-10-28T11:09:32-05:00"
-timestamp: "2026-10-28T11:09:32-05:00"
+x-okfw-created: "2026-10-28T11:09:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:32-05:00"
 description: "Rego v1 read the violation rule as a partial object, so a clean scan gave {} and the gate blocked; commit 7cd9b4e fixed it."
 x:
   todo: 10

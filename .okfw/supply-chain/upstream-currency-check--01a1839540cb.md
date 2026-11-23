@@ -1,13 +1,13 @@
 ---
-id: "01a18395-40cb-7f11-aa48-1fc9e7b6e9d3"
+x-okfw-id: "01a18395-40cb-7f11-aa48-1fc9e7b6e9d3"
 title: "Upstream currency check"
 type: "component"
 tags:
   - "supply-chain"
   - "pinning"
   - "currency"
-created: "2026-10-28T12:35:59-05:00"
-timestamp: "2026-10-28T12:35:59-05:00"
+x-okfw-created: "2026-10-28T12:35:59-05:00"
+x-okfw-timestamp: "2026-10-28T12:35:59-05:00"
 description: "A weekly and per-PR report of each installed tool and CI tool that is behind its newest upstream release by 7 days or more."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/scripts/check-upstream-currency.py"
 sources:

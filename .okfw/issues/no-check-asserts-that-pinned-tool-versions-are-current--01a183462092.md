@@ -1,15 +1,15 @@
 ---
-id: "01a18346-2092-78cf-80d9-c276a89e4779"
+x-okfw-id: "01a18346-2092-78cf-80d9-c276a89e4779"
 title: "No check asserts that pinned tool versions are current"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "pinning"
   - "cve"
   - "resolved"
-created: "2026-10-28T11:09:33-05:00"
-timestamp: "2026-10-28T12:36:42-05:00"
+x-okfw-created: "2026-10-28T11:09:33-05:00"
+x-okfw-timestamp: "2026-10-28T12:36:42-05:00"
 description: "Nothing measures whether pinned tools are current, so drift is found only when someone reads a CVE report."
 x:
   todo: 22

@@ -1,13 +1,13 @@
 ---
-id: "01a18348-d928-73aa-9683-fa4648b9e8c1"
+x-okfw-id: "01a18348-d928-73aa-9683-fa4648b9e8c1"
 title: "CI Build & Audit workflow"
 type: "component"
 tags:
   - "supply-chain"
   - "workflow"
   - "build"
-created: "2026-10-28T11:12:31-05:00"
-timestamp: "2026-10-28T11:12:31-05:00"
+x-okfw-created: "2026-10-28T11:12:31-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:31-05:00"
 description: "The build.yml workflow builds, tests and scans each changed template on a pull request, and signs the evidence with the build key."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/.github/workflows/build.yml"
 sources:

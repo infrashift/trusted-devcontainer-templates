@@ -1,12 +1,12 @@
 ---
-id: "01a1833e-d42f-79db-b7f0-77eef9aac31b"
+x-okfw-id: "01a1833e-d42f-79db-b7f0-77eef9aac31b"
 title: "Issue workflow"
 type: "guide"
 tags:
   - "guide"
   - "issue-workflow"
-created: "2026-10-28T11:01:35-05:00"
-timestamp: "2026-10-28T11:01:35-05:00"
+x-okfw-created: "2026-10-28T11:01:35-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:35-05:00"
 description: "How to record, find and close an issue in the wiki, with the body sections and the state tags."
 generated:
   by: "claude-code/opus-5-5"

@@ -1,15 +1,15 @@
 ---
-id: "01a18346-218e-78b9-bc0e-e0364dca8eb9"
+x-okfw-id: "01a18346-218e-78b9-bc0e-e0364dca8eb9"
 title: "A fork PR fails the build check instead of skipping it"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "open"
   - "ci"
   - "forks"
-created: "2026-10-28T11:09:33-05:00"
-timestamp: "2026-10-28T11:09:33-05:00"
+x-okfw-created: "2026-10-28T11:09:33-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:33-05:00"
 description: "The build-and-audit job in build.yml has no fork guard, so a fork PR gets no signing secret and fails build/gate."
 x:
   todo: 25

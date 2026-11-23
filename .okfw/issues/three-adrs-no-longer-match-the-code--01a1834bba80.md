@@ -1,15 +1,15 @@
 ---
-id: "01a1834b-ba80-7135-8c45-0f6be5ec9c17"
+x-okfw-id: "01a1834b-ba80-7135-8c45-0f6be5ec9c17"
 title: "Three ADRs no longer match the code"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "open"
   - "docs"
   - "adr"
-created: "2026-10-28T11:15:40-05:00"
-timestamp: "2026-10-28T11:15:40-05:00"
+x-okfw-created: "2026-10-28T11:15:40-05:00"
+x-okfw-timestamp: "2026-10-28T11:15:40-05:00"
 description: "ADR-002, ADR-004 and ADR-009 name workflows, policy rules and feature sets that changed after the ADRs were written."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/docs/src/content/docs/decisions/index.md"
 generated:

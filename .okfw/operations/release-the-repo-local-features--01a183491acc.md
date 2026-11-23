@@ -1,13 +1,13 @@
 ---
-id: "01a18349-1acc-7d71-ad05-55de1e2db2dc"
+x-okfw-id: "01a18349-1acc-7d71-ad05-55de1e2db2dc"
 title: "Release the repo-local features"
 type: "runbook"
 tags:
   - "runbook"
   - "release"
   - "features"
-created: "2026-10-28T11:12:48-05:00"
-timestamp: "2026-10-28T11:12:48-05:00"
+x-okfw-created: "2026-10-28T11:12:48-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:48-05:00"
 description: "Bump the feature version and merge to main; release-features.yml stages, reviews and promotes it; then pin the new digest in a second pull request."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/.github/workflows/release-features.yml"
 sources:

@@ -1,15 +1,15 @@
 ---
-id: "01a1834b-bc41-7162-9de5-9dc17dac007b"
+x-okfw-id: "01a1834b-bc41-7162-9de5-9dc17dac007b"
 title: "The main ruleset does not require the test-features gate"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "open"
   - "ci"
   - "features"
-created: "2026-10-28T11:15:41-05:00"
-timestamp: "2026-10-28T11:15:41-05:00"
+x-okfw-created: "2026-10-28T11:15:41-05:00"
+x-okfw-timestamp: "2026-10-28T11:15:41-05:00"
 description: "A PR that breaks a repo-local feature can merge, because the main ruleset does not require test-features/gate."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/.github/workflows/test-features.yml"
 generated:

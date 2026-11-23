@@ -1,15 +1,15 @@
 ---
-id: "01a18346-1baf-71b9-a31d-31cf54712394"
+x-okfw-id: "01a18346-1baf-71b9-a31d-31cf54712394"
 title: "The features repo maintainer dev container could not be built"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "features-repo"
   - "dev-container"
-created: "2026-10-28T11:09:32-05:00"
-timestamp: "2026-10-28T11:09:32-05:00"
+x-okfw-created: "2026-10-28T11:09:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:32-05:00"
 description: "The features repo maintainer dev container used parent-folder feature paths; initializeCommand now stages the features before the CLI resolves them."
 x:
   todo: 16

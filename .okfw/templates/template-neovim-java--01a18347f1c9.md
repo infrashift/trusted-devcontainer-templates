@@ -1,13 +1,13 @@
 ---
-id: "01a18347-f1c9-7efe-8c45-843603308ec7"
+x-okfw-id: "01a18347-f1c9-7efe-8c45-843603308ec7"
 title: "Template: neovim-java"
 type: "template"
 tags:
   - "template"
   - "neovim-java"
   - "neovim"
-created: "2026-10-28T11:11:32-05:00"
-timestamp: "2026-10-28T11:11:32-05:00"
+x-okfw-created: "2026-10-28T11:11:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:11:32-05:00"
 description: "The neovim-java template gives tmux, Neovim with LazyVim 1.2.3 and its Java extra, OpenJDK, Maven, Gradle, jdtls and sshd."
 x:
   template: "neovim-java"

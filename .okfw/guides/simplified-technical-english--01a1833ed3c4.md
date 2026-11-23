@@ -1,12 +1,12 @@
 ---
-id: "01a1833e-d3c4-7c17-90ca-13cdbc17a4d3"
+x-okfw-id: "01a1833e-d3c4-7c17-90ca-13cdbc17a4d3"
 title: "Simplified Technical English"
 type: "guide"
 tags:
   - "guide"
   - "ste"
-created: "2026-10-28T11:01:35-05:00"
-timestamp: "2026-10-28T11:01:35-05:00"
+x-okfw-created: "2026-10-28T11:01:35-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:35-05:00"
 description: "The writing rules for all wiki prose, adapted from ASD-STE100, with bad and good examples from this project."
 sources:
   - resource: "https://www.asd-ste100.org/"

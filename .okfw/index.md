@@ -1,5 +1,7 @@
 ---
-okf_version: "0.2"
+okf_version: "0.3"
+description: "Per-template notes, ADRs, supply-chain records (SBOM, SLSA, dual signing, OPA CVE gate) and operations guides for the hardened Fedora dev container templates, plus CVE findings and open issues."
+title: "Trusted DevContainer Templates"
 ---
 
 # /

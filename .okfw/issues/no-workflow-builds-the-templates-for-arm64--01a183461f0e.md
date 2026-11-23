@@ -1,15 +1,15 @@
 ---
-id: "01a18346-1f0e-7d7b-8fa7-8b0dd0718dce"
+x-okfw-id: "01a18346-1f0e-7d7b-8fa7-8b0dd0718dce"
 title: "No workflow builds the templates for arm64"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "open"
   - "arm64"
   - "ci"
-created: "2026-10-28T11:09:33-05:00"
-timestamp: "2026-10-28T11:09:33-05:00"
+x-okfw-created: "2026-10-28T11:09:33-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:33-05:00"
 description: "All templates declare linux/arm64, but no workflow builds a template in src/ for arm64, so arm64 support is not proven."
 x:
   todo: 12

@@ -1,5 +1,5 @@
 ---
-id: "01a18346-a598-7dd7-ae54-422cc85b17d3"
+x-okfw-id: "01a18346-a598-7dd7-ae54-422cc85b17d3"
 title: "ADR-003: Non-root dev user"
 type: "decision"
 tags:
@@ -7,8 +7,8 @@ tags:
   - "decision"
   - "dev-user"
   - "security"
-created: "2026-10-28T11:10:07-05:00"
-timestamp: "2026-10-28T11:10:07-05:00"
+x-okfw-created: "2026-10-28T11:10:07-05:00"
+x-okfw-timestamp: "2026-10-28T11:10:07-05:00"
 description: "ADR-003 makes all templates run as the non-root user dev, UID 1001 and GID 1001, with updateRemoteUserUID false."
 x:
   adr: 3

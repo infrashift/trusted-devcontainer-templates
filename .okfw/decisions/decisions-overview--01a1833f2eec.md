@@ -1,12 +1,12 @@
 ---
-id: "01a1833f-2eec-7abf-8931-ac398eaa8c14"
+x-okfw-id: "01a1833f-2eec-7abf-8931-ac398eaa8c14"
 title: "Decisions overview"
 type: "overview"
 tags:
   - "hub"
   - "adr"
-created: "2026-10-28T11:01:58-05:00"
-timestamp: "2026-10-28T11:01:58-05:00"
+x-okfw-created: "2026-10-28T11:01:58-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:58-05:00"
 description: "One pointer concept for each architecture decision record (ADR) in the documentation site."
 generated:
   by: "claude-code/opus-5-5"

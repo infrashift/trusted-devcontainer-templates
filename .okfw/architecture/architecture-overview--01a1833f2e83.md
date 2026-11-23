@@ -1,12 +1,12 @@
 ---
-id: "01a1833f-2e83-70e0-badf-226e066c9373"
+x-okfw-id: "01a1833f-2e83-70e0-badf-226e066c9373"
 title: "Architecture overview"
 type: "overview"
 tags:
   - "hub"
   - "architecture"
-created: "2026-10-28T11:01:58-05:00"
-timestamp: "2026-10-28T11:01:58-05:00"
+x-okfw-created: "2026-10-28T11:01:58-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:58-05:00"
 description: "The parts of the template system and how they connect, from the base image to the published artifact."
 generated:
   by: "claude-code/opus-5-5"

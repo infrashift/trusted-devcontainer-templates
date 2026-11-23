@@ -1,13 +1,13 @@
 ---
-id: "01a18346-ef2b-7541-9898-834d6fad86bf"
+x-okfw-id: "01a18346-ef2b-7541-9898-834d6fad86bf"
 title: "The remediation distinction cut blocking findings to 6 or 7 per template"
 type: "finding"
 tags:
   - "finding"
   - "cve"
   - "pdp"
-created: "2026-10-28T11:10:26-05:00"
-timestamp: "2026-10-28T11:10:26-05:00"
+x-okfw-created: "2026-10-28T11:10:26-05:00"
+x-okfw-timestamp: "2026-10-28T11:10:26-05:00"
 description: "On 2026-08-23 the vendored-finding rule cut blocking findings to 6 per template, 7 for dotnet-node, and the waivers from 41 CVEs to 8."
 x:
   todo: 21

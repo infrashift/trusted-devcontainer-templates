@@ -1,16 +1,16 @@
 ---
-id: "01a18346-1a9e-7e92-bedb-bae7640d0e1e"
+x-okfw-id: "01a18346-1a9e-7e92-bedb-bae7640d0e1e"
 title: "The make test targets in the features repo did not work"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "features-repo"
   - "testing"
   - "makefile"
-created: "2026-10-28T11:09:32-05:00"
-timestamp: "2026-10-28T11:09:32-05:00"
+x-okfw-created: "2026-10-28T11:09:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:32-05:00"
 description: "Four make test targets in the features repo needed a removed test tree; the Makefile now has only working targets."
 x:
   todo: 13

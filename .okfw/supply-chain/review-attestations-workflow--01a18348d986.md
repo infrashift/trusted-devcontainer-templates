@@ -1,13 +1,13 @@
 ---
-id: "01a18348-d986-7294-8cda-746696ee5d4a"
+x-okfw-id: "01a18348-d986-7294-8cda-746696ee5d4a"
 title: "Review Attestations workflow"
 type: "component"
 tags:
   - "supply-chain"
   - "workflow"
   - "review"
-created: "2026-10-28T11:12:32-05:00"
-timestamp: "2026-10-28T11:12:32-05:00"
+x-okfw-created: "2026-10-28T11:12:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:32-05:00"
 description: "The review.yml workflow verifies pull request build evidence, evaluates the CVE gate, signs a verdict with the review key, and sets review/cve-policy."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/.github/workflows/review.yml"
 sources:

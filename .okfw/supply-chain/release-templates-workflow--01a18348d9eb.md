@@ -1,13 +1,13 @@
 ---
-id: "01a18348-d9eb-738e-87d2-f7f984ebdf84"
+x-okfw-id: "01a18348-d9eb-738e-87d2-f7f984ebdf84"
 title: "Release Templates workflow"
 type: "component"
 tags:
   - "supply-chain"
   - "workflow"
   - "release"
-created: "2026-10-28T11:12:32-05:00"
-timestamp: "2026-10-28T11:12:32-05:00"
+x-okfw-created: "2026-10-28T11:12:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:32-05:00"
 description: "The release.yml workflow runs on a v* tag, builds and reviews all templates again, then publishes, attests and signs them as the Release-Actor."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/.github/workflows/release.yml"
 sources:

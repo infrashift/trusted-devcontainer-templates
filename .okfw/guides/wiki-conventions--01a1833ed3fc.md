@@ -1,12 +1,12 @@
 ---
-id: "01a1833e-d3fc-797e-9fb5-50bacd376970"
+x-okfw-id: "01a1833e-d3fc-797e-9fb5-50bacd376970"
 title: "Wiki conventions"
 type: "guide"
 tags:
   - "guide"
   - "okfw"
-created: "2026-10-28T11:01:35-05:00"
-timestamp: "2026-10-28T11:01:35-05:00"
+x-okfw-created: "2026-10-28T11:01:35-05:00"
+x-okfw-timestamp: "2026-10-28T11:01:35-05:00"
 description: "The structure rules for the wiki: disclosure levels, bundles, types, tags, pointer concepts, trust and lifecycle."
 generated:
   by: "claude-code/opus-5-5"

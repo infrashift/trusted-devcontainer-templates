@@ -1,13 +1,13 @@
 ---
-id: "01a18348-d8cc-78e0-9858-ea7a38cd34c2"
+x-okfw-id: "01a18348-d8cc-78e0-9858-ea7a38cd34c2"
 title: "PR Gate workflow"
 type: "component"
 tags:
   - "supply-chain"
   - "workflow"
   - "pr-gate"
-created: "2026-10-28T11:12:31-05:00"
-timestamp: "2026-10-28T11:12:31-05:00"
+x-okfw-created: "2026-10-28T11:12:31-05:00"
+x-okfw-timestamp: "2026-10-28T11:12:31-05:00"
 description: "The pr-gate.yml workflow runs on every pull request, evaluates the repository half of the PDP, and seeds two required statuses."
 resource: "https://github.com/infrashift/trusted-devcontainer-templates/blob/main/.github/workflows/pr-gate.yml"
 sources:

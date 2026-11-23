@@ -1,16 +1,16 @@
 ---
-id: "01a18346-1d9e-7e7c-b4db-1362fcc23fa2"
+x-okfw-id: "01a18346-1d9e-7e7c-b4db-1362fcc23fa2"
 title: "The workflows did not match the hardened org reference pipeline"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "ci"
   - "pinning"
   - "signing"
-created: "2026-10-28T11:09:32-05:00"
-timestamp: "2026-10-28T11:09:32-05:00"
+x-okfw-created: "2026-10-28T11:09:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:32-05:00"
 description: "The release job installed unpinned tools next to the signing key; commit dd89603 added pins, least privilege and three signing actors."
 x:
   todo: 17

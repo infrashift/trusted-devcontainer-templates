@@ -1,15 +1,15 @@
 ---
-id: "01a18346-2140-7813-85c0-7d64f950f10c"
+x-okfw-id: "01a18346-2140-7813-85c0-7d64f950f10c"
 title: "The attestations have no Rekor transparency-log entry"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "open"
   - "signing"
   - "rekor"
-created: "2026-10-28T11:09:33-05:00"
-timestamp: "2026-10-28T11:09:33-05:00"
+x-okfw-created: "2026-10-28T11:09:33-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:33-05:00"
 description: "The SBOM, vulnerability and provenance attestations have a keyed signature only, so a third party cannot audit them in Rekor."
 x:
   todo: 24

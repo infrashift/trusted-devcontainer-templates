@@ -1,15 +1,15 @@
 ---
-id: "01a18346-1cfa-7c12-aa7c-76876f4fc1bd"
+x-okfw-id: "01a18346-1cfa-7c12-aa7c-76876f4fc1bd"
 title: "The root dev container Containerfile was outside the drift check"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "containerfile"
   - "ci"
-created: "2026-10-28T11:09:32-05:00"
-timestamp: "2026-10-28T11:09:32-05:00"
+x-okfw-created: "2026-10-28T11:09:32-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:32-05:00"
 description: "The Containerfile drift check skipped the root .devcontainer/Containerfile; the Makefile now lists all managed files in MANAGED_CONTAINERFILES."
 x:
   todo: 8

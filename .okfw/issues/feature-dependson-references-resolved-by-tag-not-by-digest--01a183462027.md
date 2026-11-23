@@ -1,16 +1,16 @@
 ---
-id: "01a18346-2027-70a0-ad6c-c03d427f5d3c"
+x-okfw-id: "01a18346-2027-70a0-ad6c-c03d427f5d3c"
 title: "Feature dependsOn references resolved by tag, not by digest"
 type: "issue"
-kind: "issue"
+x-okfw-kind: "issue"
 tags:
   - "issue"
   - "resolved"
   - "features-repo"
   - "pinning"
   - "bootstrap"
-created: "2026-10-28T11:09:33-05:00"
-timestamp: "2026-10-28T11:09:33-05:00"
+x-okfw-created: "2026-10-28T11:09:33-05:00"
+x-okfw-timestamp: "2026-10-28T11:09:33-05:00"
 description: "Each feature's dependsOn named bootstrap without a digest; a two-phase publish in the features repo now pins it."
 x:
   todo: 20
